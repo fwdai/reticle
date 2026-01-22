@@ -1,0 +1,93 @@
+.sidebar {
+  grid-area: sidebar;
+  background-color: #f8f8f8;
+  padding: 1rem;
+  border-right: 1px solid #e0e0e0;
+}
+
+.sidebar-buttons {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.sidebar-button {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.sidebar-button.active {
+  background-color: #e0e0e0;
+}
+
+.sidebar-button span {
+  margin-left: 0.5rem;
+}
+
+.collections-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.collections-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.collections-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  margin-left: 0.5rem;
+  width: 100%;
+}
+
+.collections-tree ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.collections-tree li {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.collections-tree li span {
+  margin-left: 0.5rem;
+}
+
+.collections-tree .file-count {
+  margin-left: auto;
+  color: #999;
+}
+
+.collections-tree ul ul {
+  padding-left: 1.5rem;
+}
