@@ -18,6 +18,7 @@ const sidebars: Partial<Record<Page, ComponentType>> = {
 
 function Sidebar({ currentPage }: SidebarProps) {
   const SidebarComponent = sidebars[currentPage];
+  if (currentPage === "home") return null;
 
   return (
     <aside className="w-60 bg-sidebar-light flex flex-col flex-shrink-0 mr-1.5">

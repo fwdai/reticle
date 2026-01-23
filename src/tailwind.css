@@ -172,4 +172,7 @@
     border-top: 1px solid var(--color-section-border);
     box-shadow: inset 0 1px 0 0 white;
   }
+  .table-row-hover:hover {
+    background-color: #f9fafb;
+  }
 }
