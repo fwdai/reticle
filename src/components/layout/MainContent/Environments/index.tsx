@@ -54,7 +54,7 @@ function Environments() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-[#FCFDFF]">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="bg-white border border-border-light rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-start mb-4">

@@ -72,7 +72,7 @@ function Runs() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
+    <div className="flex-1 flex flex-col min-w-0">
       <div className="px-4 sm:px-8 py-4 border-b border-border-light bg-slate-50/50 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 overflow-x-auto">
         <div className="flex items-center gap-3 flex-shrink-0">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Filters</span>
@@ -201,7 +201,7 @@ function Runs() {
           </tbody>
         </table>
       </div>
-      <footer className="h-14 border-t border-border-light flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-8 bg-white flex-shrink-0">
+      <footer className="h-14 border-t border-border-light flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-8flex-shrink-0">
         <div className="text-xs text-text-muted font-medium">
           Showing <span className="text-text-main">1-25</span> of <span className="text-text-main">1,420</span> runs
         </div>

@@ -9,7 +9,7 @@ function Settings() {
   const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "system">("light");
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
+    <div className="flex-1 overflow-y-auto custom-scrollbar">
       <div className="max-w-3xl mx-auto px-10 py-12 space-y-10">
         <section className="space-y-6">
           <div>
