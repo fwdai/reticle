@@ -35,6 +35,10 @@ function PromptBox({
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState("");
 
+  useEffect(() => {
+    setPrompt(initialPromptValue);
+  }, [initialPromptValue]);
+
   // Load templates from localStorage
   useEffect(() => {
     const savedTemplates = localStorage.getItem("promptTemplates");
