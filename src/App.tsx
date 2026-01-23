@@ -1,7 +1,7 @@
 import { useState } from "react";
-import LeftNav from "./components/layout/LeftNav";
-import Sidebar from "./components/layout/Sidebar";
-import MainContent from "./components/layout/MainContent";
+import LeftNav from "./components/Layout/LeftNav";
+import Sidebar from "./components/Layout/Sidebar";
+import MainContent from "./components/Layout/MainContent";
 import { Page } from "./types";
 import "./App.css";
 

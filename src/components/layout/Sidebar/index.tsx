@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Page, SidebarItem } from "@/types";
+import { Page } from "@/types";
 import Studio from "./Studio";
 import Settings from "./Settings";
 import Runs from "./Runs";
@@ -9,7 +9,7 @@ interface SidebarProps {
   currentPage: Page;
 }
 
-const sidebars: Record<SidebarItem, ComponentType> = {
+const sidebars: Partial<Record<Page, ComponentType>> = {
   studio: Studio,
   settings: Settings,
   runs: Runs,
@@ -17,16 +17,12 @@ const sidebars: Record<SidebarItem, ComponentType> = {
 };
 
 function Sidebar({ currentPage }: SidebarProps) {
-  const SidebarComponent = sidebars[currentPage as SidebarItem];
-
-  if (!SidebarComponent) {
-    return null;
-  }
+  const SidebarComponent = sidebars[currentPage];
 
   return (
     <aside className="w-60 bg-sidebar-light flex flex-col flex-shrink-0 mr-1.5">
       <div className="p-3">
-        <SidebarComponent />
+        {SidebarComponent && <SidebarComponent />}
       </div>
     </aside>
   )

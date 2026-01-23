@@ -1,17 +1,17 @@
 import { ComponentType } from "react";
 import { Page } from "@/types";
-import StudioHeader from "./StudioHeader";
-import SettingsHeader from "./SettingsHeader";
-import HomeHeader from "./HomeHeader";
+import Studio from "./Studio";
+import Settings from "./Settings";
+import Home from "./Home";
 
 interface HeaderProps {
   currentPage: Page;
 }
 
 const headers: Partial<Record<Page, ComponentType>> = {
-  home: HomeHeader,
-  studio: StudioHeader,
-  settings: SettingsHeader,
+  home: Home,
+  studio: Studio,
+  settings: Settings,
 };
 
 function Header({ currentPage }: HeaderProps) {
