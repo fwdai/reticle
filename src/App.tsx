@@ -4,9 +4,8 @@ import Sidebar from "./components/Layout/Sidebar";
 import MainContent from "./components/Layout/MainContent";
 import { Page } from "./types";
 import "./App.css";
-import { ConfigurationProvider } from "./contexts/ConfigurationContext";
 
-import { ConfigurationProvider } from "./contexts/ConfigurationContext";
+import { StudioProvider } from "./contexts/StudioContext";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("studio");
@@ -15,9 +14,9 @@ function App() {
     <div className="flex h-screen w-full overflow-hidden p-[3px] bg-sidebar-light">
       <LeftNav currentPage={currentPage} onNavigate={setCurrentPage} />
       <Sidebar currentPage={currentPage} />
-      <ConfigurationProvider>
+      <StudioProvider>
         <MainContent currentPage={currentPage} onNavigate={setCurrentPage} />
-      </ConfigurationProvider>
+      </StudioProvider>
     </div>
   );
 }

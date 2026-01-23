@@ -1,15 +1,15 @@
 import { useContext } from 'react';
 import { Play, Save, Share } from "lucide-react";
-import { ConfigurationContext } from '@/contexts/ConfigurationContext';
+import { StudioContext } from '@/contexts/StudioContext';
 
 function StudioHeader() {
-  const context = useContext(ConfigurationContext);
+  const context = useContext(StudioContext);
 
   const handleRunClick = () => {
     if (context) {
-      console.log('Running with configuration:', context.configuration);
+      console.log('Running with configuration:', context.studioState.currentInteraction.configuration);
     } else {
-      console.error('ConfigurationContext not found');
+      console.error('StudioContext not found');
     }
   };
 
