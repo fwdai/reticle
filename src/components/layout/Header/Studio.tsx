@@ -2,7 +2,7 @@ import { Play, Save, Share } from "lucide-react";
 
 function StudioHeader() {
   return (
-    <header className="h-14 border-b border-border-light flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 rounded-t-xl">
+    <>
       <div className="flex items-center gap-3 text-sm">
         <span className="text-text-muted">Collections</span>
         <span className="text-gray-300">/</span>
@@ -28,7 +28,7 @@ function StudioHeader() {
           </button>
         </div>
       </div>
-    </header>
+    </>
   );
 }
 

@@ -13,7 +13,7 @@ const sidebars: Partial<Record<Page, ComponentType>> = {
   studio: Studio,
   settings: Settings,
   runs: Runs,
-  enviroments: Environments,
+  environments: Environments,
 };
 
 function Sidebar({ currentPage }: SidebarProps) {

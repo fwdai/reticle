@@ -14,7 +14,7 @@ interface MainContentProps {
 const pages: Partial<Record<Page, ComponentType>> = {
   home: Home,
   studio: Studio,
-  enviroments: Environments,
+  environments: Environments,
   runs: Runs,
   settings: Settings,
 };
@@ -24,7 +24,7 @@ function MainContent({ currentPage }: MainContentProps) {
 
   return (
     <main className="flex-1 flex flex-col min-w-0 bg-white border border-border-light rounded-xl">
-      {currentPage !== "home" && <Header currentPage={currentPage} />}
+      <Header currentPage={currentPage} />
       {PageComponent && <PageComponent />}
     </main>
   );
