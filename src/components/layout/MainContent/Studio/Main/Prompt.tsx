@@ -1,25 +1,32 @@
-import { useState } from "react";
+import { useContext } from "react";
 import PromptBox from "@/components/ui/PromptBox"; // Adjust path as needed
-
-interface Variable {
-  id: number;
-  key: string;
-  value: string;
-}
+import { StudioContext } from "@/contexts/StudioContext";
 
 function Prompt() {
-  const [prompt, setPrompt] = useState("");
-  const [variables, setVariables] = useState<Variable[]>([
-    { id: Date.now(), key: "", value: "" },
-  ]);
+  const context = useContext(StudioContext);
+
+  if (!context) {
+    throw new Error("Prompt must be used within a StudioProvider");
+  }
+
+  const { studioState, setStudioState } = context;
+  const { userPrompt } = studioState.currentInteraction;
+
+  const handlePromptChange = (newPrompt: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      currentInteraction: {
+        ...prev.currentInteraction,
+        userPrompt: newPrompt,
+      },
+    }));
+  };
 
   return (
     <PromptBox
       type="user"
-      initialPromptValue={prompt}
-      initialVariables={variables}
-      onPromptChange={(newPrompt) => setPrompt(newPrompt)}
-      onVariablesChange={(newVariables) => setVariables(newVariables)}
+      initialPromptValue={userPrompt}
+      onPromptChange={handlePromptChange}
       showTemplateManager={true}
     />
   );

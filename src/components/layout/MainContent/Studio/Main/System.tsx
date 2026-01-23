@@ -1,34 +1,32 @@
-import { useState } from "react";
+import { useContext } from "react";
 import PromptBox from "@/components/ui/PromptBox"; // Adjust path as needed
+import { StudioContext } from "@/contexts/StudioContext";
 
 function SystemMessage() {
-  const [message, setMessage] = useState("");
-  const [variables, setVariables] = useState([
-    { id: Date.now(), key: "", value: "" },
-  ]);
+  const context = useContext(StudioContext);
+
+  if (!context) {
+    throw new Error("SystemMessage must be used within a StudioProvider");
+  }
+
+  const { studioState, setStudioState } = context;
+  const { systemPrompt } = studioState.currentInteraction;
 
   const handlePromptChange = (newPrompt: string) => {
-    setMessage(newPrompt);
-  };
-
-  const handleVariablesChange = (newVariables: { key: string; value: string }[]) => {
-    // Ensure variables are in the expected format with IDs
-    setVariables(
-      newVariables.map((v, index) => ({
-        id: v.id || Date.now() + index, // Ensure ID exists, generate if missing (though PromptBox should handle this)
-        key: v.key,
-        value: v.value,
-      }))
-    );
+    setStudioState((prev) => ({
+      ...prev,
+      currentInteraction: {
+        ...prev.currentInteraction,
+        systemPrompt: newPrompt,
+      },
+    }));
   };
 
   return (
     <PromptBox
       type="system"
-      initialPromptValue={message}
-      initialVariables={variables}
+      initialPromptValue={systemPrompt}
       onPromptChange={handlePromptChange}
-      onVariablesChange={handleVariablesChange}
       showTemplateManager={true}
     />
   );

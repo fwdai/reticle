@@ -7,7 +7,10 @@ function StudioHeader() {
 
   const handleRunClick = () => {
     if (context) {
-      console.log('Running with configuration:', context.studioState.currentInteraction.configuration);
+      const { systemPrompt, userPrompt, configuration } = context.studioState.currentInteraction;
+      console.log('System Prompt:', systemPrompt);
+      console.log('User Prompt:', userPrompt);
+      console.log('Running with configuration:', configuration);
     } else {
       console.error('StudioContext not found');
     }

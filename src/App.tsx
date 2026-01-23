@@ -15,7 +15,7 @@ function App() {
       <LeftNav currentPage={currentPage} onNavigate={setCurrentPage} />
       <Sidebar currentPage={currentPage} />
       <StudioProvider>
-        <MainContent currentPage={currentPage} onNavigate={setCurrentPage} />
+        <MainContent currentPage={currentPage} />
       </StudioProvider>
     </div>
   );
