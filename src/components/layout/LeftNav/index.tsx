@@ -54,7 +54,7 @@ function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
             );
           })}
         </nav>
-        <div className="flex flex-col gap-6 mb-2 w-full">
+        <div className="flex flex-col gap-6 w-full">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
