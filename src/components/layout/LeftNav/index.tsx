@@ -22,7 +22,7 @@ function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
 
   return (
     <TooltipProvider>
-      <aside className="w-16 bg-nav-dark flex flex-col items-center py-6 flex-shrink-0 z-20 rounded-xl mr-1.5">
+      <aside className="w-16 bg-nav-dark flex flex-col items-center py-6 flex-shrink-0 z-20 rounded-xl mr-1.5 shadow-right">
         <div className="mb-8">
           <div className="size-10 bg-white/10 rounded-xl flex items-center justify-center text-white">
             <Radar className="text-2xl font-bold" strokeWidth={1} size={24} />

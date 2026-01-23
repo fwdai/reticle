@@ -22,7 +22,7 @@ function Sidebar({ currentPage }: SidebarProps) {
 
   return (
     <aside className="w-60 bg-sidebar-light flex flex-col flex-shrink-0 mr-1.5">
-      <div className="p-3">
+      <div className="p-4">
         {SidebarComponent && <SidebarComponent />}
       </div>
     </aside>
