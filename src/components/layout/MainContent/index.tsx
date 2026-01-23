@@ -6,6 +6,7 @@ import Studio from "./Studio";
 import Settings from "./Settings";
 import Environments from "./Environments";
 import Runs from "./Runs";
+import TemplatesPage from "./Templates";
 
 interface MainContentProps {
   currentPage: Page;
@@ -17,6 +18,7 @@ const pages: Partial<Record<Page, ComponentType>> = {
   environments: Environments,
   runs: Runs,
   settings: Settings,
+  templates: TemplatesPage,
 };
 
 function MainContent({ currentPage }: MainContentProps) {

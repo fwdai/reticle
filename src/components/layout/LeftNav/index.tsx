@@ -11,6 +11,7 @@ function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
   const navItems = [
     { id: "home" as Page, icon: Home, label: "Home" },
     { id: "studio" as Page, icon: LayoutDashboard, label: "Studio" },
+    { id: "templates" as Page, icon: Layers, label: "Templates" },
     { id: "environments" as Page, icon: Layers, label: "Environments" },
     { id: "runs" as Page, icon: Activity, label: "Runs" },
   ];

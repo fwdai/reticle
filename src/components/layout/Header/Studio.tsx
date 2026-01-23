@@ -1,13 +1,29 @@
+import { useContext } from 'react';
 import { Play, Save, Share } from "lucide-react";
+import { ConfigurationContext } from '@/contexts/ConfigurationContext';
 
 function StudioHeader() {
+  const context = useContext(ConfigurationContext);
+
+  const handleRunClick = () => {
+    if (context) {
+      console.log('Running with configuration:', context.configuration);
+    } else {
+      console.error('ConfigurationContext not found');
+    }
+  };
+
   return (
     <>
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-text-muted">Collections</span>
+        <span className="text-text-muted">Studio</span>
         <span className="text-gray-300">/</span>
-        <span className="font-semibold text-text-main">GPT-4o Debugger</span>
-        <span className="bg-green-50 text-[10px] text-green-600 font-bold px-2 py-0.5 rounded-full border border-green-100 ml-2 uppercase tracking-tight">Active</span>
+        <span className="font-semibold text-text-main">New Interaction</span>
+        {false ? (
+          <span className="bg-green-50 text-[10px] text-green-600 font-bold px-2 py-0.5 rounded-full border border-green-100 ml-2 uppercase tracking-tight">Saved</span>
+        ) : (
+          <span className="bg-gray-100 text-[10px] text-gray-600 font-bold px-2 py-0.5 rounded-full border border-gray-100 ml-2 uppercase tracking-tight">Unsaved</span>
+        )}
       </div>
       <div className="flex items-center gap-4">
         <div className="flex bg-gray-100 p-1 rounded-xl">
@@ -16,7 +32,9 @@ function StudioHeader() {
         </div>
         <div className="h-6 w-px bg-border-light"></div>
         <div className="flex items-center gap-2">
-          <button className="bg-primary hover:bg-[#048fa9] text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
+          <button
+            onClick={handleRunClick}
+            className="bg-primary hover:bg-[#048fa9] text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
             <Play size={18} className="font-bold" />
             Run
           </button>
