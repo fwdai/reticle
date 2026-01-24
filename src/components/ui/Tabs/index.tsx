@@ -1,5 +1,10 @@
-import React, { useState, Children, isValidElement, cloneElement } from "react";
+import React, { useState, Children, isValidElement } from "react";
 import TabPanel from "./TabPanel";
+
+interface TabPanelProps {
+  title: string;
+  children: React.ReactNode;
+}
 
 interface TabsProps {
   children: React.ReactNode;
@@ -13,7 +18,7 @@ function Tabs({ children }: TabsProps) {
   };
 
   const tabs = Children.map(children, (child, index) => {
-    if (isValidElement(child) && child.type === TabPanel) {
+    if (isValidElement<TabPanelProps>(child) && child.type === TabPanel) {
       return (
         <button
           key={index}
@@ -46,3 +51,4 @@ function Tabs({ children }: TabsProps) {
 }
 
 export { Tabs };
+

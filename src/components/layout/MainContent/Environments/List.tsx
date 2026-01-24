@@ -1,4 +1,4 @@
-import { Search, Plus, Globe, Cloud, Code, Settings, Trash2, Edit2, CheckCircle, XCircle } from "lucide-react";
+import { Search, Plus, Globe, Cloud, Code, Trash2, Edit2, CheckCircle, XCircle } from "lucide-react";
 import { useState } from "react";
 
 interface Environment {
@@ -15,9 +15,9 @@ interface Environment {
 function Environments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingEnv, setEditingEnv] = useState<Environment | null>(null);
+  // const [editingEnv, setEditingEnv] = useState<Environment | null>(null);
 
-  const [environments, setEnvironments] = useState<Environment[]>([
+  const [environments, /* setEnvironments */] = useState<Environment[]>([
     {
       id: "env_1",
       name: "Production",
@@ -167,7 +167,7 @@ function Environments() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setEditingEnv(env)}
+                    onClick={() => { /* setEditingEnv(env) */ }}
                     className="p-2 rounded-lg text-text-muted hover:bg-slate-50 hover:text-primary-600 transition-colors"
                     title="Edit"
                   >

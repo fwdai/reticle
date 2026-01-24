@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Save } from "lucide-react";
 
-interface Variable {
+export interface Variable {
   id: number;
   key: string;
   value: string;

@@ -16,7 +16,6 @@ function Runs() {
   const [dateRange, setDateRange] = useState("Last 24 Hours");
   const [model, setModel] = useState("All Models");
   const [environment, setEnvironment] = useState("Staging");
-  const [searchQuery, setSearchQuery] = useState("");
 
   const runs: Run[] = [
     {

@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import PromptBox from "@/components/ui/PromptBox"; // Adjust path as needed
 import { StudioContext } from "@/contexts/StudioContext";
+import { Variable } from "@/components/ui/PromptBox";
 
 function SystemMessage() {
   const context = useContext(StudioContext);
@@ -22,11 +23,17 @@ function SystemMessage() {
     }));
   };
 
+  const handleVariablesChange = (variables: Variable[]) => {
+    // TODO: Implement variable handling in the context
+    console.log("Variables changed:", variables);
+  };
+
   return (
     <PromptBox
       type="system"
       initialPromptValue={systemPrompt}
       onPromptChange={handlePromptChange}
+      onVariablesChange={handleVariablesChange}
       showTemplateManager={true}
     />
   );

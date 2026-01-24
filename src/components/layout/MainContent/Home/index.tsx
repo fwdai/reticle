@@ -1,4 +1,4 @@
-import { Bell, CheckSquare, LayoutDashboard, Key, ArrowRight, ExternalLink } from "lucide-react";
+import { CheckSquare, LayoutDashboard, Key, ArrowRight, ExternalLink } from "lucide-react";
 
 function Home() {
   return (

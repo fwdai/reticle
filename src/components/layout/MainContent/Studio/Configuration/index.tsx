@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { ChevronDown, Info } from "lucide-react";
 import { StudioContext } from '@/contexts/StudioContext';
 import { Label } from '@/components/ui/label';
