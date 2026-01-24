@@ -45,6 +45,8 @@ async fn proxy_handler(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    let body = reqwest::Body::from(body_bytes);
+
     let mut request_builder = client.request(method, &target_url);
 
     for (name, value) in headers.iter() {
@@ -54,7 +56,7 @@ async fn proxy_handler(
     }
     
     let response = request_builder
-        .body(body_bytes)
+        .body(body)
         .send()
         .await
         .map_err(|e| {
