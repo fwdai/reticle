@@ -80,6 +80,7 @@ export const generateText = async (prompt: string, configuration: Configuration)
     includeUsage: true, // Important: must match original
     headers: {
       'X-Api-Provider': providerConfig.id,
+      'X-Api-Auth-Header': providerConfig.header,
       'X-Proxy-Target-Url': providerConfig.baseUrl,
     },
     fetch: measuringFetch, // Use our latency-measuring fetch

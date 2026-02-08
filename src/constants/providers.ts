@@ -3,16 +3,19 @@ export const PROVIDERS = {
     id: 'openai',
     name: 'OpenAI',
     baseUrl: 'https://api.openai.com',
+    header: 'Authorization',
   },
   ANTHROPIC: {
     id: 'anthropic',
     name: 'Anthropic',
     baseUrl: 'https://api.anthropic.com',
+    header: 'X-Api-Key',
   },
   GOOGLE: {
     id: 'google',
     name: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com',
+    header: 'X-Goog-Api-Key',
   },
 } as const;
 
