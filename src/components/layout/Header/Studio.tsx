@@ -1,18 +1,65 @@
 import { useContext } from 'react';
-import { Play, Save, Share } from "lucide-react";
+import { Play, Save, Share, Loader2 } from "lucide-react";
 import { StudioContext } from '@/contexts/StudioContext';
+import { generateText } from '@/lib/registry';
 
 function StudioHeader() {
   const context = useContext(StudioContext);
 
-  const handleRunClick = () => {
-    if (context) {
-      const { systemPrompt, userPrompt, configuration } = context.studioState.currentInteraction;
+  const handleRunClick = async () => {
+    if (!context) {
+      console.error('StudioContext not found');
+      return;
+    }
+
+    const { systemPrompt, userPrompt, configuration } = context.studioState.currentInteraction;
+
+    // Set loading state
+    context.setStudioState((prev) => ({
+      ...prev,
+      isLoading: true,
+      response: null,
+    }));
+
+    try {
       console.log('System Prompt:', systemPrompt);
       console.log('User Prompt:', userPrompt);
       console.log('Running with configuration:', configuration);
-    } else {
-      console.error('StudioContext not found');
+
+      const result = await generateText(userPrompt, { systemPrompt, ...configuration });
+      // Latency is now measured at the HTTP request level and returned from generateText
+      const latency = result.latency;
+
+
+      // Store response in state
+      const usage = result.usage;
+      context.setStudioState((prev) => ({
+        ...prev,
+        isLoading: false,
+        response: {
+          text: result.text,
+          usage: usage ? {
+            promptTokens: usage.inputTokens,
+            completionTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+          } : undefined,
+          latency,
+        },
+      }));
+    } catch (error) {
+      console.error('Error generating text:', error);
+
+      // Store error in state
+      // Note: latency won't be available on error since the request didn't complete
+      context.setStudioState((prev) => ({
+        ...prev,
+        isLoading: false,
+        response: {
+          text: '',
+          error: error instanceof Error ? error.message : 'An unknown error occurred',
+          latency: undefined,
+        },
+      }));
     }
   };
 
@@ -37,8 +84,13 @@ function StudioHeader() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleRunClick}
-            className="bg-primary hover:bg-[#048fa9] text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
-            <Play size={18} className="font-bold" />
+            disabled={context?.studioState.isLoading}
+            className="bg-primary hover:bg-[#048fa9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
+            {context?.studioState.isLoading ? (
+              <Loader2 size={18} className="font-bold animate-spin" />
+            ) : (
+              <Play size={18} className="font-bold" />
+            )}
             Run
           </button>
           <button className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">

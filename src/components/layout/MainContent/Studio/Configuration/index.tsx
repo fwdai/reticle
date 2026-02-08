@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
+import { PROVIDERS_LIST } from '@/constants/providers';
 
 function Configuration() {
   const context = useContext(StudioContext);
@@ -53,9 +54,11 @@ function Configuration() {
                 <SelectValue placeholder="Select a provider" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="OpenAI">OpenAI</SelectItem>
-                <SelectItem value="Anthropic">Anthropic</SelectItem>
-                <SelectItem value="Google Gemini">Google Gemini</SelectItem>
+                {PROVIDERS_LIST.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.name}>
+                    {provider.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

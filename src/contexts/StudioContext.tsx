@@ -28,10 +28,24 @@ export interface Interaction {
   history: HistoryItem[];
 }
 
+// Response state for API calls
+export interface ResponseState {
+  text: string;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+  latency?: number; // in milliseconds
+  error?: string;
+}
+
 // The top-level state for the entire studio feature
 export interface StudioContainerState {
   currentInteraction: Interaction;
   savedInteractions: Interaction[];
+  isLoading: boolean;
+  response: ResponseState | null;
 }
 
 // --- Context Definition ---
@@ -73,6 +87,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [studioState, setStudioState] = useState<StudioContainerState>({
     currentInteraction: initialInteraction,
     savedInteractions: [],
+    isLoading: false,
+    response: null,
   });
 
   return (
