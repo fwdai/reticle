@@ -7,7 +7,7 @@ use axum::{
 };
 use reqwest::Client;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex}; // Added Mutex
+use std::sync::{Arc, Mutex};
 use tower_http::cors::{Any, CorsLayer};
 use tauri::{AppHandle, Manager};
 use rusqlite::Connection;
@@ -42,21 +42,60 @@ async fn proxy_handler(
     let method = req.method().clone();
     let headers = req.headers().clone();
     
+    // --- API Key Handling ---
+    let mut request_builder = state.client.request(method.clone(), &target_url); // Now method.clone() is okay
+    let mut api_key_found = false;
+
+    let api_auth_header_name_option: Option<String> = headers.get("X-Api-Auth-Header")
+        .and_then(|h| h.to_str().ok())
+        .map(String::from);
+
+    let provider_option = headers.get("X-Api-Provider")
+        .and_then(|provider| provider.to_str().ok())
+        .map(String::from);
+
+    if let (Some(provider), Some(api_auth_header_name)) = (provider_option, api_auth_header_name_option) {
+        let db_state: tauri::State<Arc<Mutex<Connection>>> = state.app_handle.state();
+        let db_conn = db_state.lock().unwrap();
+
+        let api_key_result = crate::database::db_select(&db_conn, "api_keys", json!({
+            "where": {
+                "provider": &provider
+            }
+        }));
+
+        if let Ok(mut keys) = api_key_result {
+            if let Some(key_entry) = keys.pop() {
+                if let Some(api_key_val) = key_entry.get("key") {
+                    if let Some(api_key) = api_key_val.as_str() {
+                        api_key_found = true;
+                        if api_auth_header_name == "Authorization" {
+                            let auth_header = format!("Bearer {}", api_key);
+                            request_builder = request_builder.header("Authorization", &auth_header);
+                        } else { // All other headers are set directly
+                            request_builder = request_builder.header(&api_auth_header_name, api_key);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // --- End API Key Handling ---
+
     let body_bytes = axum::body::to_bytes(req.into_body(), usize::MAX)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let is_post = method == axum::http::Method::POST;
+    let is_post = method == axum::http::Method::POST; // Use original `method` variable
     let body_is_empty = body_bytes.is_empty();
     let has_content_type = headers.contains_key("content-type");
 
     let body = reqwest::Body::from(body_bytes);
 
-    let mut request_builder = state.client.request(method, &target_url);
-
-    let excluded_headers = [
+    let mut excluded_headers = vec![
         "x-proxy-target-url",
         "x-api-provider",
+        "x-api-auth-header", // Exclude new header
         "host",
         "connection",
         "keep-alive",
@@ -66,9 +105,15 @@ async fn proxy_handler(
         "transfer-encoding",
         "upgrade",
         "content-length",
-        "authorization",
         "accept-encoding",
     ];
+
+    // If an API key was found and used, exclude the original headers it might replace
+    if api_key_found {
+        excluded_headers.push("authorization");
+        excluded_headers.push("x-api-key");
+        excluded_headers.push("x-goog-api-key"); // Still exclude potential previous X-Goog-Api-Key
+    }
 
     for (name, value) in headers.iter() {
         let header_name_lower = name.as_str().to_lowercase();
@@ -77,35 +122,6 @@ async fn proxy_handler(
         }
     }
 
-    // --- Fetch API key from DB based on X-Api-Provider header ---
-    let api_provider_option: Option<String> = match headers.get("X-Api-Provider") {
-        Some(provider) => Some(provider.to_str().map_err(|_| StatusCode::BAD_REQUEST)?.to_string()),
-        None => None,
-    };
-
-    if let Some(provider) = api_provider_option {
-        let db_state: tauri::State<Arc<Mutex<Connection>>> = state.app_handle.state();
-        let db_conn = db_state.lock().unwrap();
-
-        let api_key_result = crate::database::db_select(&db_conn, "api_keys", json!({
-            "where": {
-                "provider": provider
-            }
-        }));
-
-        if let Ok(mut keys) = api_key_result {
-            if let Some(key_entry) = keys.pop() {
-                if let Some(api_key_val) = key_entry.get("key") {
-                    if let Some(api_key) = api_key_val.as_str() {
-                        let auth_header = format!("Bearer {}", api_key);
-                        request_builder = request_builder.header("Authorization", &auth_header);
-                    }
-                }
-            }
-        }
-    }
-    // --- End Fetch API key ---
-    
     if !headers.contains_key("user-agent") {
         request_builder = request_builder.header("User-Agent", "reticle-proxy/1.0");
     }

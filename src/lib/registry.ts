@@ -114,6 +114,7 @@ export async function listModels(providerId: string): Promise<any[]> {
 
   const headers: HeadersInit = {
     'X-Api-Provider': providerConfig.id,
+    'X-Api-Auth-Header': providerConfig.header,
     'X-Proxy-Target-Url': providerConfig.baseUrl,
   };
 
