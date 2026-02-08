@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS api_keys (
+    provider TEXT NOT NULL UNIQUE,
+    key TEXT NOT NULL
+);
