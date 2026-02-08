@@ -8,8 +8,8 @@ export const reticle = createOpenAICompatible({
   baseURL: 'http://localhost:11513/v1',
   includeUsage: true, // Include usage information in streaming responses
   headers: {
-    'X-Api-Provider': 'openai',
-    'X-Proxy-Target-Url': 'https://api.openai.com',
+    'X-Api-Provider': 'openai', // Default provider for direct reticle usage, will be overridden
+    'X-Proxy-Target-Url': 'https://api.openai.com', // Default target, will be overridden
   },
 });
 
@@ -66,7 +66,7 @@ export const generateText = async (prompt: string, configuration: Configuration)
   const { fetch: measuringFetch, getLatency } = createLatencyMeasuringFetch();
 
   // Find the provider by name
-  const providerConfig = PROVIDERS_LIST.find(p => p.name === configuration.provider);
+  const providerConfig = PROVIDERS_LIST.find(p => p.id === configuration.provider);
   if (!providerConfig) {
     throw new Error(`Provider "${configuration.provider}" not found`);
   }
@@ -95,7 +95,7 @@ export const generateText = async (prompt: string, configuration: Configuration)
   // Get the measured latency
   const latency = getLatency();
 
-  // Map the result properties: generateTextAi returns _output and totalUsage,
+  // Map the result properties: generateTextAi returns output and totalUsage,
   // but we need to map them to text and usage for consistency
   return {
     ...result,
@@ -105,4 +105,48 @@ export const generateText = async (prompt: string, configuration: Configuration)
   };
 }
 
-// export const call = () => generateText({ model: reticle('gpt-4'), prompt: 'Hello' })
+export async function listModels(providerId: string): Promise<any[]> {
+  const providerConfig = PROVIDERS_LIST.find(p => p.id === providerId);
+  if (!providerConfig) {
+    throw new Error(`Provider "${providerId}" not found.`);
+  }
+
+  const headers: HeadersInit = {
+    'X-Api-Provider': providerConfig.id,
+    'X-Proxy-Target-Url': providerConfig.baseUrl,
+  };
+
+  if (providerId === 'anthropic') {
+    headers['anthropic-version'] = '2023-06-01'; // Required for Anthropic API
+  }
+
+  try {
+    const response = await fetch('http://localhost:11513/v1/models', {
+      method: 'GET',
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      console.log(response)
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch models from ${providerId}: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // Return the array as returned from the API
+    if (data && Array.isArray(data.data)) {
+      return data.data;
+    } else if (data && Array.isArray(data.models)) {
+      return data.models;
+    } else if (Array.isArray(data)) {
+      return data;
+    }
+
+    throw new Error(`Unexpected response format from ${providerId} models API.`);
+
+  } catch (error) {
+    console.error(`Error listing models for ${providerId}:`, error);
+    throw error;
+  }
+}
