@@ -21,7 +21,7 @@ struct ProxyState {
 
 async fn proxy_handler(
     State(state): State<Arc<ProxyState>>,
-    mut req: Request<axum::body::Body>,
+    req: Request<axum::body::Body>,
 ) -> Result<Response, StatusCode> {
     let path = req.uri().path();
     let path_query = req

@@ -1,3 +1,4 @@
+import { PROVIDERS_LIST } from '@/constants/providers';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { generateText as generateTextAi } from 'ai';
 
@@ -7,12 +8,14 @@ export const reticle = createOpenAICompatible({
   baseURL: 'http://localhost:11513/v1',
   includeUsage: true, // Include usage information in streaming responses
   headers: {
+    'X-Api-Provider': 'openai',
     'X-Proxy-Target-Url': 'https://api.openai.com',
   },
 });
 
 type Configuration = {
-  modelVariant: string;
+  provider: string;
+  model: string;
   systemPrompt: string;
 }
 
@@ -31,8 +34,8 @@ function createLatencyMeasuringFetch(): { fetch: typeof fetch; getLatency: () =>
 
       // Extract latency from the Rust proxy's response header
       // Read headers immediately but don't consume the body
-      const latencyHeader = response.headers.get('X-Request-Latency-Ms') || 
-                           response.headers.get('x-request-latency-ms');
+      const latencyHeader = response.headers.get('X-Request-Latency-Ms') ||
+        response.headers.get('x-request-latency-ms');
 
       if (latencyHeader) {
         const parsedLatency = parseInt(latencyHeader, 10);
@@ -62,6 +65,12 @@ export const generateText = async (prompt: string, configuration: Configuration)
   // Create a latency-measuring fetch for this request
   const { fetch: measuringFetch, getLatency } = createLatencyMeasuringFetch();
 
+  // Find the provider by name
+  const providerConfig = PROVIDERS_LIST.find(p => p.name === configuration.provider);
+  if (!providerConfig) {
+    throw new Error(`Provider "${configuration.provider}" not found`);
+  }
+
   // Use the existing reticle model but create a new instance with our fetch wrapper
   // This ensures we capture latency while preserving all the original model configuration
   const modelWithFetch = createOpenAICompatible({
@@ -70,10 +79,11 @@ export const generateText = async (prompt: string, configuration: Configuration)
     baseURL: 'http://localhost:11513/v1',
     includeUsage: true, // Important: must match original
     headers: {
-      'X-Proxy-Target-Url': 'https://api.openai.com',
+      'X-Api-Provider': providerConfig.id,
+      'X-Proxy-Target-Url': providerConfig.baseUrl,
     },
     fetch: measuringFetch, // Use our latency-measuring fetch
-  })(configuration.modelVariant);
+  })(configuration.model);
 
   // Generate text using the model with latency measurement
   const result = await generateTextAi({
@@ -89,7 +99,7 @@ export const generateText = async (prompt: string, configuration: Configuration)
   // but we need to map them to text and usage for consistency
   return {
     ...result,
-    text: result._output ?? result.text, // Use _output if available, fallback to text
+    text: result.output ?? result.text, // Use output if available, fallback to text
     usage: result.totalUsage ?? result.usage, // Use totalUsage if available, fallback to usage
     latency: latency ?? undefined,
   };

@@ -46,9 +46,9 @@ function Configuration() {
           <div className="space-y-3">
             <Label className="font-bold text-text-main">LLM Provider</Label>
             <Select
-              name="llmProvider"
-              value={configuration.llmProvider}
-              onValueChange={(value) => handleValueChange('llmProvider', value)}
+              name="provider"
+              value={configuration.provider}
+              onValueChange={(value) => handleValueChange('provider', value)}
             >
               <SelectTrigger className="w-full text-sm rounded-xl border-border-light bg-white py-2.5 px-3 shadow-sm focus:ring-primary focus:border-primary transition-all cursor-pointer">
                 <SelectValue placeholder="Select a provider" />
@@ -65,9 +65,9 @@ function Configuration() {
           <div className="space-y-3">
             <Label className="font-bold text-text-main">Model Variant</Label>
             <Select
-              name="modelVariant"
-              value={configuration.modelVariant}
-              onValueChange={(value) => handleValueChange('modelVariant', value)}
+              name="model"
+              value={configuration.model}
+              onValueChange={(value) => handleValueChange('model', value)}
             >
               <SelectTrigger className="w-full text-sm rounded-xl border-border-light bg-white py-2.5 px-3 shadow-sm focus:ring-primary focus:border-primary transition-all cursor-pointer">
                 <SelectValue placeholder="Select a model" />

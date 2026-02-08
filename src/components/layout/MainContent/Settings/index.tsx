@@ -1,5 +1,8 @@
-import { Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
-import { useState } from "react";
+import { Eye, EyeOff, Sun, Moon, Monitor, CheckCircle, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { invoke } from '@tauri-apps/api/core';
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 function Settings() {
   const [openaiVisible, setOpenaiVisible] = useState(true);
@@ -7,6 +10,103 @@ function Settings() {
   const [googleVisible, setGoogleVisible] = useState(true);
   const [telemetryEnabled, setTelemetryEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "system">("light");
+
+  const [apiKeys, setApiKeys] = useState<{ [key: string]: string }>({});
+  const [saveStatus, setSaveStatus] = useState<{ [key: string]: SaveStatus }>({
+    openai: 'idle',
+    anthropic: 'idle',
+    google: 'idle',
+  });
+
+  useEffect(() => {
+    const fetchApiKeys = async () => {
+      try {
+        const keys: any = await invoke("db_select_cmd", {
+          table: "api_keys",
+          query: {},
+        });
+        const keyMap = keys.reduce((acc: any, { provider, key }: any) => {
+          acc[provider] = key;
+          return acc;
+        }, {});
+        setApiKeys(keyMap);
+      } catch (error) {
+        console.error("Failed to fetch API keys:", error);
+      }
+    };
+    fetchApiKeys();
+  }, []);
+
+  const handleSaveApiKey = async (provider: string, apiKey: string) => {
+    if (!apiKey) {
+      setApiKeys((prevKeys) => ({ ...prevKeys, [provider]: "" }));
+      setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'idle' }));
+      // Optionally, delete the key if it's cleared
+      try {
+        await invoke("db_delete_cmd", { table: "api_keys", query: { where: { provider } } });
+        console.log(`API key for ${provider} cleared/deleted.`);
+      } catch (error) {
+        console.error(`Failed to delete API key for ${provider}:`, error);
+        setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'error' }));
+      }
+      return;
+    }
+
+    setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'saving' }));
+
+    try {
+      const updatedRows = await invoke("db_update_cmd", {
+        table: "api_keys",
+        query: { where: { provider } },
+        data: { key: apiKey },
+      });
+
+      if (updatedRows === 0) {
+        await invoke("db_insert_cmd", {
+          table: "api_keys",
+          data: { provider, key: apiKey },
+        });
+      }
+      setApiKeys((prevKeys) => ({ ...prevKeys, [provider]: apiKey }));
+      setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'saved' }));
+      console.log(`API key for ${provider} saved.`);
+
+      setTimeout(() => {
+        setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'idle' }));
+      }, 3000); // Revert to idle after 3 seconds
+
+    } catch (error) {
+      console.error(`Failed to save API key for ${provider}:`, error);
+      setSaveStatus((prevStatus) => ({ ...prevStatus, [provider]: 'error' }));
+    }
+  };
+
+  const getInputClass = (provider: string) => {
+    let baseClass = "w-full px-4 py-2.5 border rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12";
+    switch (saveStatus[provider]) {
+      case 'saved':
+        return `${baseClass} border-green-500 ring-2 ring-green-200`;
+      case 'error':
+        return `${baseClass} border-red-500 ring-2 ring-red-200`;
+      case 'saving':
+        return `${baseClass} border-blue-500 ring-2 ring-blue-200`; // Or some other indicator
+      default:
+        return `${baseClass} border-slate-200`;
+    }
+  };
+
+  const renderStatusIcon = (provider: string) => {
+    switch (saveStatus[provider]) {
+      case 'saved':
+        return <CheckCircle className="size-5 text-green-500" />;
+      case 'error':
+        return <XCircle className="size-5 text-red-500" />;
+      case 'saving':
+        return <span className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>; // Simple spinner
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -19,66 +119,87 @@ function Settings() {
             </p>
           </div>
           <div className="space-y-4">
+            {/* OpenAI API Key */}
             <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 OpenAI API Key
               </label>
               <div className="relative">
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12"
+                  className={getInputClass("openai")}
                   placeholder="sk-..."
                   type={openaiVisible ? "text" : "password"}
-                  defaultValue="sk-proj-7a8b9c1d2e3f4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v"
+                  value={apiKeys.openai || ""} // Use value instead of defaultValue
+                  onChange={(e) => setApiKeys((prevKeys) => ({ ...prevKeys, openai: e.target.value }))}
+                  onBlur={(e) => handleSaveApiKey("openai", e.target.value)}
                 />
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                  onClick={() => setOpenaiVisible(!openaiVisible)}
-                >
-                  {openaiVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {renderStatusIcon("openai")}
+                  <button
+                    className="text-slate-400 hover:text-primary transition-colors"
+                    onClick={() => setOpenaiVisible(!openaiVisible)}
+                  >
+                    {openaiVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
                 Used for GPT-4o, GPT-3.5 Turbo, and DALL-E models.
               </p>
             </div>
+
+            {/* Anthropic API Key */}
             <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Anthropic API Key
               </label>
               <div className="relative">
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12"
+                  className={getInputClass("anthropic")}
                   placeholder="sk-ant-..."
                   type={anthropicVisible ? "text" : "password"}
-                  defaultValue="sk-ant-api03-L_9x_0kL2m3n4o5p6q7r8s9t0u1v2w3x4y5z"
+                  value={apiKeys.anthropic || ""} // Use value instead of defaultValue
+                  onChange={(e) => setApiKeys((prevKeys) => ({ ...prevKeys, anthropic: e.target.value }))}
+                  onBlur={(e) => handleSaveApiKey("anthropic", e.target.value)}
                 />
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                  onClick={() => setAnthropicVisible(!anthropicVisible)}
-                >
-                  {anthropicVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {renderStatusIcon("anthropic")}
+                  <button
+                    className="text-slate-400 hover:text-primary transition-colors"
+                    onClick={() => setAnthropicVisible(!anthropicVisible)}
+                  >
+                    {anthropicVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
                 Required for Claude 3.5 Sonnet and Opus models.
               </p>
             </div>
+
+            {/* Google Vertex/Gemini API Key */}
             <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Google Vertex/Gemini API Key
               </label>
               <div className="relative">
                 <input
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12"
+                  className={getInputClass("google")}
                   placeholder="Enter Google Cloud API Key"
                   type={googleVisible ? "text" : "password"}
+                  value={apiKeys.google || ""} // Use value instead of defaultValue
+                  onChange={(e) => setApiKeys((prevKeys) => ({ ...prevKeys, google: e.target.value }))}
+                  onBlur={(e) => handleSaveApiKey("google", e.target.value)}
                 />
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                  onClick={() => setGoogleVisible(!googleVisible)}
-                >
-                  {googleVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {renderStatusIcon("google")}
+                  <button
+                    className="text-slate-400 hover:text-primary transition-colors"
+                    onClick={() => setGoogleVisible(!googleVisible)}
+                  >
+                    {googleVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
                 Enables Gemini 1.5 Pro and Flash integration.

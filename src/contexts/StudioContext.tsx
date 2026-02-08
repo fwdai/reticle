@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 // --- State Interfaces ---
 
 export interface ConfigurationState {
-  llmProvider: string;
-  modelVariant: string;
+  provider: string;
+  model: string;
   temperature: number;
   topP: number;
   maxTokens: number;
@@ -69,8 +69,8 @@ const initialInteraction: Interaction = {
   id: uuidv4(),
   name: 'New Interaction',
   configuration: {
-    llmProvider: 'OpenAI',
-    modelVariant: 'gpt-4o-2024-05-13',
+    provider: 'OpenAI',
+    model: 'gpt-4o-2024-05-13',
     temperature: 0.7,
     topP: 1.0,
     maxTokens: 2048,
