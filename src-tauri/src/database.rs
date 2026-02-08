@@ -1,4 +1,4 @@
-use rusqlite::{Connection, Result, params, Statement};
+use rusqlite::{Connection, params_from_iter};
 use rusqlite_migration::{Migrations, M};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
@@ -26,9 +26,20 @@ pub fn init_database(app_handle: &AppHandle) -> AnyhowResult<Arc<Mutex<Connectio
     Ok(Arc::new(Mutex::new(conn)))
 }
 
+// Helper to convert rusqlite::types::ValueRef to serde_json::Value
+fn rusqlite_value_to_json(value_ref: &rusqlite::types::ValueRef) -> AnyhowResult<Value> {
+    match value_ref {
+        rusqlite::types::ValueRef::Null => Ok(Value::Null),
+        rusqlite::types::ValueRef::Integer(i) => Ok(Value::Number(serde_json::Number::from(*i))),
+        rusqlite::types::ValueRef::Real(f) => Ok(Value::Number(serde_json::Number::from_f64(*f).ok_or_else(|| anyhow!("Invalid float value"))?)),
+        rusqlite::types::ValueRef::Text(s) => Ok(Value::String(String::from_utf8(s.to_vec())?)),
+        rusqlite::types::ValueRef::Blob(b) => Ok(Value::Array(b.iter().map(|&byte| Value::Number(serde_json::Number::from(byte))).collect())),
+    }
+}
+
 // Helper to convert serde_json::Value to rusqlite::ToSql
-fn value_to_sql(value: &Value) -> anyhow::Result<Box<dyn rusqlite::ToSql + '_>> {
-    let boxed: Box<dyn rusqlite::ToSql + '_> = match value {
+fn json_value_to_sql<'a>(value: &'a Value) -> anyhow::Result<Box<dyn rusqlite::ToSql + 'a>> {
+    let boxed: Box<dyn rusqlite::ToSql + 'a> = match value {
         Value::Null => Box::new(rusqlite::types::Null),
         Value::Bool(b) => Box::new(*b),
         Value::Number(n) => {
@@ -40,7 +51,7 @@ fn value_to_sql(value: &Value) -> anyhow::Result<Box<dyn rusqlite::ToSql + '_>> 
                 return Err(anyhow!("Unsupported number type"));
             }
         },
-        Value::String(s) => Box::new(s.clone()),
+        Value::String(s) => Box::new(s),
         _ => return Err(anyhow!("Unsupported JSON type for SQL conversion")),
     };
     Ok(boxed)
@@ -53,7 +64,7 @@ pub fn db_insert(conn: &Connection, table: &str, data: Value) -> AnyhowResult<us
         return Err(anyhow!("Cannot insert empty data"));
     }
 
-    let columns: Vec<&String> = data_map.keys().collect();
+    let columns: Vec<&str> = data_map.keys().map(|s| s.as_str()).collect(); // Fix: collect into &str
     let placeholders: Vec<String> = (0..columns.len()).map(|i| format!("?{}", i + 1)).collect();
 
     let sql = format!(
@@ -65,11 +76,11 @@ pub fn db_insert(conn: &Connection, table: &str, data: Value) -> AnyhowResult<us
 
     let mut stmt = conn.prepare(&sql)?;
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-    for col in columns {
-        params_vec.push(value_to_sql(&data_map[col])?);
+    for col in data_map.keys() {
+        params_vec.push(json_value_to_sql(&data_map[col])?);
     }
     
-    let changes = stmt.execute(rusqlite::params_from_iter(params_vec))?;
+    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?; // Fix: use params_from_iter
     Ok(changes)
 }
 
@@ -84,7 +95,7 @@ pub fn db_select(conn: &Connection, table: &str, query: Value) -> AnyhowResult<V
     if let Some(where_obj) = query_map.get("where").and_then(|v| v.as_object()) {
         for (i, (col, val)) in where_obj.iter().enumerate() {
             where_clauses.push(format!("{} = ?{}", col, i + 1));
-            params_vec.push(value_to_sql(val)?);
+            params_vec.push(json_value_to_sql(val)?);
         }
     }
 
@@ -93,10 +104,13 @@ pub fn db_select(conn: &Connection, table: &str, query: Value) -> AnyhowResult<V
     }
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params_from_iter(params_vec), |row| {
+    let column_names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
+
+    let rows = stmt.query_map(params_from_iter(params_vec.into_iter()), |row| { // Fix: use params_from_iter
         let mut map = Map::new();
-        for (i, col_name) in row.column_names().iter().enumerate() {
-            let value = row.get_ref(i)?.to_json().map_err(|e| rusqlite::Error::ToSqlConversionFailure(e.into()))?;
+        for (i, col_name) in column_names.iter().enumerate() {
+            let value_ref = row.get_ref(i)?;
+            let value = rusqlite_value_to_json(&value_ref).map_err(|e| rusqlite::Error::ToSqlConversionFailure(e.into()))?;
             map.insert(col_name.to_string(), value);
         }
         Ok(map)
@@ -119,13 +133,13 @@ pub fn db_update(conn: &Connection, table: &str, query: Value, data: Value) -> A
 
     for (i, (col, val)) in data_map.iter().enumerate() {
         set_clauses.push(format!("{} = ?{}", col, i + 1));
-        params_vec.push(value_to_sql(val)?);
+        params_vec.push(json_value_to_sql(val)?);
     }
 
     if let Some(where_obj) = query_map.get("where").and_then(|v| v.as_object()) {
         for (i, (col, val)) in where_obj.iter().enumerate() {
             where_clauses.push(format!("{} = ?{}", col, params_vec.len() + i + 1));
-            params_vec.push(value_to_sql(val)?);
+            params_vec.push(json_value_to_sql(val)?);
         }
     }
 
@@ -135,7 +149,7 @@ pub fn db_update(conn: &Connection, table: &str, query: Value, data: Value) -> A
     }
 
     let mut stmt = conn.prepare(&sql)?;
-    let changes = stmt.execute(rusqlite::params_from_iter(params_vec))?;
+    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?; // Fix: use params_from_iter
     Ok(changes)
 }
 
@@ -150,7 +164,7 @@ pub fn db_delete(conn: &Connection, table: &str, query: Value) -> AnyhowResult<u
     if let Some(where_obj) = query_map.get("where").and_then(|v| v.as_object()) {
         for (i, (col, val)) in where_obj.iter().enumerate() {
             where_clauses.push(format!("{} = ?{}", col, i + 1));
-            params_vec.push(value_to_sql(val)?);
+            params_vec.push(json_value_to_sql(val)?);
         }
     }
 
@@ -159,6 +173,6 @@ pub fn db_delete(conn: &Connection, table: &str, query: Value) -> AnyhowResult<u
     }
 
     let mut stmt = conn.prepare(&sql)?;
-    let changes = stmt.execute(rusqlite::params_from_iter(params_vec))?;
+    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?; // Fix: use params_from_iter
     Ok(changes)
 }
