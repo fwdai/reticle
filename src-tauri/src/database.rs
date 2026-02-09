@@ -12,6 +12,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0001_initial_schema.sql")),
         M::up(include_str!("../migrations/0002_create_collections_table.sql")),
         M::up(include_str!("../migrations/0003_create_scenarios_table.sql")),
+        M::up(include_str!("../migrations/0004_create_executions_table.sql")),
     ])
 }
 
@@ -22,6 +23,13 @@ pub fn init_database(app_handle: &AppHandle) -> AnyhowResult<Arc<Mutex<Connectio
     let db_path = app_dir.join("reticle.db");
     
     let mut conn = Connection::open(&db_path)?;
+    conn.execute_batch("
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = NORMAL;
+        PRAGMA temp_store = MEMORY;
+        PRAGMA foreign_keys = ON;
+        PRAGMA busy_timeout = 5000;
+    ")?;
     
     let migrations = get_migrations();
     migrations.to_latest(&mut conn)?;
