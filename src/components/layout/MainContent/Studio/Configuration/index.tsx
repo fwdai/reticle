@@ -55,7 +55,7 @@ function Configuration() {
               </SelectTrigger>
               <SelectContent>
                 {PROVIDERS_LIST.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.name}>
+                  <SelectItem key={provider.id} value={provider.id}>
                     {provider.name}
                   </SelectItem>
                 ))}

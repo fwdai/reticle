@@ -77,7 +77,7 @@ const initialScenario: Scenario = { // Renamed from initialInteraction
   id: uuidv4(), // Client-side ID for unsaved scenario
   name: 'New Scenario', // Renamed from 'New Interaction'
   configuration: {
-    provider: 'OpenAI',
+    provider: 'openai',
     model: 'gpt-4o-2024-05-13',
     temperature: 0.7,
     topP: 1.0,
@@ -93,12 +93,12 @@ const initialScenario: Scenario = { // Renamed from initialInteraction
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [studioState, setStudioState] = useState<StudioContainerState>({
-    currentScenario: initialScenario, // Renamed
-    savedScenarios: [], // Renamed
+    currentScenario: initialScenario,
+    savedScenarios: [],
     isLoading: false,
     response: null,
-    scenarioId: null, // No saved ID initially
-    isSaved: true, // New scenario is considered saved to begin with, until edited
+    scenarioId: null,
+    isSaved: false, // Changed from true to false
   });
 
   // Track changes to currentScenario to set isSaved to false
@@ -118,8 +118,9 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
 
   const saveScenario = useCallback(async (scenarioName: string | null) => {
+    console.log("Attempting to save scenario:", studioState.currentScenario);
     try {
-      setStudioState(prev => ({ ...prev, isLoading: true })); // Indicate saving
+      setStudioState(prev => ({ ...prev, isLoading: true }));
 
       const scenarioToSave = { ...studioState.currentScenario };
       if (scenarioName) {
@@ -128,7 +129,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
       let savedId = studioState.scenarioId;
       if (studioState.scenarioId) {
-        // Update existing scenario
+        console.log("Updating existing scenario with ID:", studioState.scenarioId);
         await invoke('db_update_cmd', {
           table: 'scenarios',
           query: { where: { id: studioState.scenarioId } },
@@ -136,7 +137,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         });
         console.log(`Scenario '${scenarioToSave.name}' updated.`);
       } else {
-        // Insert new scenario, and get ULID from Rust
+        console.log("Inserting new scenario.");
         savedId = await invoke('db_insert_cmd', {
           table: 'scenarios',
           data: scenarioToSave,
@@ -152,7 +153,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           scenarioId: savedId,
           currentScenario: { ...scenarioToSave, id: savedId || scenarioToSave.id },
         };
-        setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null })); // Update comparison JSON
+        setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
+        console.log("Scenario saved. New state:", newState);
         return newState;
       });
     } catch (error) {
@@ -161,7 +163,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       // Optionally show an error message in the UI
     }
   }, [studioState.currentScenario, studioState.scenarioId]);
-
   const createNewScenario = useCallback(() => {
     setStudioState(prev => ({
       ...prev,
