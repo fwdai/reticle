@@ -2,8 +2,9 @@ use rusqlite::{Connection, params_from_iter};
 use rusqlite_migration::{Migrations, M};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
-use serde_json::{Value, Map};
+use serde_json::{Value, Map, json};
 use anyhow::{anyhow, Result as AnyhowResult};
+use ulid::Ulid; // Added Ulid
 
 // Define the migrations
 fn get_migrations() -> Migrations<'static> {
@@ -60,13 +61,18 @@ fn json_value_to_sql<'a>(value: &'a Value) -> anyhow::Result<Box<dyn rusqlite::T
 }
 
 // Generic INSERT operation
-pub fn db_insert(conn: &Connection, table: &str, data: Value) -> AnyhowResult<usize> {
-    let data_map = data.as_object().ok_or_else(|| anyhow!("Data must be a JSON object for insert"))?;
-    if data_map.is_empty() {
-        return Err(anyhow!("Cannot insert empty data"));
+pub fn db_insert(conn: &Connection, table: &str, mut data: Value) -> AnyhowResult<usize> {
+    let data_map_original = data.as_object_mut().ok_or_else(|| anyhow!("Data must be a JSON object for insert"))?;
+    
+    // Generate ULID if no 'id' is provided
+    if !data_map_original.contains_key("id") {
+        let ulid = Ulid::new().to_string();
+        data_map_original.insert("id".to_string(), json!(ulid));
     }
+    
+    let data_map = data_map_original; // Use the mutable reference now as immutable for collection
 
-    let columns: Vec<&str> = data_map.keys().map(|s| s.as_str()).collect(); // Fix: collect into &str
+    let columns: Vec<&str> = data_map.keys().map(|s| s.as_str()).collect();
     let placeholders: Vec<String> = (0..columns.len()).map(|i| format!("?{}", i + 1)).collect();
 
     let sql = format!(
@@ -82,7 +88,7 @@ pub fn db_insert(conn: &Connection, table: &str, data: Value) -> AnyhowResult<us
         params_vec.push(json_value_to_sql(&data_map[col])?);
     }
     
-    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?; // Fix: use params_from_iter
+    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?;
     Ok(changes)
 }
 

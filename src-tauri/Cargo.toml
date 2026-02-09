@@ -30,4 +30,5 @@ http = "1.0"
 rusqlite = { version = "0.38", features = ["bundled"] }
 rusqlite_migration = "2.4.1"
 anyhow = "1.0"
+ulid = "1.0"
 
