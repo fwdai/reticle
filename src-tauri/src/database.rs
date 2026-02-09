@@ -9,6 +9,8 @@ use anyhow::{anyhow, Result as AnyhowResult};
 fn get_migrations() -> Migrations<'static> {
     Migrations::new(vec![
         M::up(include_str!("../migrations/0001_initial_schema.sql")),
+        M::up(include_str!("../migrations/0002_create_collections_table.sql")),
+        M::up(include_str!("../migrations/0003_create_scenarios_table.sql")),
     ])
 }
 
