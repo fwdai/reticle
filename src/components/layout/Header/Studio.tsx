@@ -1,7 +1,6 @@
 import { useContext } from 'react';
 import { Play, Save, Share, Loader2 } from "lucide-react";
 import { StudioContext } from '@/contexts/StudioContext';
-import { generateText } from '@/lib/registry';
 
 function StudioHeader() {
   const context = useContext(StudioContext);
@@ -12,58 +11,8 @@ function StudioHeader() {
     return null;
   }
 
-  const { studioState, setStudioState, saveScenario } = context;
+  const { studioState, saveScenario, runScenario } = context;
   const { currentScenario, isLoading, isSaved } = studioState;
-  const { systemPrompt, userPrompt, configuration } = currentScenario;
-
-  const handleRunClick = async () => {
-    // Set loading state
-    setStudioState((prev) => ({
-      ...prev,
-      isLoading: true,
-      response: null,
-    }));
-
-    try {
-      console.log('System Prompt:', systemPrompt);
-      console.log('User Prompt:', userPrompt);
-      console.log('Running with configuration:', configuration);
-
-      const result = await generateText(userPrompt, { systemPrompt, ...configuration });
-      const latency = result.latency;
-
-      // Store response in state
-      const usage = result.usage;
-      setStudioState((prev) => ({
-        ...prev,
-        isLoading: false,
-        response: {
-          text: result.text,
-          usage: usage ? {
-            promptTokens: usage.inputTokens,
-            completionTokens: usage.outputTokens,
-            totalTokens: usage.totalTokens,
-          } : undefined,
-          latency,
-        },
-        isSaved: false, // Running modifies the scenario, so it becomes unsaved
-      }));
-    } catch (error) {
-      console.error('Error generating text:', error);
-
-      // Store error in state
-      setStudioState((prev) => ({
-        ...prev,
-        isLoading: false,
-        response: {
-          text: '',
-          error: error instanceof Error ? error.message : 'An unknown error occurred',
-          latency: undefined,
-        },
-        isSaved: false, // An error implies the state might be different or not successfully processed
-      }));
-    }
-  };
 
   const handleSaveClick = async () => {
     // For now, using null to indicate that the name should be taken from currentScenario.name
@@ -92,7 +41,7 @@ function StudioHeader() {
         <div className="h-6 w-px bg-border-light"></div>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleRunClick}
+            onClick={runScenario}
             disabled={isLoading}
             className="bg-primary hover:bg-[#048fa9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
             {isLoading ? (

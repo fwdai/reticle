@@ -2,6 +2,7 @@ import React, { createContext, useState, ReactNode, useEffect, useCallback } fro
 import { Tool } from '@/components/Layout/MainContent/Studio/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
 import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
+import { generateText } from '@/lib/registry'; // Added generateText import
 
 // --- State Interfaces ---
 
@@ -62,6 +63,7 @@ export interface StudioContainerState {
   response: ResponseState | null;
   scenarioId: string | null; // ID of the currently loaded/saved scenario from DB
   isSaved: boolean; // Indicates if currentScenario matches a saved version
+  currentExecutionId: string | null; // ID of the current execution for tracking
 }
 
 // --- Context Definition ---
@@ -72,7 +74,9 @@ interface StudioContextType {
   saveScenario: (scenarioName: string | null) => Promise<void>;
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
-  fetchCollections: () => Promise<void>; // Added fetchCollections
+  fetchCollections: () => Promise<void>;
+  saveExecution: (data: any, id?: string) => Promise<string>; // Added saveExecution
+  runScenario: () => Promise<void>; // Added runScenario
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -113,6 +117,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     response: null,
     scenarioId: null,
     isSaved: false, // Changed from true to false
+    currentExecutionId: null, // Initialized currentExecutionId
   });
 
   // Track changes to currentScenario to set isSaved to false
@@ -297,8 +302,143 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, []);
 
+  const saveExecution = useCallback(async (data: any, id?: string): Promise<string> => {
+    try {
+      const now = Date.now();
+      let executionId: string;
+      const executionData = { ...data, updated_at: now };
+
+      if (id) {
+        // Update existing execution
+        await invoke('db_update_cmd', {
+          table: 'executions',
+          query: { where: { id } },
+          data: executionData,
+        });
+        executionId = id;
+        console.log(`Execution ${id} updated.`);
+      } else {
+        // Insert new execution
+        const newId: string = await invoke('db_insert_cmd', {
+          table: 'executions',
+          data: { ...executionData, created_at: now },
+        });
+        executionId = newId;
+        console.log(`Execution ${executionId} inserted.`);
+      }
+      return executionId;
+    } catch (error) {
+      console.error("Failed to save execution:", error);
+      throw error;
+    }
+  }, []);
+
+  const runScenario = useCallback(async () => {
+    if (!studioState.scenarioId) {
+      // Force save current scenario before running if it's new/unsaved
+      console.log("Scenario not saved. Saving before run.");
+      await saveScenario(null); // Save with current name
+      // This will trigger a re-render and updated studioState.scenarioId
+      // So, runScenario will be called again or handle it in next effect
+      // For now, let's just return and assume re-render handles the rerun
+      return; 
+    }
+
+    const { currentScenario, scenarioId } = studioState;
+    const { systemPrompt, userPrompt, configuration } = currentScenario;
+
+    // Set loading state and reset response
+    setStudioState((prev) => ({
+      ...prev,
+      isLoading: true,
+      response: null,
+      currentExecutionId: null,
+    }));
+
+    let executionId: string | null = null;
+    try {
+      // 1. Save initial execution record (status: running)
+      const initialExecution = {
+        scenario_id: scenarioId,
+        provider: configuration.provider,
+        model: configuration.model,
+        status: 'running',
+        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
+      };
+      executionId = await saveExecution(initialExecution);
+      setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
+
+
+      console.log('System Prompt:', systemPrompt);
+      console.log('User Prompt:', userPrompt);
+      console.log('Running with configuration:', configuration);
+
+      const result = await generateText(userPrompt, { systemPrompt, ...configuration });
+      const latency = result.latency;
+
+      // 2. Update execution record on success
+      const finalExecution = {
+        provider: configuration.provider,
+        model: configuration.model,
+        status: 'success',
+        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
+        output_json: JSON.stringify({ text: result.text, usage: result.usage }),
+        latency_ms: latency,
+        tokens_used_json: JSON.stringify(result.usage),
+        cost_usd: 0, // TODO: calculate cost
+      };
+      await saveExecution(finalExecution, executionId);
+
+      // Store response in state
+      setStudioState((prev) => ({
+        ...prev,
+        isLoading: false,
+        response: {
+          text: result.text,
+          usage: result.usage ? {
+            promptTokens: result.usage.inputTokens,
+            completionTokens: result.usage.outputTokens,
+            totalTokens: result.usage.totalTokens,
+          } : undefined,
+          latency,
+        },
+        isSaved: false, // Running modifies the scenario, so it becomes unsaved
+      }));
+    } catch (error) {
+      console.error('Error generating text:', error);
+
+      // 2. Update execution record on failure
+      const failedExecution = {
+        provider: configuration.provider,
+        model: configuration.model,
+        status: 'failed',
+        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
+        output_json: JSON.stringify({ error: error instanceof Error ? error.message : 'An unknown error occurred' }),
+        latency_ms: 0,
+        tokens_used_json: null,
+        cost_usd: 0,
+      };
+      if (executionId) {
+        await saveExecution(failedExecution, executionId);
+      }
+
+      // Store error in state
+      setStudioState((prev) => ({
+        ...prev,
+        isLoading: false,
+        response: {
+          text: '',
+          error: error instanceof Error ? error.message : 'An unknown error occurred',
+          latency: undefined,
+        },
+        isSaved: false, // An error implies the state might be different or not successfully processed
+      }));
+    }
+  }, [studioState.currentScenario, studioState.scenarioId, saveExecution, saveScenario]);
+
+
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, saveExecution, runScenario }}>
       {children}
     </StudioContext.Provider>
   );
