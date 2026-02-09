@@ -1,4 +1,4 @@
-CREATE TABLE collections (
+CREATE TABLE IF NOT EXISTS collections (
   id            TEXT PRIMARY KEY,        -- ULID
   name          TEXT NOT NULL,
   description   TEXT,
@@ -7,4 +7,4 @@ CREATE TABLE collections (
   archived_at   INTEGER
 );
 
-CREATE INDEX idx_collections_updated_at ON collections(updated_at);
+CREATE INDEX IF NOT EXISTS idx_collections_updated_at ON collections(updated_at);

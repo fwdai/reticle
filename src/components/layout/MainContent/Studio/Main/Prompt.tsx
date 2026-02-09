@@ -11,13 +11,13 @@ function Prompt() {
   }
 
   const { studioState, setStudioState } = context;
-  const { userPrompt } = studioState.currentInteraction;
+  const { userPrompt } = studioState.currentScenario;
 
   const handlePromptChange = (newPrompt: string) => {
     setStudioState((prev) => ({
       ...prev,
-      currentInteraction: {
-        ...prev.currentInteraction,
+      currentScenario: {
+        ...prev.currentScenario,
         userPrompt: newPrompt,
       },
     }));

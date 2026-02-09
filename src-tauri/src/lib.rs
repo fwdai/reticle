@@ -12,7 +12,7 @@ async fn db_insert_cmd(
     table: String,
     data: Value,
     state: tauri::State<'_, Arc<Mutex<rusqlite::Connection>>>,
-) -> Result<usize, String> {
+) -> Result<String, String> {
     let conn = state.lock().unwrap();
     database::db_insert(&conn, &table, data).map_err(|e| e.to_string())
 }

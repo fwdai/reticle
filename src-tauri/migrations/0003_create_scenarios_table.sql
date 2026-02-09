@@ -1,4 +1,4 @@
-CREATE TABLE scenarios (
+CREATE TABLE IF NOT EXISTS scenarios (
   id                   TEXT PRIMARY KEY,        -- ULID
   collection_id        TEXT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
 
@@ -31,6 +31,6 @@ CREATE TABLE scenarios (
   archived_at          INTEGER
 );
 
-CREATE INDEX idx_scenarios_collection_id ON scenarios(collection_id);
-CREATE INDEX idx_scenarios_updated_at ON scenarios(updated_at);
-CREATE INDEX idx_scenarios_provider_model ON scenarios(provider, model);
+CREATE INDEX IF NOT EXISTS idx_scenarios_collection_id ON scenarios(collection_id);
+CREATE INDEX IF NOT EXISTS idx_scenarios_updated_at ON scenarios(updated_at);
+CREATE INDEX IF NOT EXISTS idx_scenarios_provider_model ON scenarios(provider, model);

@@ -11,13 +11,13 @@ function SystemMessage() {
   }
 
   const { studioState, setStudioState } = context;
-  const { systemPrompt } = studioState.currentInteraction;
+  const { systemPrompt } = studioState.currentScenario;
 
   const handlePromptChange = (newPrompt: string) => {
     setStudioState((prev) => ({
       ...prev,
-      currentInteraction: {
-        ...prev.currentInteraction,
+      currentScenario: {
+        ...prev.currentScenario,
         systemPrompt: newPrompt,
       },
     }));

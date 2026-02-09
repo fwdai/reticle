@@ -15,15 +15,15 @@ function Configuration() {
   }
 
   const { studioState, setStudioState } = context;
-  const configuration = studioState.currentInteraction.configuration;
+  const configuration = studioState.currentScenario.configuration;
 
   const handleValueChange = (name: string, value: string | number) => {
     setStudioState(prevStudioState => ({
       ...prevStudioState,
-      currentInteraction: {
-        ...prevStudioState.currentInteraction,
+      currentScenario: {
+        ...prevStudioState.currentScenario,
         configuration: {
-          ...prevStudioState.currentInteraction.configuration,
+          ...prevStudioState.currentScenario.configuration,
           [name]: value,
         },
       },

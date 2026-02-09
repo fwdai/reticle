@@ -61,16 +61,19 @@ fn json_value_to_sql<'a>(value: &'a Value) -> anyhow::Result<Box<dyn rusqlite::T
 }
 
 // Generic INSERT operation
-pub fn db_insert(conn: &Connection, table: &str, mut data: Value) -> AnyhowResult<usize> {
+pub fn db_insert(conn: &Connection, table: &str, mut data: Value) -> AnyhowResult<String> {
     let data_map_original = data.as_object_mut().ok_or_else(|| anyhow!("Data must be a JSON object for insert"))?;
     
     // Generate ULID if no 'id' is provided
-    if !data_map_original.contains_key("id") {
+    let id_to_insert = if let Some(id_val) = data_map_original.get("id").and_then(|v| v.as_str()) {
+        id_val.to_string()
+    } else {
         let ulid = Ulid::new().to_string();
-        data_map_original.insert("id".to_string(), json!(ulid));
-    }
+        data_map_original.insert("id".to_string(), json!(ulid.clone()));
+        ulid
+    };
     
-    let data_map = data_map_original; // Use the mutable reference now as immutable for collection
+    let data_map = data_map_original;
 
     let columns: Vec<&str> = data_map.keys().map(|s| s.as_str()).collect();
     let placeholders: Vec<String> = (0..columns.len()).map(|i| format!("?{}", i + 1)).collect();
@@ -88,8 +91,8 @@ pub fn db_insert(conn: &Connection, table: &str, mut data: Value) -> AnyhowResul
         params_vec.push(json_value_to_sql(&data_map[col])?);
     }
     
-    let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?;
-    Ok(changes)
+    stmt.execute(params_from_iter(params_vec.into_iter()))?;
+    Ok(id_to_insert)
 }
 
 // Generic SELECT operation
