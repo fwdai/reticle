@@ -13,8 +13,8 @@ function App() {
   return (
     <div className="flex h-screen w-full overflow-hidden p-[3px] bg-sidebar-light">
       <LeftNav currentPage={currentPage} onNavigate={setCurrentPage} />
-      <Sidebar currentPage={currentPage} />
       <StudioProvider>
+        <Sidebar currentPage={currentPage} />
         <MainContent currentPage={currentPage} />
       </StudioProvider>
     </div>

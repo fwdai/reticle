@@ -18,10 +18,20 @@ export interface HistoryItem {
   content: string;
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: number;
+  updated_at: number;
+  archived_at?: number;
+}
+
 // Represents a single, saveable interaction (now Scenario)
 export interface Scenario {
   id: string; // Unique ID for the scenario (ULID for saved ones)
   name: string; // User-defined name for the scenario
+  collection_id: string; // Foreign key to collections table
   configuration: ConfigurationState;
   systemPrompt: string;
   userPrompt: string;
@@ -47,6 +57,7 @@ export interface ResponseState {
 export interface StudioContainerState {
   currentScenario: Scenario; // Renamed from currentInteraction
   savedScenarios: Scenario[]; // Renamed from savedInteractions
+  collections: Collection[]; // List of collections
   isLoading: boolean;
   response: ResponseState | null;
   scenarioId: string | null; // ID of the currently loaded/saved scenario from DB
@@ -61,6 +72,7 @@ interface StudioContextType {
   saveScenario: (scenarioName: string | null) => Promise<void>;
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
+  fetchCollections: () => Promise<void>; // Added fetchCollections
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -76,6 +88,7 @@ interface StudioProviderProps {
 const initialScenario: Scenario = { // Renamed from initialInteraction
   id: uuidv4(), // Client-side ID for unsaved scenario
   name: 'New Scenario', // Renamed from 'New Interaction'
+  collection_id: '', // Default for now
   configuration: {
     provider: 'openai',
     model: 'gpt-4o-2024-05-13',
@@ -95,6 +108,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [studioState, setStudioState] = useState<StudioContainerState>({
     currentScenario: initialScenario,
     savedScenarios: [],
+    collections: [], // Initialized collections
     isLoading: false,
     response: null,
     scenarioId: null,
@@ -116,16 +130,90 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, [studioState.currentScenario, prevScenarioJson, studioState.scenarioId]);
 
+  const fetchCollections = useCallback(async () => {
+    try {
+      const collections: any[] = await invoke('db_select_cmd', { table: 'collections', query: {} });
+      setStudioState(prev => ({ ...prev, collections: collections as Collection[] }));
+    } catch (error) {
+      console.error("Failed to fetch collections:", error);
+    }
+  }, []);
+
+  // Fetch collections on mount
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
+
+
+  const getOrCreateDefaultCollection = useCallback(async (): Promise<string> => {
+    try {
+      const existingCollections: any[] = await invoke('db_select_cmd', {
+        table: 'collections',
+        query: { where: { name: 'Default Collection' } },
+      });
+
+      if (existingCollections.length > 0) {
+        return existingCollections[0].id;
+      } else {
+        const now = Date.now();
+        const newCollection = {
+          name: 'Default Collection',
+          created_at: now,
+          updated_at: now,
+          description: 'Default collection for scenarios',
+        };
+        const newCollectionId: string = await invoke('db_insert_cmd', {
+          table: 'collections',
+          data: newCollection,
+        });
+        console.log("Created Default Collection with ID:", newCollectionId);
+        return newCollectionId;
+      }
+    } catch (error) {
+      console.error("Failed to get or create default collection:", error);
+      throw error;
+    }
+  }, []);
 
   const saveScenario = useCallback(async (scenarioName: string | null) => {
     console.log("Attempting to save scenario:", studioState.currentScenario);
     try {
       setStudioState(prev => ({ ...prev, isLoading: true }));
 
-      const scenarioToSave = { ...studioState.currentScenario };
+      const scenarioData = { ...studioState.currentScenario };
       if (scenarioName) {
-        scenarioToSave.name = scenarioName;
+        scenarioData.name = scenarioName;
       }
+
+      const collectionId = await getOrCreateDefaultCollection(); // Get or create default collection ID
+
+      // Prepare data for database insertion/update
+      const now = Date.now(); // Current Unix timestamp in milliseconds
+
+      const dbScenario = {
+        id: scenarioData.id, // Will be overridden by db_insert for new scenarios if null
+        collection_id: collectionId, // Assign the collection ID
+        title: scenarioData.name,
+        provider: scenarioData.configuration.provider,
+        model: scenarioData.configuration.model,
+        system_prompt: scenarioData.systemPrompt,
+        user_prompt: scenarioData.userPrompt,
+        history_json: JSON.stringify(scenarioData.history),
+        tools_json: JSON.stringify(scenarioData.tools),
+        params_json: JSON.stringify({
+          temperature: scenarioData.configuration.temperature,
+          topP: scenarioData.configuration.topP,
+          maxTokens: scenarioData.configuration.maxTokens,
+          // Add other configuration parameters as needed (e.g., seed, etc.)
+        }),
+        variables_json: null, // No variables in context yet
+        response_format_json: null, // No response format in context yet
+        provider_meta_json: null, // No provider meta in context yet
+        created_at: studioState.scenarioId && scenarioData.createdAt
+          ? new Date(scenarioData.createdAt).getTime() // Use existing created_at for updates
+          : now, // Generate new created_at for new inserts
+        updated_at: now,
+      };
 
       let savedId = studioState.scenarioId;
       if (studioState.scenarioId) {
@@ -133,16 +221,16 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         await invoke('db_update_cmd', {
           table: 'scenarios',
           query: { where: { id: studioState.scenarioId } },
-          data: scenarioToSave,
+          data: dbScenario,
         });
-        console.log(`Scenario '${scenarioToSave.name}' updated.`);
+        console.log(`Scenario '${scenarioData.name}' updated.`);
       } else {
         console.log("Inserting new scenario.");
         savedId = await invoke('db_insert_cmd', {
           table: 'scenarios',
-          data: scenarioToSave,
+          data: dbScenario,
         });
-        console.log(`Scenario '${scenarioToSave.name}' inserted with ID: ${savedId}`);
+        console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
       }
 
       setStudioState(prev => {
@@ -151,7 +239,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           isLoading: false,
           isSaved: true,
           scenarioId: savedId,
-          currentScenario: { ...scenarioToSave, id: savedId || scenarioToSave.id },
+          currentScenario: { ...scenarioData, id: savedId || scenarioData.id, createdAt: dbScenario.created_at.toString(), updatedAt: dbScenario.updated_at.toString() },
         };
         setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
         console.log("Scenario saved. New state:", newState);
@@ -162,7 +250,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       setStudioState(prev => ({ ...prev, isLoading: false }));
       // Optionally show an error message in the UI
     }
-  }, [studioState.currentScenario, studioState.scenarioId]);
+  }, [studioState.currentScenario, studioState.scenarioId, getOrCreateDefaultCollection]);
+
   const createNewScenario = useCallback(() => {
     setStudioState(prev => ({
       ...prev,
@@ -209,7 +298,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections }}>
       {children}
     </StudioContext.Provider>
   );

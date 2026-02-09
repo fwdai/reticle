@@ -67,7 +67,7 @@ function StudioHeader() {
 
   const handleSaveClick = async () => {
     // For now, using null to indicate that the name should be taken from currentScenario.name
-    await saveScenario(null); 
+    await saveScenario(null);
   };
 
   const statusBadge = isSaved ? (
@@ -102,7 +102,7 @@ function StudioHeader() {
             )}
             Run
           </button>
-          <button 
+          <button
             onClick={handleSaveClick}
             disabled={isLoading || isSaved} // Cannot save if loading or already saved
             className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">
