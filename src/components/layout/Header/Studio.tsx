@@ -66,7 +66,7 @@ function StudioHeader() {
   return (
     <>
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-text-muted">Studio</span>
+        <span className="text-text-muted">Scenario</span>
         <span className="text-gray-300">/</span>
         <span className="font-semibold text-text-main">New Interaction</span>
         {false ? (

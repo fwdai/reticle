@@ -3,7 +3,7 @@ import { useState } from "react";
 
 interface Run {
   id: string;
-  workflowName: string;
+  scenarioName: string;
   status: "success" | "error";
   model: string;
   latency: string;
@@ -20,7 +20,7 @@ function Runs() {
   const runs: Run[] = [
     {
       id: "run_7d2f9a1",
-      workflowName: "Customer Support Routing",
+      scenarioName: "Customer Support Routing",
       status: "success",
       model: "gpt-4o",
       latency: "1,245ms",
@@ -30,7 +30,7 @@ function Runs() {
     },
     {
       id: "run_e3a10b4",
-      workflowName: "Summary Generator V2",
+      scenarioName: "Summary Generator V2",
       status: "error",
       model: "claude-3-5",
       latency: "Timeout",
@@ -40,7 +40,7 @@ function Runs() {
     },
     {
       id: "run_88c2f1e",
-      workflowName: "RAG Semantic Search",
+      scenarioName: "RAG Semantic Search",
       status: "success",
       model: "gpt-4o",
       latency: "2,410ms",
@@ -50,7 +50,7 @@ function Runs() {
     },
     {
       id: "run_2b9d5c1",
-      workflowName: "SQL Query Generator",
+      scenarioName: "SQL Query Generator",
       status: "success",
       model: "gpt-3.5-turbo",
       latency: "815ms",
@@ -60,7 +60,7 @@ function Runs() {
     },
     {
       id: "run_0f3e1a2",
-      workflowName: "Sentiment Analysis Bulk",
+      scenarioName: "Sentiment Analysis Bulk",
       status: "success",
       model: "gpt-4o",
       latency: "4,120ms",
@@ -143,7 +143,7 @@ function Runs() {
           <thead>
             <tr className="sticky top-0 bg-white border-b border-border-light z-10">
               <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-16">Status</th>
-              <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Workflow Name</th>
+              <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Scenario Name</th>
               <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Model</th>
               <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Latency</th>
               <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Tokens</th>
@@ -168,7 +168,7 @@ function Runs() {
                 <td className="px-4 py-4">
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-text-main group-hover:text-primary-600 transition-colors">
-                      {run.workflowName}
+                      {run.scenarioName}
                     </span>
                     <span className="text-[10px] font-mono text-text-muted">{run.id}</span>
                   </div>

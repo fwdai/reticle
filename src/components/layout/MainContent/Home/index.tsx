@@ -14,7 +14,7 @@ function Home() {
             Welcome to Reticle Hub
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Build, test, and deploy AI workflows in minutes. We've prepared everything you need to get your first model running.
+            Build, test, and deploy AI scenarios in minutes. We've prepared everything you need to get your first model running.
           </p>
         </section>
 

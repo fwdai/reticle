@@ -29,7 +29,7 @@ function Environments() {
     {
       name: "DEBUG_MODE",
       value: "false",
-      description: "Enables verbose logging for workflow execution.",
+      description: "Enables verbose logging for scenario execution.",
       isSecret: false,
     },
     {

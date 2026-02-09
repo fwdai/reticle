@@ -18,7 +18,7 @@ function HomeHeader() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted size-4" />
           <input
             className="pl-10 pr-4 py-2 bg-slate-50 border border-border-light rounded-xl text-sm w-full sm:w-80 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            placeholder="Search workflow, ID, or user..."
+            placeholder="Search scenario, ID, or user..."
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

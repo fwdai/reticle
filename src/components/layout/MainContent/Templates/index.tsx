@@ -76,7 +76,7 @@ function TemplatesPage() {
     <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
       <h2 className="text-xl font-bold text-text-main mb-6">Prompt Templates</h2>
       {templates.length === 0 ? (
-        <p className="text-text-muted">No templates saved yet. Go to the Studio tab to create one!</p>
+        <p className="text-text-muted">No templates saved yet. Go to the Scenario tab to create one!</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (

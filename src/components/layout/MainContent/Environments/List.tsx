@@ -210,7 +210,7 @@ function Environments() {
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="p-6 border-b border-border-light">
               <h2 className="text-xl font-bold text-text-main">Create New Environment</h2>
-              <p className="text-sm text-text-muted mt-1">Configure a new environment for your workflows</p>
+              <p className="text-sm text-text-muted mt-1">Configure a new environment for your scenarios</p>
             </div>
             <div className="p-6 space-y-4">
               <div>

@@ -115,7 +115,7 @@ function Settings() {
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Global API Keys</h2>
             <p className="text-sm text-slate-500 mt-1">
-              Configure your LLM provider credentials. These keys are encrypted at rest and used as defaults across all workflows.
+              Configure your LLM provider credentials. These keys are encrypted at rest and used as defaults across all scenarios.
             </p>
           </div>
           <div className="space-y-4">

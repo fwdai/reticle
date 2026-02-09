@@ -3,7 +3,7 @@ import { Plus, Folder, Globe, Cloud, History } from "lucide-react";
 function Studio() {
   return (
     <>
-      <h2 className="text-lg font-bold tracking-tight mb-6 text-sidebar-text">Workflows</h2>
+      <h2 className="text-lg font-bold tracking-tight mb-6 text-sidebar-text">Scenarios</h2>
       <div className="space-y-6">
         <div>
           <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Collections</h3>
@@ -49,7 +49,7 @@ function Studio() {
       <div className="mt-auto p-6 section-divider pt-6">
         <button className="w-full flex items-center justify-center gap-2 bg-text-main text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-black transition-all shadow-sm">
           <Plus size={16} />
-          New Workflow
+          New Scenario
         </button>
       </div>
     </>

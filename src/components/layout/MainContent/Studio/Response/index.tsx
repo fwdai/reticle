@@ -31,7 +31,6 @@ function Response() {
   };
 
   const statusColor = response?.error ? 'bg-red-500' : 'bg-green-500';
-  const statusText = response?.error ? 'ERROR' : isLoading ? 'LOADING' : '200 OK';
   const statusCode = response?.error ? 'ERROR' : isLoading ? '...' : '200 OK';
 
   return (
