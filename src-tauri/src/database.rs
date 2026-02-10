@@ -18,7 +18,10 @@ fn get_migrations() -> Migrations<'static> {
 
 // Initialize the database connection and run migrations
 pub fn init_database(app_handle: &AppHandle) -> AnyhowResult<Arc<Mutex<Connection>>> {
-    let app_dir = app_handle.path().app_data_dir().expect("Failed to get app data directory");
+    let app_data_dir = app_handle.path().app_data_dir().expect("Failed to get app data directory");
+    let parent_dir = app_data_dir.parent().expect("Failed to get parent of app data directory");
+    let app_dir = parent_dir.join("Reticle"); // Custom folder name
+    
     std::fs::create_dir_all(&app_dir).expect("Failed to create app data directory");
     let db_path = app_dir.join("reticle.db");
     
