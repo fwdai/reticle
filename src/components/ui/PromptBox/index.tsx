@@ -170,13 +170,13 @@ function PromptBox({
         />
         <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="size-1.5 bg-primary rounded-full"></span>
+            {/* <span className="size-1.5 bg-primary rounded-full"></span>
             <span className="text-[10px] text-text-muted font-medium">
               Auto-saving
-            </span>
+            </span> */}
           </div>
-          <span className="text-[10px] text-text-muted font-medium uppercase tracking-tighter">
-            {characterCount} CHARACTERS • ~{estimatedTokenCount} TOKENS (approx.) • UTF-8
+          <span className="text-[9px] text-text-muted uppercase">
+            <span className="font-medium">{characterCount}</span> CHARACTERS • ~<span className="font-me">{estimatedTokenCount}</span> TOKENS (approx.)
           </span>
         </div>
       </div>
