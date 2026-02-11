@@ -44,7 +44,7 @@ function Configuration() {
         </div>
         <div className="space-y-8">
           <div className="space-y-3">
-            <Label className="font-bold text-text-main">LLM Provider</Label>
+            <Label className="font-bold text-text-main">Provider</Label>
             <Select
               name="provider"
               value={configuration.provider}
@@ -63,7 +63,7 @@ function Configuration() {
             </Select>
           </div>
           <div className="space-y-3">
-            <Label className="font-bold text-text-main">Model Variant</Label>
+            <Label className="font-bold text-text-main">Model</Label>
             <Select
               name="model"
               value={configuration.model}
@@ -73,9 +73,11 @@ function Configuration() {
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4o-2024-05-13">gpt-4o-2024-05-13</SelectItem>
-                <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
-                <SelectItem value="gpt-3.5-turbo">gpt-3.5-turbo</SelectItem>
+                {studioState.providerModels[configuration.provider]?.map((model: any) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    {model.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
