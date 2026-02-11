@@ -1,33 +1,12 @@
-import { ComponentType } from "react";
-import { Page } from "@/types";
-import Studio from "./Studio";
-import Settings from "./Settings";
-import Runs from "./Runs";
-import Environments from "./Environments";
-
-interface SidebarProps {
-  currentPage: Page;
-}
-
-const sidebars: Partial<Record<Page, ComponentType>> = {
-  studio: Studio,
-  settings: Settings,
-  runs: Runs,
-  environments: Environments,
-};
-
-function Sidebar({ currentPage }: SidebarProps) {
-  const SidebarComponent = sidebars[currentPage];
-  if (currentPage === "home") return null;
-
+function Sidebar({ title, children }: { title: string, children: React.ReactNode }) {
   return (
-    <aside className="w-60 bg-sidebar-light flex flex-col flex-shrink-0 mr-1.5">
-      <div className="p-4">
-        {SidebarComponent && <SidebarComponent />}
+    <aside className="w-60 bg-sidebar-light flex flex-col flex-shrink-0 mr-1.5 p-4">
+      <h2 className="text-lg font-bold tracking-tight mb-6 text-sidebar-text">{title}</h2>
+      <div className="space-y-6">
+        {children}
       </div>
     </aside>
-  )
+  );
 }
 
 export default Sidebar;
-

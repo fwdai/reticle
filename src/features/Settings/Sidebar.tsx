@@ -1,7 +1,8 @@
+import Sidebar from "@/components/Layout/Sidebar";
+
 function Settings() {
   return (
-    <>
-      <h2 className="text-lg font-bold tracking-tight mb-6 text-sidebar-text">Settings</h2>
+    <Sidebar title="Settings">
       <div className="space-y-6">
         <div>
           <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">General</h3>
@@ -26,7 +27,7 @@ function Settings() {
           </nav>
         </div>
       </div>
-    </>
+    </Sidebar>
   );
 }
 

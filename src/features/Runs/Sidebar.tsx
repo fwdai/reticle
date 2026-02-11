@@ -1,7 +1,8 @@
+import Sidebar from "@/components/Layout/Sidebar";
+
 function Runs() {
   return (
-    <>
-      <h2 className="text-lg font-bold tracking-tight mb-6 text-sidebar-text">Runs</h2>
+    <Sidebar title="Runs">
       <div className="space-y-6">
         <div>
           <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Filters</h3>
@@ -15,7 +16,7 @@ function Runs() {
           </nav>
         </div>
       </div>
-    </>
+    </Sidebar>
   );
 }
 

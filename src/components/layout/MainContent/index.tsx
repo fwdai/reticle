@@ -1,7 +1,6 @@
 import { ComponentType } from "react";
 import Header from "../Header";
 import { Page } from "@/types";
-import Home from "./Home";
 import Studio from "./Studio";
 import Settings from "./Settings";
 import Environments from "./Environments";
@@ -13,7 +12,6 @@ interface MainContentProps {
 }
 
 const pages: Partial<Record<Page, ComponentType>> = {
-  home: Home,
   studio: Studio,
   environments: Environments,
   runs: Runs,
