@@ -3,6 +3,8 @@ import { Tool } from '@/components/Layout/MainContent/Studio/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
 import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
+import { PROVIDERS_LIST } from '@/constants/providers';
+import { listModels } from '@/lib/gateway';
 
 // --- State Interfaces ---
 
@@ -64,6 +66,7 @@ export interface StudioContainerState {
   scenarioId: string | null; // ID of the currently loaded/saved scenario from DB
   isSaved: boolean; // Indicates if currentScenario matches a saved version
   currentExecutionId: string | null; // ID of the current execution for tracking
+  providerModels: Record<string, any[]>;
 }
 
 // --- Context Definition ---
@@ -76,6 +79,7 @@ interface StudioContextType {
   loadScenario: (id: string) => Promise<void>;
   fetchCollections: () => Promise<void>;
   runScenario: () => Promise<void>;
+  fetchModelsForAllProviders: () => Promise<void>;
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -117,6 +121,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     scenarioId: null,
     isSaved: false, // Changed from true to false
     currentExecutionId: null, // Initialized currentExecutionId
+    providerModels: {}, // Initialized providerModels
   });
 
   // Track changes to currentScenario to set isSaved to false
@@ -147,6 +152,30 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
+
+  const fetchModelsForAllProviders = useCallback(async () => {
+    try {
+      const allProviderModels: Record<string, any[]> = {};
+      for (const provider of PROVIDERS_LIST) {
+        try {
+          const models = await listModels(provider.id);
+          console.log(models)
+          allProviderModels[provider.id] = models;
+        } catch (error) {
+          console.error(`Failed to fetch models for provider ${provider.name}:`, error);
+          // Optionally, handle this error more gracefully, e.g., by skipping the provider
+        }
+      }
+      setStudioState(prev => ({ ...prev, providerModels: allProviderModels }));
+    } catch (error) {
+      console.error("Failed to fetch models for all providers:", error);
+    }
+  }, []);
+
+  // Fetch models for all providers on mount
+  useEffect(() => {
+    fetchModelsForAllProviders();
+  }, [fetchModelsForAllProviders]);
 
   const saveScenario = useCallback(async (scenarioName: string | null) => {
     await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);
@@ -203,7 +232,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
 
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, runScenario, fetchModelsForAllProviders }}>
       {children}
     </StudioContext.Provider>
   );

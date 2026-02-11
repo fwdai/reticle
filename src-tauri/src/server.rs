@@ -95,7 +95,7 @@ async fn proxy_handler(
     let mut excluded_headers = vec![
         "x-proxy-target-url",
         "x-api-provider",
-        "x-api-auth-header", // Exclude new header
+        "x-api-auth-header",
         "host",
         "connection",
         "keep-alive",
@@ -106,6 +106,7 @@ async fn proxy_handler(
         "upgrade",
         "content-length",
         "accept-encoding",
+        "origin", // Exclude the Origin header to prevent CORS issues
     ];
 
     // If an API key was found and used, exclude the original headers it might replace
