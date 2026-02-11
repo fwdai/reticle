@@ -1,13 +1,11 @@
 import { Radar, Home, Activity, Layers, Settings, PlayCircle } from "lucide-react";
 import { Page } from "@/types";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipArrow } from "@/components/ui/tooltip";
+import { useAppContext } from "@/contexts/AppContext";
 
-interface LeftNavProps {
-  currentPage: Page;
-  onNavigate: (page: Page) => void;
-}
-
-function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
+function Navigation() {
+  const { appState, setCurrentPage } = useAppContext();
+  const currentPage = appState.currentPage;
   const navItems = [
     { id: "home" as Page, icon: Home, label: "Home" },
     { id: "studio" as Page, icon: PlayCircle, label: "Scenarios " },
@@ -18,7 +16,7 @@ function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
 
   const handleClick = (page: Page, e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate(page);
+    setCurrentPage(page);
   };
 
   return (
@@ -87,4 +85,4 @@ function LeftNav({ currentPage, onNavigate }: LeftNavProps) {
   );
 }
 
-export default LeftNav;
+export default Navigation;
