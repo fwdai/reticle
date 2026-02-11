@@ -2,7 +2,7 @@ import React, { createContext, useState, ReactNode, useEffect, useCallback } fro
 import { Tool } from '@/components/Layout/MainContent/Studio/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
 import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
-import { generateText } from '@/lib/registry'; // Added generateText import
+import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 
 // --- State Interfaces ---
 
@@ -75,8 +75,7 @@ interface StudioContextType {
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
   fetchCollections: () => Promise<void>;
-  saveExecution: (data: any, id?: string) => Promise<string>; // Added saveExecution
-  runScenario: () => Promise<void>; // Added runScenario
+  runScenario: () => Promise<void>;
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -149,113 +148,9 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     fetchCollections();
   }, [fetchCollections]);
 
-
-  const getOrCreateDefaultCollection = useCallback(async (): Promise<string> => {
-    try {
-      const existingCollections: any[] = await invoke('db_select_cmd', {
-        table: 'collections',
-        query: { where: { name: 'Default Collection' } },
-      });
-
-      if (existingCollections.length > 0) {
-        return existingCollections[0].id;
-      } else {
-        const now = Date.now();
-        const newCollection = {
-          name: 'Default Collection',
-          created_at: now,
-          updated_at: now,
-          description: 'Default collection for scenarios',
-        };
-        const newCollectionId: string = await invoke('db_insert_cmd', {
-          table: 'collections',
-          data: newCollection,
-        });
-        console.log("Created Default Collection with ID:", newCollectionId);
-        return newCollectionId;
-      }
-    } catch (error) {
-      console.error("Failed to get or create default collection:", error);
-      throw error;
-    }
-  }, []);
-
   const saveScenario = useCallback(async (scenarioName: string | null) => {
-    console.log("Attempting to save scenario:", studioState.currentScenario);
-    try {
-      setStudioState(prev => ({ ...prev, isLoading: true }));
-
-      const scenarioData = { ...studioState.currentScenario };
-      if (scenarioName) {
-        scenarioData.name = scenarioName;
-      }
-
-      const collectionId = await getOrCreateDefaultCollection(); // Get or create default collection ID
-
-      // Prepare data for database insertion/update
-      const now = Date.now(); // Current Unix timestamp in milliseconds
-
-      const dbScenario = {
-        id: scenarioData.id, // Will be overridden by db_insert for new scenarios if null
-        collection_id: collectionId, // Assign the collection ID
-        title: scenarioData.name,
-        provider: scenarioData.configuration.provider,
-        model: scenarioData.configuration.model,
-        system_prompt: scenarioData.systemPrompt,
-        user_prompt: scenarioData.userPrompt,
-        history_json: JSON.stringify(scenarioData.history),
-        tools_json: JSON.stringify(scenarioData.tools),
-        params_json: JSON.stringify({
-          temperature: scenarioData.configuration.temperature,
-          topP: scenarioData.configuration.topP,
-          maxTokens: scenarioData.configuration.maxTokens,
-          // Add other configuration parameters as needed (e.g., seed, etc.)
-        }),
-        variables_json: null, // No variables in context yet
-        response_format_json: null, // No response format in context yet
-        provider_meta_json: null, // No provider meta in context yet
-        created_at: studioState.scenarioId && scenarioData.createdAt
-          ? new Date(scenarioData.createdAt).getTime() // Use existing created_at for updates
-          : now, // Generate new created_at for new inserts
-        updated_at: now,
-      };
-
-      let savedId = studioState.scenarioId;
-      if (studioState.scenarioId) {
-        console.log("Updating existing scenario with ID:", studioState.scenarioId);
-        await invoke('db_update_cmd', {
-          table: 'scenarios',
-          query: { where: { id: studioState.scenarioId } },
-          data: dbScenario,
-        });
-        console.log(`Scenario '${scenarioData.name}' updated.`);
-      } else {
-        console.log("Inserting new scenario.");
-        savedId = await invoke('db_insert_cmd', {
-          table: 'scenarios',
-          data: dbScenario,
-        });
-        console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
-      }
-
-      setStudioState(prev => {
-        const newState = {
-          ...prev,
-          isLoading: false,
-          isSaved: true,
-          scenarioId: savedId,
-          currentScenario: { ...scenarioData, id: savedId || scenarioData.id, createdAt: dbScenario.created_at.toString(), updatedAt: dbScenario.updated_at.toString() },
-        };
-        setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
-        console.log("Scenario saved. New state:", newState);
-        return newState;
-      });
-    } catch (error) {
-      console.error('Failed to save scenario:', error);
-      setStudioState(prev => ({ ...prev, isLoading: false }));
-      // Optionally show an error message in the UI
-    }
-  }, [studioState.currentScenario, studioState.scenarioId, getOrCreateDefaultCollection]);
+    await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);
+  }, [studioState, setStudioState, setPrevScenarioJson]);
 
   const createNewScenario = useCallback(() => {
     setStudioState(prev => ({
@@ -302,143 +197,13 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const saveExecution = useCallback(async (data: any, id?: string): Promise<string> => {
-    try {
-      const now = Date.now();
-      let executionId: string;
-      const executionData = { ...data, updated_at: now };
-
-      if (id) {
-        // Update existing execution
-        await invoke('db_update_cmd', {
-          table: 'executions',
-          query: { where: { id } },
-          data: executionData,
-        });
-        executionId = id;
-        console.log(`Execution ${id} updated.`);
-      } else {
-        // Insert new execution
-        const newId: string = await invoke('db_insert_cmd', {
-          table: 'executions',
-          data: { ...executionData, created_at: now },
-        });
-        executionId = newId;
-        console.log(`Execution ${executionId} inserted.`);
-      }
-      return executionId;
-    } catch (error) {
-      console.error("Failed to save execution:", error);
-      throw error;
-    }
-  }, []);
-
   const runScenario = useCallback(async () => {
-    if (!studioState.scenarioId) {
-      // Force save current scenario before running if it's new/unsaved
-      console.log("Scenario not saved. Saving before run.");
-      await saveScenario(null); // Save with current name
-      // This will trigger a re-render and updated studioState.scenarioId
-      // So, runScenario will be called again or handle it in next effect
-      // For now, let's just return and assume re-render handles the rerun
-      return; 
-    }
-
-    const { currentScenario, scenarioId } = studioState;
-    const { systemPrompt, userPrompt, configuration } = currentScenario;
-
-    // Set loading state and reset response
-    setStudioState((prev) => ({
-      ...prev,
-      isLoading: true,
-      response: null,
-      currentExecutionId: null,
-    }));
-
-    let executionId: string | null = null;
-    try {
-      // 1. Save initial execution record (status: running)
-      const initialExecution = {
-        scenario_id: scenarioId,
-        provider: configuration.provider,
-        model: configuration.model,
-        status: 'running',
-        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-      };
-      executionId = await saveExecution(initialExecution);
-      setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
-
-
-      console.log('System Prompt:', systemPrompt);
-      console.log('User Prompt:', userPrompt);
-      console.log('Running with configuration:', configuration);
-
-      const result = await generateText(userPrompt, { systemPrompt, ...configuration });
-      const latency = result.latency;
-
-      // 2. Update execution record on success
-      const finalExecution = {
-        provider: configuration.provider,
-        model: configuration.model,
-        status: 'success',
-        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-        output_json: JSON.stringify({ text: result.text, usage: result.usage }),
-        latency_ms: latency,
-        tokens_used_json: JSON.stringify(result.usage),
-        cost_usd: 0, // TODO: calculate cost
-      };
-      await saveExecution(finalExecution, executionId);
-
-      // Store response in state
-      setStudioState((prev) => ({
-        ...prev,
-        isLoading: false,
-        response: {
-          text: result.text,
-          usage: result.usage ? {
-            promptTokens: result.usage.inputTokens,
-            completionTokens: result.usage.outputTokens,
-            totalTokens: result.usage.totalTokens,
-          } : undefined,
-          latency,
-        },
-        isSaved: false, // Running modifies the scenario, so it becomes unsaved
-      }));
-    } catch (error) {
-      console.error('Error generating text:', error);
-
-      // 2. Update execution record on failure
-      const failedExecution = {
-        provider: configuration.provider,
-        model: configuration.model,
-        status: 'failed',
-        input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-        output_json: JSON.stringify({ error: error instanceof Error ? error.message : 'An unknown error occurred' }),
-        latency_ms: 0,
-        tokens_used_json: null,
-        cost_usd: 0,
-      };
-      if (executionId) {
-        await saveExecution(failedExecution, executionId);
-      }
-
-      // Store error in state
-      setStudioState((prev) => ({
-        ...prev,
-        isLoading: false,
-        response: {
-          text: '',
-          error: error instanceof Error ? error.message : 'An unknown error occurred',
-          latency: undefined,
-        },
-        isSaved: false, // An error implies the state might be different or not successfully processed
-      }));
-    }
-  }, [studioState.currentScenario, studioState.scenarioId, saveExecution, saveScenario]);
+    await runScenarioAction(studioState, setStudioState);
+  }, [studioState, setStudioState]);
 
 
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, saveExecution, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, runScenario }}>
       {children}
     </StudioContext.Provider>
   );
