@@ -1,29 +1,31 @@
 import { generateText } from '@/lib/gateway';
-import { invoke } from '@tauri-apps/api/core';
-import { StudioContainerState } from '@/types/studio';
+import {
+  getOrCreateDefaultCollection,
+  insertExecution,
+  insertScenario,
+  updateExecution,
+  updateScenario,
+  type ExecutionRow,
+  type ScenarioRow,
+} from '@/lib/storage';
+import { StudioContainerState } from '@/contexts/StudioContext';
 
 type SetStudioState = React.Dispatch<React.SetStateAction<StudioContainerState>>;
 
 // --- Execution Actions ---
 
-export async function saveExecution(data: any, id?: string): Promise<string> {
+export async function saveExecution(
+  data: Omit<ExecutionRow, 'created_at' | 'updated_at'>,
+  id?: string
+): Promise<string> {
   try {
-    const now = Date.now();
-    let executionId: string;
-    const executionData = { ...data, updated_at: now };
-
     if (id) {
-      await invoke('db_update_cmd', { table: 'executions', query: { where: { id } }, data: executionData });
-      executionId = id;
+      await updateExecution(id, data);
       console.log(`Execution ${id} updated.`);
-    } else {
-      const newId: string = await invoke('db_insert_cmd', {
-        table: 'executions',
-        data: { ...executionData, created_at: now },
-      });
-      executionId = newId;
-      console.log(`Execution ${executionId} inserted.`);
+      return id;
     }
+    const executionId = await insertExecution(data);
+    console.log(`Execution ${executionId} inserted.`);
     return executionId;
   } catch (error) {
     console.error("Failed to save execution:", error);
@@ -32,36 +34,6 @@ export async function saveExecution(data: any, id?: string): Promise<string> {
 }
 
 // --- Scenario Actions ---
-
-export async function getOrCreateDefaultCollection(): Promise<string> {
-  try {
-    const existingCollections: any[] = await invoke('db_select_cmd', {
-      table: 'collections',
-      query: { where: { name: 'Default Collection' } },
-    });
-
-    if (existingCollections.length > 0) {
-      return existingCollections[0].id;
-    } else {
-      const now = Date.now();
-      const newCollection = {
-        name: 'Default Collection',
-        created_at: now,
-        updated_at: now,
-        description: 'Default collection for scenarios',
-      };
-      const newCollectionId: string = await invoke('db_insert_cmd', {
-        table: 'collections',
-        data: newCollection,
-      });
-      console.log("Created Default Collection with ID:", newCollectionId);
-      return newCollectionId;
-    }
-  } catch (error) {
-    console.error("Failed to get or create default collection:", error);
-    throw error;
-  }
-}
 
 export async function saveScenarioAction(
   studioState: StudioContainerState,
@@ -78,51 +50,45 @@ export async function saveScenarioAction(
       scenarioData.name = scenarioName;
     }
 
-    const collectionId = await getOrCreateDefaultCollection(); // Use the extracted function
+    const collectionId = await getOrCreateDefaultCollection();
+    const now = Date.now();
 
-    // Prepare data for database insertion/update
-    const now = Date.now(); // Current Unix timestamp in milliseconds
-
-    const dbScenario = {
-      id: scenarioData.id, // Will be overridden by db_insert for new scenarios if null
-      collection_id: collectionId, // Assign the collection ID
+    const scenarioPayload: Omit<ScenarioRow, 'created_at' | 'updated_at'> = {
+      collection_id: collectionId,
       title: scenarioData.name,
+      description: null,
       provider: scenarioData.configuration.provider,
       model: scenarioData.configuration.model,
       system_prompt: scenarioData.systemPrompt,
       user_prompt: scenarioData.userPrompt,
       history_json: JSON.stringify(scenarioData.history),
-      tools_json: JSON.stringify(scenarioData.tools),
+      variables_json: null,
       params_json: JSON.stringify({
         temperature: scenarioData.configuration.temperature,
         topP: scenarioData.configuration.topP,
         maxTokens: scenarioData.configuration.maxTokens,
-        // Add other configuration parameters as needed (e.g., seed, etc.)
       }),
-      variables_json: null, // No variables in context yet
-      response_format_json: null, // No response format in context yet
-      provider_meta_json: null, // No provider meta in context yet
-      created_at: studioState.scenarioId && scenarioData.createdAt
-        ? new Date(scenarioData.createdAt).getTime() // Use existing created_at for updates
-        : now, // Generate new created_at for new inserts
-      updated_at: now,
+      response_format_json: null,
+      tools_json: JSON.stringify(scenarioData.tools),
+      provider_meta_json: null,
     };
 
     let savedId = studioState.scenarioId;
+    let created_at: number;
+    let updated_at: number;
+
     if (studioState.scenarioId) {
       console.log("Updating existing scenario with ID:", studioState.scenarioId);
-      await invoke('db_update_cmd', {
-        table: 'scenarios',
-        query: { where: { id: studioState.scenarioId } },
-        data: dbScenario,
-      });
+      created_at =
+        scenarioData.createdAt != null ? new Date(scenarioData.createdAt).getTime() : now;
+      updated_at = now;
+      await updateScenario(studioState.scenarioId, scenarioPayload);
       console.log(`Scenario '${scenarioData.name}' updated.`);
     } else {
       console.log("Inserting new scenario.");
-      savedId = await invoke('db_insert_cmd', {
-        table: 'scenarios',
-        data: dbScenario,
-      });
+      savedId = await insertScenario(scenarioPayload);
+      created_at = now;
+      updated_at = now;
       console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
     }
 
@@ -132,7 +98,12 @@ export async function saveScenarioAction(
         isLoading: false,
         isSaved: true,
         scenarioId: savedId,
-        currentScenario: { ...scenarioData, id: savedId || scenarioData.id, createdAt: dbScenario.created_at.toString(), updatedAt: dbScenario.updated_at.toString() },
+        currentScenario: {
+          ...scenarioData,
+          id: savedId || scenarioData.id,
+          createdAt: created_at.toString(),
+          updatedAt: updated_at.toString(),
+        },
       };
       setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
       console.log("Scenario saved. New state:", newState);
@@ -146,12 +117,8 @@ export async function saveScenarioAction(
 }
 
 export async function runScenarioAction(studioState: StudioContainerState, setStudioState: SetStudioState) {
-  if (!studioState.scenarioId) {
-    console.error("Cannot run an unsaved scenario. Please save the scenario first.");
-    return;
-  }
-
-  const { currentScenario, scenarioId } = studioState;
+  console.log("Running scenario:", studioState);
+  const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration } = currentScenario;
 
   setStudioState((prev) => ({
@@ -161,70 +128,74 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     currentExecutionId: null,
   }));
 
-  let executionId: string | null = null;
+  const scenarioId = currentScenario.id!;
+  const snapshot = {
+    systemPrompt,
+    userPrompt,
+    configuration,
+    tools: currentScenario.tools,
+  };
+  const snapshot_json = JSON.stringify(snapshot);
+  const input_json = JSON.stringify(snapshot);
+
+  const started_at = Date.now();
+  const executionId = await insertExecution({
+    type: 'scenario',
+    runnable_id: currentScenario.id,
+    snapshot_json,
+    input_json,
+    status: 'running',
+    started_at,
+  });
+
   try {
-    const initialExecution = {
-      scenario_id: scenarioId,
-      provider: configuration.provider,
-      model: configuration.model,
-      status: 'running',
-      input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-    };
-    // executionId = await saveExecution(initialExecution);
     setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
 
     const result = await generateText(userPrompt, { systemPrompt, ...configuration });
-    const latency = result.latency;
+    const ended_at = Date.now();
 
-    const finalExecution = {
-      provider: configuration.provider,
-      model: configuration.model,
-      status: 'success',
-      input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-      output_json: JSON.stringify({ text: result.text, usage: result.usage }),
-      latency_ms: latency,
-      tokens_used_json: JSON.stringify(result.usage),
-      cost_usd: 0,
+    const finalExecution: Omit<ExecutionRow, 'created_at' | 'updated_at'> = {
+      type: 'scenario',
+      runnable_id: scenarioId,
+      snapshot_json,
+      input_json,
+      result_json: JSON.stringify({ text: result.text, usage: result.usage }),
+      status: 'succeeded',
+      started_at,
+      ended_at,
+      usage_json: JSON.stringify({
+        ...result.usage,
+        latency_ms: result.latency,
+        cost_usd: 0,
+      }),
     };
-    await saveExecution(finalExecution, executionId);
-
-    setStudioState((prev) => ({
-      ...prev,
-      isLoading: false,
-      response: {
-        text: result.text,
-        usage: result.usage ? {
-          promptTokens: result.usage.inputTokens,
-          completionTokens: result.usage.outputTokens,
-          totalTokens: result.usage.totalTokens,
-        } : undefined,
-        latency,
-      },
-      isSaved: false,
-    }));
+    await updateExecution(executionId, finalExecution);
+    setStudioState((prev) => ({ ...prev, isLoading: false }));
   } catch (error) {
     console.error('Error generating text:', error);
+    const ended_at = Date.now();
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 
-    const failedExecution = {
-      provider: configuration.provider,
-      model: configuration.model,
+    const failedExecution: Omit<ExecutionRow, 'created_at' | 'updated_at'> = {
+      type: 'scenario',
+      runnable_id: scenarioId,
+      snapshot_json,
+      input_json,
       status: 'failed',
-      input_json: JSON.stringify({ systemPrompt, userPrompt, configuration, tools: currentScenario.tools }),
-      output_json: JSON.stringify({ error: error instanceof Error ? error.message : 'An unknown error occurred' }),
-      latency_ms: 0,
-      tokens_used_json: null,
-      cost_usd: 0,
+      started_at,
+      ended_at,
+      error_json: JSON.stringify({ message: errorMessage }),
     };
-    if (executionId) {
-      await saveExecution(failedExecution, executionId);
-    }
+
+    await updateExecution(executionId, failedExecution);
 
     setStudioState((prev) => ({
       ...prev,
+      currentExecutionId: executionId,
       isLoading: false,
       response: {
         text: '',
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error: errorMessage,
         latency: undefined,
       },
       isSaved: false,
