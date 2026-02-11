@@ -1,11 +1,11 @@
 import Sidebar from './Sidebar';
-import RunsMainContent from '@/components/Layout/MainContent';
+import MainContent from './MainContent';
 
 function RunsPage() {
   return (
     <>
       <Sidebar />
-      <RunsMainContent currentPage="runs" />
+      <MainContent />
     </ >
   );
 }

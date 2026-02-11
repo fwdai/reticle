@@ -1,4 +1,7 @@
-import Header from "@/components/Layout/Header";
+
+import MainContent from "@/components/Layout/MainContent";
+import Header from "../Header";
+
 import StudioMain from "./Main";
 import Configuration from "./Configuration";
 import Response from "./Response";
@@ -6,14 +9,14 @@ import Response from "./Response";
 
 function Studio() {
   return (
-    <main className="flex-1 flex flex-col min-w-0 bg-white border border-border-light rounded-xl">
-      <Header currentPage="studio" />
+    <MainContent>
+      <Header />
       <div className="flex-1 flex overflow-hidden">
         <StudioMain />
         <Configuration />
       </div>
       <Response />
-    </main>
+    </MainContent>
   );
 }
 

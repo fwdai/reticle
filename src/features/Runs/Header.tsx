@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Search, RefreshCw } from "lucide-react";
 
-function HomeHeader() {
+import Header from "@/components/Layout/Header";
+
+function RunsHeader() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <>
+    <Header>
       <div className="flex items-center gap-4 flex-shrink-0">
         <h1 className="text-lg font-bold text-text-main">Runs History</h1>
         <div className="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
@@ -29,8 +31,8 @@ function HomeHeader() {
           Refresh
         </button>
       </div>
-    </>
+    </Header>
   );
 }
 
-export default HomeHeader;
+export default RunsHeader;

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Share2, Pencil, Plus } from "lucide-react";
 
-function Environments() {
+import Header from "@/components/Layout/Header";
+
+function EnvironmentsHeader() {
   const [selectedEnvironment] = useState("Production");
 
   return (
-    <>
+    <Header>
       <div className="flex items-center gap-3 text-sm">
         <span className="text-text-muted">Environments</span>
         <span className="text-gray-300">/</span>
@@ -29,8 +31,8 @@ function Environments() {
           Add Variable
         </button>
       </div>
-    </>
+    </Header>
   );
 }
 
-export default Environments;
+export default EnvironmentsHeader;

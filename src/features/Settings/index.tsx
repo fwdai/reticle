@@ -1,11 +1,11 @@
 import Sidebar from './Sidebar';
-import SettingsMainContent from '@/components/Layout/MainContent';
+import MainContent from './MainContent';
 
 function SettingsPage() {
   return (
     <>
       <Sidebar />
-      <SettingsMainContent currentPage="settings" />
+      <MainContent />
     </ >
   );
 }

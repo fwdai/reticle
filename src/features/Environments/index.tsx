@@ -1,11 +1,11 @@
 import Sidebar from './Sidebar';
-import EnvironmentsMainContent from '@/components/Layout/MainContent/Environments';
+import MainContent from './MainContent';
 
 function EnvironmentsPage() {
   return (
     <div className="flex flex-1">
       <Sidebar />
-      <EnvironmentsMainContent />
+      <MainContent />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { Tool } from '@/components/Layout/MainContent/Studio/Main/Tools/types';
+import { Tool } from '@/features/Studio/MainContent/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
 import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';

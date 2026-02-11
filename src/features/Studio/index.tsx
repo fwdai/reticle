@@ -1,6 +1,6 @@
 import { StudioProvider } from '@/contexts/StudioContext';
 import Sidebar from './Sidebar';
-import MainContent from '@/components/Layout/MainContent/Studio';
+import MainContent from './MainContent';
 
 function StudioPage() {
   return (

@@ -1,9 +1,12 @@
-import Header from "./Header";
 import { Key, LayoutDashboard, CheckSquare, ArrowRight, ExternalLink } from "lucide-react";
+
+import MainContent from "@/components/Layout/MainContent";
+import Header from "./Header";
+
 
 function HomePage() {
   return (
-    <main className="flex-1 flex flex-col min-w-0 bg-white border border-border-light rounded-xl">
+    <MainContent>
       <Header />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -136,7 +139,7 @@ function HomePage() {
           </div>
         </div>
       </div>
-    </main>
+    </MainContent>
   );
 }
 

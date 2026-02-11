@@ -1,6 +1,8 @@
 import { useContext } from 'react';
 import { Play, Save, Share, Loader2 } from "lucide-react";
+
 import { StudioContext } from '@/contexts/StudioContext';
+import Header from "@/components/Layout/Header";
 
 function StudioHeader() {
   const context = useContext(StudioContext);
@@ -26,7 +28,7 @@ function StudioHeader() {
   );
 
   return (
-    <>
+    <Header>
       <div className="flex items-center gap-3 text-sm">
         <span className="text-text-muted">Scenario</span>
         <span className="text-gray-300">/</span>
@@ -62,7 +64,7 @@ function StudioHeader() {
           </button>
         </div>
       </div>
-    </>
+    </Header>
   );
 }
 

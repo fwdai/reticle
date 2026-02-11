@@ -1,11 +1,11 @@
-import TemplatesMainContent from '@/components/Layout/MainContent';
 import Sidebar from './Sidebar';
+import MainContent from './MainContent';
 
 function TemplatesPage() {
   return (
     <>
       <Sidebar />
-      <TemplatesMainContent currentPage="templates" />
+      <MainContent />
     </ >
   );
 }
