@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Play, Save, Share, Loader2 } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
@@ -16,9 +16,41 @@ function StudioHeader() {
   const { studioState, saveScenario, runScenario } = context;
   const { currentScenario, isLoading, isSaved } = studioState;
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(currentScenario.name);
+
+  // Update editingName when currentScenario changes (e.g., when a new scenario is loaded)
+  useEffect(() => {
+    setEditingName(currentScenario.name);
+  }, [currentScenario.name]);
+
   const handleSaveClick = async () => {
-    // For now, using null to indicate that the name should be taken from currentScenario.name
     await saveScenario(null);
+  };
+
+  const handleNameClick = () => {
+    setIsEditingName(true);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingName(e.target.value);
+  };
+
+  const handleNameBlur = async () => {
+    if (editingName.trim() !== currentScenario.name) {
+      // Pass the new name directly to saveScenario
+      await saveScenario(editingName.trim());
+    }
+    setIsEditingName(false);
+  };
+
+  const handleNameKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // Trigger blur to save
+    } else if (e.key === 'Escape') {
+      setEditingName(currentScenario.name); // Revert to original name
+      setIsEditingName(false);
+    }
   };
 
   const statusBadge = isSaved ? (
@@ -29,10 +61,24 @@ function StudioHeader() {
 
   return (
     <Header>
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-text-muted">Scenario</span>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-text-muted">{context.studioState.collections.find(collection => collection.id === currentScenario.collection_id)?.name}</span>
         <span className="text-gray-300">/</span>
-        <span className="font-semibold text-text-main">{currentScenario.name}</span>
+        {isEditingName ? (
+          <input
+            type="text"
+            value={editingName}
+            onChange={handleNameChange}
+            onBlur={handleNameBlur}
+            onKeyDown={handleNameKeyDown}
+            className="font-semibold text-text-main bg-transparent border-b border-blue-500 focus:outline-none"
+            autoFocus
+          />
+        ) : (
+          <span className="font-semibold text-text-main cursor-pointer hover:text-blue-500" onClick={handleNameClick}>
+            {currentScenario.name}
+          </span>
+        )}
         {statusBadge}
       </div>
       <div className="flex items-center gap-4">
