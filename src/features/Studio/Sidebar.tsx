@@ -54,9 +54,9 @@ function Studio() {
   return (
     <Sidebar title="Scenarios">
       <div>
-        <div className="flex items-center justify-between mb-2 px-4">
+        <div className="flex items-center justify-between mb-2 pl-4 pr-3">
           <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Collections</h3>
-          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main">
+          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-1 rounded-md">
             <Plus size={16} />
           </button>
         </div>
