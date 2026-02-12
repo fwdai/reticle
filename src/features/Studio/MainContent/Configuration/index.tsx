@@ -31,7 +31,7 @@ function Configuration() {
   };
 
   return (
-    <aside className="w-80 flex-shrink-0 bg-sidebar-light overflow-y-auto custom-scrollbar">
+    <aside className="w-full h-full flex-shrink-0 bg-sidebar-light overflow-y-auto custom-scrollbar">
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">

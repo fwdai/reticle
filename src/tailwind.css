@@ -184,21 +184,39 @@
 .resize-handle {
   position: relative;
   background-color: transparent;
-  margin-bottom: -4px;
+  /* Removed margin-bottom here. It might be re-introduced if needed, but not part of the core visual line logic */
 }
 
-.resize-handle::before {
+/* For the horizontal resize handle (e.g., for vertical panel resizing) */
+.resize-handle-horizontal::before {
   content: '';
   position: absolute;
-  top: 50%;
+  top: 50%; /* Center vertically */
   left: 0;
   right: 0;
-  height: 1px;
+  height: 1px; /* Make it a horizontal line */
   background-color: var(--border-light); /* Default gray */
   transform: translateY(-50%);
   transition: background-color 0.2s ease;
 }
 
-.resize-handle:hover::before {
+.resize-handle-horizontal:hover::before {
+  background-color: var(--primary); /* Primary color on hover */
+}
+
+/* For the vertical resize handle (e.g., for horizontal panel resizing) */
+.resize-handle-vertical::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%; /* Center horizontally */
+  width: 1px; /* Make it a vertical line */
+  background-color: var(--border-light); /* Default gray */
+  transform: translateX(-50%);
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle-vertical:hover::before {
   background-color: var(--primary); /* Primary color on hover */
 }

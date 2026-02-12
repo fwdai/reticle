@@ -1,86 +1,95 @@
-import MainContent from "@/components/Layout/MainContent";
-import Header from "../Header";
 import { useState, useEffect, useRef } from 'react';
+import MainContent from "@/components/Layout/MainContent";
+import useResizablePanel from "@/hooks/useResizablePanel";
 
+import Header from "../Header";
 import StudioMain from "./Main";
 import Configuration from "./Configuration";
 import Response from "./Response";
 
 
 function Studio() {
-  const [responsePanelHeight, setResponsePanelHeight] = useState(250); // Default height
-  const [isResizing, setIsResizing] = useState(false);
-  const [initialMouseY, setInitialMouseY] = useState(0);
-  const [initialPanelHeight, setInitialPanelHeight] = useState(250);
+  const mainContentRef = useRef<HTMLDivElement>(null); // Ref for the main content area encompassing StudioMain, Config, and Response
+  const topPanelRef = useRef<HTMLDivElement>(null); // Ref for the top panel containing StudioMain and Configuration
 
-  const mainContentRef = useRef<HTMLDivElement>(null); // Ref for the main content area
-
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsResizing(true);
-    setInitialMouseY(e.clientY);
-    setInitialPanelHeight(responsePanelHeight);
-  };
+  const [maxResponseHeight, setMaxResponseHeight] = useState(Infinity);
+  const [maxConfigWidth, setMaxConfigWidth] = useState(Infinity);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const deltaY = e.clientY - initialMouseY;
-
-      // Calculate max height based on the available space
-      let maxResponseHeight = 0;
+    const calculateMaxSizes = () => {
       if (mainContentRef.current) {
-        // Approximate height of the header (adjust if needed)
-        const headerHeight = 60; // Assuming header has a fixed height
-        const totalAvailableHeight = mainContentRef.current.offsetHeight - headerHeight - 12; // 12 for the handle height
-        maxResponseHeight = totalAvailableHeight * 0.7; // Max 70% of available height for response
+        // total height of the area containing StudioMain/Config, handle, and Response
+        const totalAvailableHeight = mainContentRef.current.offsetHeight;
+        // Limit Response panel to max 70% of this total available height
+        setMaxResponseHeight(totalAvailableHeight * 0.70);
       }
-
-      const newHeight = Math.max(
-        150, // Minimum height
-        Math.min(
-          initialPanelHeight - deltaY,
-          maxResponseHeight > 0 ? maxResponseHeight : Infinity // Apply max height if calculated
-        )
-      );
-      setResponsePanelHeight(newHeight);
+      if (topPanelRef.current) {
+        // total width of the area containing StudioMain and Configuration
+        const totalAvailableWidth = topPanelRef.current.offsetWidth;
+        // Limit Configuration panel to max 30% of this total available width
+        setMaxConfigWidth(totalAvailableWidth * 0.35);
+      }
     };
 
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'ns-resize'; // Change cursor globally during resize
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = ''; // Reset cursor
-    }
+    calculateMaxSizes(); // Calculate initially
+    window.addEventListener('resize', calculateMaxSizes); // Recalculate on window resize
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
+      window.removeEventListener('resize', calculateMaxSizes);
     };
-  }, [isResizing, initialMouseY, initialPanelHeight]);
+  }, []);
+
+
+  // Resizing for the Response panel (vertical)
+  const { size: responsePanelHeight, handleMouseDown: handleResponseMouseDown } = useResizablePanel({
+    initialSize: 300,
+    minSize: 200,
+    maxSize: maxResponseHeight, // Use dynamically calculated max height
+    direction: 'vertical',
+    containerRef: mainContentRef as React.RefObject<HTMLElement>,
+  });
+
+  // Resizing for the Configuration panel (horizontal)
+  const { size: configPanelWidth, handleMouseDown: handleConfigMouseDown } = useResizablePanel({
+    initialSize: 300, // Default width for Configuration
+    minSize: 300,
+    maxSize: maxConfigWidth, // Use dynamically calculated max width
+    direction: 'horizontal',
+    containerRef: topPanelRef as React.RefObject<HTMLElement>,
+  });
 
 
   return (
     <MainContent>
       <Header />
       <div ref={mainContentRef} className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex overflow-hidden -mb-1">
-          <StudioMain />
-          <Configuration />
+        {/* Top panel containing StudioMain and Configuration */}
+        <div ref={topPanelRef} className="flex-1 flex overflow-hidden -mb-[5px]">
+          {/* StudioMain takes remaining space */}
+          <div className="flex-1 overflow-auto -mr-[5px]">
+            <StudioMain />
+          </div>
+
+          {/* Horizontal Resize Handle for Configuration */}
+          <div
+            className="w-3 h-full resize-handle resize-handle-vertical cursor-ew-resize -mr-[5px]" // Added resize-handle-vertical
+            onMouseDown={handleConfigMouseDown}
+          ></div>
+
+          {/* Configuration panel */}
+          <div style={{ width: configPanelWidth }} className="overflow-auto flex-shrink-0">
+            <Configuration />
+          </div>
         </div>
+
+        {/* Vertical Resize Handle for Response */}
         <div
-          className="h-3 resize-handle cursor-ns-resize"
-          onMouseDown={handleMouseDown}
+          className="h-3 resize-handle resize-handle-horizontal cursor-ns-resize -mb-[5px]" // Added resize-handle-horizontal
+          onMouseDown={handleResponseMouseDown}
         ></div>
-        <div className="overflow-auto" style={{ height: responsePanelHeight }}>
+
+        {/* Response panel */}
+        <div className="overflow-auto flex-shrink-0" style={{ height: responsePanelHeight }}>
           <Response />
         </div>
       </div>
