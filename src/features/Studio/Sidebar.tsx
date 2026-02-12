@@ -1,8 +1,9 @@
-import { Folder, FileText, ChevronRight } from "lucide-react";
+import { Folder, FileText, ChevronRight, Plus } from "lucide-react";
 import { useContext, useState } from 'react';
 import Sidebar from "@/components/Layout/Sidebar";
 import { StudioContext } from '@/contexts/StudioContext';
 import { Scenario } from '@/types';
+import NewCollectionModal from './components/NewCollectionModal';
 
 function Studio() {
   const context = useContext(StudioContext);
@@ -12,11 +13,12 @@ function Studio() {
     return null;
   }
 
-  const { studioState, loadScenario } = context;
+  const { studioState, loadScenario, createCollection } = context;
   const { collections, savedScenarios, currentScenario } = studioState;
 
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
   const [hoveredCollectionId, setHoveredCollectionId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   const toggleCollapse = (collectionId: string) => {
     setCollapsedCollections(prev => {
@@ -39,10 +41,25 @@ function Studio() {
     return acc;
   }, {} as Record<string, Scenario[]>);
 
+  const handleCreateCollection = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCreateCollectionSubmit = async (name: string) => {
+    await createCollection(name);
+    // Optionally, if the new collection should be immediately expanded or selected, handle it here
+    setIsModalOpen(false); // Close modal after creation
+  };
+
   return (
     <Sidebar title="Scenarios">
       <div>
-        <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 px-4">Collections</h3>
+        <div className="flex items-center justify-between mb-2 px-4">
+          <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Collections</h3>
+          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main">
+            <Plus size={16} />
+          </button>
+        </div>
         <nav className="space-y-1">
           {collections.map(collection => (
             <div key={collection.id}>
@@ -69,7 +86,7 @@ function Studio() {
                 </div>
               </a>
               {!collapsedCollections.has(collection.id!) && (
-                <div className="mt-1 space-y-1">
+                <div className="space-y-1">
                   {(scenariosByCollection[collection.id!] || []).map(scenario => (
                     <a
                       key={scenario.id}
@@ -89,6 +106,11 @@ function Studio() {
           ))}
         </nav>
       </div>
+      <NewCollectionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleCreateCollectionSubmit}
+      />
     </Sidebar>
   );
 }

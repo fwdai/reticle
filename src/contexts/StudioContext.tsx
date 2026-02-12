@@ -70,6 +70,7 @@ interface StudioContextType {
   loadScenario: (id: string) => Promise<void>;
   fetchCollections: () => Promise<void>;
   fetchScenarios: () => Promise<void>;
+  createCollection: (name: string) => Promise<void>; // New function
   runScenario: () => Promise<void>;
 }
 
@@ -184,7 +185,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       if (result.length > 0) {
         const dbScenario = result[0];
         const configParams = JSON.parse(dbScenario.params_json || '{}');
-        
+
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
           name: dbScenario.title,
@@ -228,12 +229,36 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   }, []);
 
   const runScenario = useCallback(async () => {
+
     await runScenarioAction(studioState, setStudioState);
+
   }, [studioState, setStudioState]);
 
+
+
+  const createCollection = useCallback(async (name: string) => {
+    console.log(`Creating collection '${name}'`);
+    try {
+      setStudioState(prev => ({ ...prev, isLoading: true }));
+      await invoke('db_insert_cmd', { table: 'collections', data: { name } });
+
+      await fetchCollections(); // Refresh collections after adding a new one
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    } catch (error) {
+      console.error(`Failed to create collection '${name}':`, error);
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    }
+
+  }, [fetchCollections]); // Depend on fetchCollections to ensure it's up-to-date
+
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, runScenario }}>
+
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, runScenario }}>
+
       {children}
+
     </StudioContext.Provider>
+
   );
+
 };
