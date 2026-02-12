@@ -83,6 +83,16 @@ pub fn db_insert(conn: &Connection, table: &str, mut data: Value) -> AnyhowResul
         data_map_original.insert("id".to_string(), json!(ulid.clone()));
         ulid
     };
+
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
+
+    // Automatically set created_at and updated_at on insert if not provided
+    if !data_map_original.contains_key("created_at") {
+        data_map_original.insert("created_at".to_string(), json!(now));
+    }
+    if !data_map_original.contains_key("updated_at") {
+        data_map_original.insert("updated_at".to_string(), json!(now));
+    }
     
     let data_map = data_map_original;
 
@@ -142,12 +152,17 @@ pub fn db_select(conn: &Connection, table: &str, query: Value) -> AnyhowResult<V
 }
 
 // Generic UPDATE operation
-pub fn db_update(conn: &Connection, table: &str, query: Value, data: Value) -> AnyhowResult<usize> {
+pub fn db_update(conn: &Connection, table: &str, query: Value, mut data: Value) -> AnyhowResult<usize> {
     let query_map = query.as_object().ok_or_else(|| anyhow!("Query must be a JSON object for update"))?;
-    let data_map = data.as_object().ok_or_else(|| anyhow!("Data must be a JSON object for update"))?;
+    let data_map = data.as_object_mut().ok_or_else(|| anyhow!("Data must be a JSON object for update"))?; // data is now mutable
+
     if data_map.is_empty() {
         return Err(anyhow!("Cannot update with empty data"));
     }
+
+    // Automatically set updated_at on update
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
+    data_map.insert("updated_at".to_string(), json!(now));
 
     let mut set_clauses = Vec::new();
     let mut where_clauses = Vec::new();
@@ -174,6 +189,7 @@ pub fn db_update(conn: &Connection, table: &str, query: Value, data: Value) -> A
     let changes = stmt.execute(params_from_iter(params_vec.into_iter()))?; // Fix: use params_from_iter
     Ok(changes)
 }
+
 
 // Generic DELETE operation
 pub fn db_delete(conn: &Connection, table: &str, query: Value) -> AnyhowResult<usize> {
