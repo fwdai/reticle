@@ -1,11 +1,10 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Tool } from '@/features/Studio/MainContent/Main/Tools/types';
-import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
-import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
+import { invoke } from '@tauri-apps/api/core';
+import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
-import { Collection } from '@/types';
-
+import { Collection, Scenario } from '@/types';
 
 // --- State Interfaces ---
 
@@ -22,11 +21,11 @@ export interface HistoryItem {
   content: string;
 }
 
-// Represents a single, saveable interaction (now Scenario)
-export interface Scenario {
-  id: string; // Unique ID for the scenario (ULID for saved ones)
-  name: string; // User-defined name for the scenario
-  collection_id: string; // Foreign key to collections table
+// This represents the scenario being actively edited in the UI
+export interface CurrentScenario {
+  id: string; // Can be a client-side UUID or a DB ULID
+  name: string;
+  collection_id: string;
   configuration: ConfigurationState;
   systemPrompt: string;
   userPrompt: string;
@@ -48,16 +47,16 @@ export interface ResponseState {
   error?: string;
 }
 
-// The top-level state for the entire studio feature (now Scenario editing)
+// The top-level state for the studio feature
 export interface StudioContainerState {
-  currentScenario: Scenario; // Renamed from currentInteraction
-  savedScenarios: Scenario[]; // Renamed from savedInteractions
-  collections: Collection[]; // List of collections
+  currentScenario: CurrentScenario;
+  savedScenarios: Scenario[]; // These are the raw DB-format scenarios
+  collections: Collection[];
   isLoading: boolean;
   response: ResponseState | null;
-  scenarioId: string | null; // ID of the currently loaded/saved scenario from DB
-  isSaved: boolean; // Indicates if currentScenario matches a saved version
-  currentExecutionId: string | null; // ID of the current execution for tracking
+  scenarioId: string | null; // DB ULID of the loaded scenario
+  isSaved: boolean;
+  currentExecutionId: string | null;
   providerModels: Record<string, any[]>;
 }
 
@@ -70,6 +69,7 @@ interface StudioContextType {
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
   fetchCollections: () => Promise<void>;
+  fetchScenarios: () => Promise<void>;
   runScenario: () => Promise<void>;
 }
 
@@ -83,10 +83,10 @@ interface StudioProviderProps {
 
 // --- Initial State ---
 
-const initialScenario: Scenario = { // Renamed from initialInteraction
-  id: uuidv4(), // Client-side ID for unsaved scenario
-  name: 'New Scenario', // Renamed from 'New Interaction'
-  collection_id: '', // Default for now
+const initialScenario: CurrentScenario = {
+  id: uuidv4(),
+  name: 'New Scenario',
+  collection_id: '',
   configuration: {
     provider: 'openai',
     model: 'gpt-4o-2024-05-13',
@@ -106,45 +106,48 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [studioState, setStudioState] = useState<StudioContainerState>({
     currentScenario: initialScenario,
     savedScenarios: [],
-    collections: [], // Initialized collections
+    collections: [],
     isLoading: false,
     response: null,
     scenarioId: null,
-    isSaved: false, // Changed from true to false
-    currentExecutionId: null, // Initialized currentExecutionId
-    providerModels: {}, // Initialized providerModels
+    isSaved: false,
+    currentExecutionId: null,
+    providerModels: {},
   });
 
-  // Track changes to currentScenario to set isSaved to false
-  const initialScenarioJson = JSON.stringify({ ...initialScenario, id: null }); // Don't compare UUIDs
+  const initialScenarioJson = JSON.stringify({ ...initialScenario, id: null });
   const [prevScenarioJson, setPrevScenarioJson] = useState(initialScenarioJson);
 
   useEffect(() => {
-    // Deep compare currentScenario with the last saved/loaded version
-    const currentScenarioCompare = JSON.stringify({ ...studioState.currentScenario, id: null }); // Ignore client-side UUID
+    const currentScenarioCompare = JSON.stringify({ ...studioState.currentScenario, id: null });
     if (currentScenarioCompare !== prevScenarioJson) {
       setStudioState(prev => ({ ...prev, isSaved: false }));
-    } else if (studioState.scenarioId === null) {
-      // If it's a brand new scenario and hasn't been edited, it's considered saved
-      setStudioState(prev => ({ ...prev, isSaved: true }));
     }
-  }, [studioState.currentScenario, prevScenarioJson, studioState.scenarioId]);
+  }, [studioState.currentScenario, prevScenarioJson]);
 
   const fetchCollections = useCallback(async () => {
     try {
-      const collections: any[] = await invoke('db_select_cmd', { table: 'collections', query: {} });
-      setStudioState(prev => ({ ...prev, collections: collections as Collection[] }));
+      const collections: Collection[] = await invoke('db_select_cmd', { table: 'collections', query: {} });
+      setStudioState(prev => ({ ...prev, collections }));
     } catch (error) {
       console.error("Failed to fetch collections:", error);
     }
   }, []);
 
-  // Fetch collections on mount
+  const fetchScenarios = useCallback(async () => {
+    try {
+      const scenarios: Scenario[] = await invoke('db_select_cmd', { table: 'scenarios', query: {} });
+      setStudioState(prev => ({ ...prev, savedScenarios: scenarios }));
+    } catch (error) {
+      console.error("Failed to fetch scenarios:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCollections();
-  }, [fetchCollections]);
+    fetchScenarios();
+  }, [fetchCollections, fetchScenarios]);
 
-  // Fetch models for all providers on mount
   useEffect(() => {
     const loadModels = async () => {
       const models = await fetchAndNormalizeModels();
@@ -155,29 +158,52 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   const saveScenario = useCallback(async (scenarioName: string | null) => {
     await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);
-  }, [studioState, setStudioState, setPrevScenarioJson]);
+    await fetchCollections();
+    await fetchScenarios();
+  }, [studioState, setStudioState, setPrevScenarioJson, fetchCollections, fetchScenarios]);
 
   const createNewScenario = useCallback(() => {
     setStudioState(prev => ({
       ...prev,
-      currentScenario: { ...initialScenario, id: uuidv4() }, // New client-side UUID for current interaction
-      scenarioId: null, // No saved ID
-      isSaved: true, // Considered saved until edited
+      currentScenario: { ...initialScenario, id: uuidv4() },
+      scenarioId: null,
+      isSaved: true,
       response: null,
     }));
-    setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null })); // Reset comparison JSON
+    setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
   }, []);
 
   const loadScenario = useCallback(async (id: string) => {
     try {
       setStudioState(prev => ({ ...prev, isLoading: true }));
-      const result: any[] = await invoke('db_select_cmd', {
+      const result: Scenario[] = await invoke('db_select_cmd', {
         table: 'scenarios',
         query: { where: { id } },
       });
 
       if (result.length > 0) {
-        const loadedScenario = result[0] as Scenario;
+        const dbScenario = result[0];
+        const configParams = JSON.parse(dbScenario.params_json || '{}');
+        
+        const loadedScenario: CurrentScenario = {
+          id: dbScenario.id!,
+          name: dbScenario.title,
+          collection_id: dbScenario.collection_id,
+          configuration: {
+            provider: dbScenario.provider,
+            model: dbScenario.model,
+            temperature: configParams.temperature ?? 0.7,
+            topP: configParams.topP ?? 1.0,
+            maxTokens: configParams.maxTokens ?? 2048,
+          },
+          systemPrompt: dbScenario.system_prompt,
+          userPrompt: dbScenario.user_prompt,
+          tools: JSON.parse(dbScenario.tools_json || '[]'),
+          history: JSON.parse(dbScenario.history_json || '[]'),
+          createdAt: dbScenario.created_at?.toString(),
+          updatedAt: dbScenario.updated_at?.toString(),
+        };
+
         setStudioState(prev => {
           const newState = {
             ...prev,
@@ -194,7 +220,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       } else {
         console.error(`Scenario with ID '${id}' not found.`);
         setStudioState(prev => ({ ...prev, isLoading: false }));
-        // Optionally create a new one or show error
       }
     } catch (error) {
       console.error(`Failed to load scenario ${id}:`, error);
@@ -206,9 +231,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     await runScenarioAction(studioState, setStudioState);
   }, [studioState, setStudioState]);
 
-
   return (
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, runScenario }}>
       {children}
     </StudioContext.Provider>
   );
