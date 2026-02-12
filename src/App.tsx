@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import Navigation from "./components/Layout/Nav";
+import Navigation from "./components/layout/Nav/index";
 import Home from "./features/Home";
 import Studio from "./features/Studio";
 import Environments from "./features/Environments";
