@@ -4,6 +4,8 @@ import { invoke } from '@tauri-apps/api/core'; // For Tauri commands
 import { v4 as uuidv4 } from 'uuid'; // For initial UUID generation for currentInteraction
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
+import { Collection } from '@/types';
+
 
 // --- State Interfaces ---
 
@@ -18,15 +20,6 @@ export interface ConfigurationState {
 export interface HistoryItem {
   role: 'user' | 'assistant';
   content: string;
-}
-
-export interface Collection {
-  id: string;
-  name: string;
-  description?: string;
-  created_at: number;
-  updated_at: number;
-  archived_at?: number;
 }
 
 // Represents a single, saveable interaction (now Scenario)

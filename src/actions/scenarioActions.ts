@@ -5,17 +5,16 @@ import {
   insertScenario,
   updateExecution,
   updateScenario,
-  type ExecutionRow,
-  type ScenarioRow,
 } from '@/lib/storage';
 import { StudioContainerState } from '@/contexts/StudioContext';
+import { Execution, Scenario } from '@/types';
 
 type SetStudioState = React.Dispatch<React.SetStateAction<StudioContainerState>>;
 
 // --- Execution Actions ---
 
 export async function saveExecution(
-  data: Omit<ExecutionRow, 'created_at' | 'updated_at'>,
+  data: Execution,
   id?: string
 ): Promise<string> {
   try {
@@ -53,7 +52,7 @@ export async function saveScenarioAction(
     const collectionId = await getOrCreateDefaultCollection();
     const now = Date.now();
 
-    const scenarioPayload: Omit<ScenarioRow, 'created_at' | 'updated_at'> = {
+    const scenarioPayload: Scenario = {
       collection_id: collectionId,
       title: scenarioData.name,
       description: null,
@@ -154,7 +153,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     const result = await generateText(userPrompt, { systemPrompt, ...configuration });
     const ended_at = Date.now();
 
-    const finalExecution: Omit<ExecutionRow, 'created_at' | 'updated_at'> = {
+    const finalExecution: Execution = {
       type: 'scenario',
       runnable_id: scenarioId,
       snapshot_json,
@@ -170,13 +169,22 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       }),
     };
     await updateExecution(executionId, finalExecution);
-    setStudioState((prev) => ({ ...prev, isLoading: false }));
+    setStudioState((prev) => ({
+      ...prev,
+      isLoading: false,
+      response: {
+        text: result.text,
+        usage: result.usage,
+        latency: result.latency,
+        error: undefined,
+      },
+    }));
   } catch (error) {
     console.error('Error generating text:', error);
     const ended_at = Date.now();
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 
-    const failedExecution: Omit<ExecutionRow, 'created_at' | 'updated_at'> = {
+    const failedExecution: Execution = {
       type: 'scenario',
       runnable_id: scenarioId,
       snapshot_json,
