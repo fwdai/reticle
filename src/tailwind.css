@@ -180,3 +180,25 @@
     box-shadow: var(--shadow-right);
   }
 }
+
+.resize-handle {
+  position: relative;
+  background-color: transparent;
+  margin-bottom: -4px;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--border-light); /* Default gray */
+  transform: translateY(-50%);
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover::before {
+  background-color: var(--primary); /* Primary color on hover */
+}

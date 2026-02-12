@@ -34,7 +34,7 @@ function Response() {
   const statusCode = response?.error ? 'ERROR' : isLoading ? '...' : '200 OK';
 
   return (
-    <section className="h-1/3 border-t border-border-light flex flex-col bg-white rounded-b-xl">
+    <section className="h-full flex flex-col rounded-b-xl">
       <div className="h-11 border-b border-border-light flex items-center justify-between px-8 bg-sidebar-light/40">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
