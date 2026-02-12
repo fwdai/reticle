@@ -41,31 +41,31 @@ function Studio() {
   return (
     <Sidebar title="Scenarios">
       <div>
-        <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Collections</h3>
+        <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 px-4">Collections</h3>
         <nav className="space-y-1">
           {collections.map(collection => (
             <div key={collection.id}>
+              {/* <ChevronRight
+                className={`text-sm text-gray-400 transition-transform ${collapsedCollections.has(collection.id!) ? '' : 'rotate-90'
+                  }`}
+                size={16}
+              /> */}
               <a
-                className="flex items-center justify-between p-1 rounded-lg text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer"
+                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer px-4 py-1.5"
                 onClick={() => toggleCollapse(collection.id!)}
               >
                 <div className="flex items-center gap-2">
-                  <ChevronRight
-                    className={`text-sm text-gray-400 transition-transform ${collapsedCollections.has(collection.id!) ? '' : 'rotate-90'
-                      }`}
-                    size={16}
-                  />
                   <Folder className="text-sm text-sidebar-text" size={16} />
                   <span className="text-sm text-sidebar-text">{collection.name}</span>
                 </div>
               </a>
               {!collapsedCollections.has(collection.id!) && (
-                <div className="ml-5 mt-1 space-y-0.5">
+                <div className="space-y-0.5">
                   {(scenariosByCollection[collection.id!] || []).map(scenario => (
                     <a
                       key={scenario.id}
                       onClick={() => loadScenario(scenario.id!)}
-                      className={`flex items-center justify-between px-3 py-1 rounded-lg text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
+                      className={`flex items-center justify-between pl-6 pr-4 py-1.5 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
                         }`}
                     >
                       <div className="flex items-center gap-3">

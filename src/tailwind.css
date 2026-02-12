@@ -46,7 +46,7 @@
   --color-border-light: #e5e7eb;
   --color-sidebar-text: #202221;
   --color-section-border: #EBEBED;
-  --shadow-right: 4px 0px 8px 0px rgba(17, 17, 26, 0.1), 8px 0px 16px 0px rgba(17, 17, 26, 0.1);
+  --shadow-right: 2px 0px 5px 0px rgba(17, 17, 26, 0.1), 8px 0px 12px 0px rgba(17, 17, 26, 0.1);
 }
 
 :root {
