@@ -25,7 +25,7 @@ function App() {
   const PageComponent = pages[appState.currentPage] as ComponentType;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden p-[3px] bg-sidebar-light">
+    <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light">
       <Navigation />
       <PageComponent />
     </div>
