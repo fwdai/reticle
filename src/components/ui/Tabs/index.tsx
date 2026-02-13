@@ -23,11 +23,10 @@ function Tabs({ children }: TabsProps) {
         <button
           key={index}
           onClick={() => handleTabClick(index)}
-          className={`relative py-4 text-xs font-bold tracking-widest uppercase ${
-            activeIndex === index
-              ? "text-primary border-b-2 border-primary"
-              : "text-text-muted hover:text-text-main border-b-2 border-transparent transition-colors"
-          }`}
+          className={`relative py-4 text-xs font-bold tracking-widest uppercase ${activeIndex === index
+            ? "text-primary border-b-2 border-primary"
+            : "text-text-muted hover:text-text-main border-b-2 border-transparent transition-colors"
+            }`}
         >
           {child.props.title}
         </button>
@@ -39,7 +38,7 @@ function Tabs({ children }: TabsProps) {
   const activeContent = Children.toArray(children)[activeIndex];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0  h-full">
       <div className="flex border-b border-border-light px-8 gap-10 bg-white">
         {tabs}
       </div>

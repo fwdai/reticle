@@ -77,7 +77,7 @@ function Studio() {
                       size={16}
                     />
                     <ChevronRight
-                      className={`absolute text-sm text-gray-400 transition-opacity duration-200 transition-transform ${hoveredCollectionId === collection.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      className={`absolute text-sm text-gray-400 transition-[opacity,transform] duration-200 ease-in-out ${hoveredCollectionId === collection.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
                         } ${collapsedCollections.has(collection.id!) ? '' : 'rotate-90'}`}
                       size={16}
                     />

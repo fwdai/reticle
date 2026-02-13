@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Filter, CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 import type { Execution, Scenario } from "@/types";
 import MainContent from "@/components/Layout/MainContent";
@@ -71,9 +71,9 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): R
 const PAGE_SIZE = 20;
 
 function Runs() {
-  const [dateRange, setDateRange] = useState("Last 24 Hours");
-  const [model, setModel] = useState("All Models");
-  const [environment, setEnvironment] = useState("Staging");
+  // const [dateRange, setDateRange] = useState("Last 24 Hours");
+  // const [model, setModel] = useState("All Models");
+  // const [environment, setEnvironment] = useState("Staging");
   const [runs, setRuns] = useState<Run[]>([]);
   const [totalRuns, setTotalRuns] = useState(0);
   const [page, setPage] = useState(1);
