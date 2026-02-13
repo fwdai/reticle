@@ -38,12 +38,12 @@ function Navigation() {
                   <button
                     onClick={(e) => handleClick(item.id, e)}
                     className={`${isActive ? "text-white" : "text-white/40 hover:text-white"
-                      } transition-colors flex items-center justify-center relative cursor-pointer`}
+                      } transition-colors flex items-center justify-center relative cursor-pointer h-7`}
                   >
                     {isActive && (
                       <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full"></div>
                     )}
-                    <Icon size={20} className={isActive ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
+                    <Icon size={22} className={isActive ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -60,12 +60,12 @@ function Navigation() {
               <button
                 onClick={(e) => handleClick("settings", e)}
                 className={`${currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white"
-                  } transition-colors flex items-center justify-center relative cursor-pointer`}
+                  } transition-colors flex items-center justify-center relative cursor-pointer h-7`}
               >
                 {currentPage === "settings" && (
                   <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full"></div>
                 )}
-                <Settings size={20} className={currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
+                <Settings size={22} className={currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
