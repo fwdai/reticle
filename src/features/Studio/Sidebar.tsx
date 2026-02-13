@@ -28,7 +28,7 @@ function Studio() {
     return null;
   }
 
-  const { studioState, loadScenario, createCollection, deleteScenario } = context;
+  const { studioState, loadScenario, createCollection, createScenario, deleteScenario } = context;
   const { collections, savedScenarios, currentScenario } = studioState;
 
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
@@ -66,6 +66,11 @@ function Studio() {
     setIsModalOpen(false);
   };
 
+  const handleCreateScenario = async (collectionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    await createScenario(collectionId);
+  };
+
   const handleDeleteClick = (scenario: Scenario) => {
     setScenarioToDelete(scenario);
   };
@@ -88,14 +93,16 @@ function Studio() {
         <nav className="space-y-1">
           {collections.map(collection => (
             <div key={collection.id}>
-              <a
-                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer px-4 py-1"
-                onClick={() => toggleCollapse(collection.id!)}
+              <div
+                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer px-4 py-1 group"
                 onMouseEnter={() => setHoveredCollectionId(collection.id!)}
                 onMouseLeave={() => setHoveredCollectionId(null)}
               >
-                <div className="flex items-center gap-2">
-                  <div className="relative w-4 h-4 flex items-center justify-center"> {/* w-4 h-4 to match icon size */}
+                <a
+                  className="flex items-center gap-2 flex-grow py-1"
+                  onClick={() => toggleCollapse(collection.id!)}
+                >
+                  <div className="relative w-4 h-4 flex items-center justify-center">
                     <Folder
                       className={`absolute text-sm text-sidebar-text transition-opacity duration-200 ${hoveredCollectionId === collection.id ? 'opacity-0' : 'opacity-100'
                         }`}
@@ -108,8 +115,17 @@ function Studio() {
                     />
                   </div>
                   <span className="text-sm text-sidebar-text">{collection.name}</span>
-                </div>
-              </a>
+                </a>
+                {hoveredCollectionId === collection.id && (
+                  <button
+                    onClick={(event) => handleCreateScenario(collection.id!, event)}
+                    className="ml-auto text-text-muted hover:text-text-main hover:bg-gray-300 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="New Scenario"
+                  >
+                    <Plus size={16} />
+                  </button>
+                )}
+              </div>
               {!collapsedCollections.has(collection.id!) && (
                 <div className="space-y-1">
                   {(scenariosByCollection[collection.id!] || []).map(scenario => (

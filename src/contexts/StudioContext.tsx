@@ -75,7 +75,8 @@ interface StudioContextType {
   loadScenario: (id: string) => Promise<void>;
   fetchCollections: () => Promise<void>;
   fetchScenarios: () => Promise<void>;
-  createCollection: (name: string) => Promise<void>; // New function
+  createCollection: (name: string) => Promise<void>;
+  createScenario: (collectionId: string) => Promise<void>;
   deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
 }
@@ -87,6 +88,8 @@ export const StudioContext = createContext<StudioContextType | undefined>(undefi
 interface StudioProviderProps {
   children: ReactNode;
 }
+
+const LAST_USED_SCENARIO_ID_KEY = 'lastUsedScenarioId';
 
 // --- Initial State ---
 
@@ -111,13 +114,13 @@ const initialScenario: CurrentScenario = {
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [studioState, setStudioState] = useState<StudioContainerState>({
-    currentScenario: initialScenario,
+    currentScenario: { ...initialScenario, id: uuidv4() }, // Temporary new scenario until last used is loaded
     savedScenarios: [],
     collections: [],
-    isLoading: false,
+    isLoading: true, // Set to true initially to indicate loading of last used scenario
     response: null,
-    scenarioId: null,
-    isSaved: false,
+    scenarioId: null, // This will be set after loading last used or creating new
+    isSaved: true,
     currentExecutionId: null,
     providerModels: {},
     historyViewMode: 'visual',
@@ -153,9 +156,21 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    fetchCollections();
-    fetchScenarios();
-  }, [fetchCollections, fetchScenarios]);
+    const initializeStudio = async () => {
+      await fetchCollections();
+      await fetchScenarios();
+
+      const lastUsedScenarioId = localStorage.getItem(LAST_USED_SCENARIO_ID_KEY);
+      if (lastUsedScenarioId) {
+        await loadScenario(lastUsedScenarioId);
+      } else {
+        createNewScenario();
+      }
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    };
+
+    initializeStudio();
+  }, []); // Empty dependency array means this runs once on mount
 
   useEffect(() => {
     const loadModels = async () => {
@@ -169,20 +184,22 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);
     await fetchCollections();
     await fetchScenarios();
-  }, [studioState, setStudioState, setPrevScenarioJson, fetchCollections, fetchScenarios]);
+  }, [studioState, setStudioState, setPrevScenarioJson]);
 
   const createNewScenario = useCallback(() => {
+    const newId = uuidv4();
     setStudioState(prev => ({
       ...prev,
-      currentScenario: { ...initialScenario, id: uuidv4() },
-      scenarioId: null,
+      currentScenario: { ...initialScenario, id: newId },
+      scenarioId: newId,
       isSaved: true,
       response: null,
       historyViewMode: 'visual' as const,
       historyJsonDraft: '',
     }));
     setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
-  }, []);
+    localStorage.setItem(LAST_USED_SCENARIO_ID_KEY, newId);
+  }, [setStudioState, setPrevScenarioJson]);
 
   const loadScenario = useCallback(async (id: string) => {
     try {
@@ -230,15 +247,44 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           return newState;
         });
         console.log(`Scenario '${loadedScenario.name}' loaded.`);
+        localStorage.setItem(LAST_USED_SCENARIO_ID_KEY, loadedScenario.id!);
       } else {
         console.error(`Scenario with ID '${id}' not found.`);
         setStudioState(prev => ({ ...prev, isLoading: false }));
+        // If not found, clear from local storage and create a new scenario
+        localStorage.removeItem(LAST_USED_SCENARIO_ID_KEY);
+        createNewScenario();
       }
     } catch (error) {
       console.error(`Failed to load scenario ${id}:`, error);
       setStudioState(prev => ({ ...prev, isLoading: false }));
     }
-  }, []);
+  }, [setStudioState, setPrevScenarioJson, createNewScenario]);
+
+  const createScenario = useCallback(async (collectionId: string) => {
+    try {
+      setStudioState(prev => ({ ...prev, isLoading: true }));
+      const newScenario: Omit<Scenario, 'id' | 'created_at' | 'updated_at'> = {
+        title: `New Scenario`,
+        collection_id: collectionId,
+        provider: initialScenario.configuration.provider,
+        model: initialScenario.configuration.model,
+        system_prompt: initialScenario.systemPrompt,
+        user_prompt: initialScenario.userPrompt,
+        params_json: JSON.stringify(initialScenario.configuration),
+        tools_json: JSON.stringify(initialScenario.tools),
+        history_json: JSON.stringify(initialScenario.history),
+      };
+
+      const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });
+      await fetchScenarios();
+      await loadScenario(scenarioId);
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    } catch (error) {
+      console.error(`Failed to create scenario in collection ${collectionId}:`, error);
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [setStudioState, fetchScenarios, loadScenario]);
 
   const runScenario = useCallback(async () => {
 
@@ -265,31 +311,42 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   const deleteScenario = useCallback(async (id: string) => {
     try {
+      setStudioState(prev => ({ ...prev, isLoading: true })); // Set loading true at the start
       await invoke('db_delete_cmd', { table: 'scenarios', query: { where: { id } } });
-      await fetchScenarios();
+      await fetchScenarios(); // Re-fetch to get the updated list of scenarios
+
       setStudioState(prev => {
+        let newState = { ...prev };
+        const updatedSavedScenarios = newState.savedScenarios.filter(s => s.id !== id);
+
         if (prev.scenarioId === id || prev.currentScenario.id === id) {
-          return {
-            ...prev,
-            currentScenario: { ...initialScenario, id: uuidv4() },
-            scenarioId: null,
-            isSaved: true,
-            response: null,
-            historyViewMode: 'visual' as const,
-            historyJsonDraft: '',
-          };
+          localStorage.removeItem(LAST_USED_SCENARIO_ID_KEY);
+          if (updatedSavedScenarios.length > 0) {
+            // Load the first available scenario if others exist
+            loadScenario(updatedSavedScenarios[0].id!);
+            newState = { ...newState, isLoading: false };
+          } else {
+            // Otherwise, create a new blank scenario
+            createNewScenario();
+            newState = { ...newState, isLoading: false };
+          }
+        } else {
+          // If the deleted scenario was not the current one,
+          // ensure prevScenarioJson is updated to reflect currentScenario's saved state.
+          setPrevScenarioJson(JSON.stringify({ ...prev.currentScenario, id: null }));
+          newState = { ...newState, isLoading: false };
         }
-        return prev;
+        return newState;
       });
-      setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
     } catch (error) {
       console.error(`Failed to delete scenario ${id}:`, error);
+      setStudioState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [fetchScenarios]);
+  }, [fetchScenarios, createNewScenario, loadScenario, setPrevScenarioJson, studioState.currentScenario, studioState.savedScenarios]);
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, deleteScenario, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
 
       {children}
 

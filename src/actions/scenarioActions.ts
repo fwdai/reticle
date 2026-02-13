@@ -1,6 +1,5 @@
 import { generateText } from '@/lib/gateway';
 import {
-  getOrCreateDefaultCollection,
   insertExecution,
   insertScenario,
   updateExecution,
@@ -71,11 +70,10 @@ export async function saveScenarioAction(
         ? parseHistoryJson(studioState.historyJsonDraft) ?? scenarioData.history
         : scenarioData.history;
 
-    const collectionId = await getOrCreateDefaultCollection();
     const now = Date.now();
 
     const scenarioPayload: Scenario = {
-      collection_id: collectionId,
+      collection_id: scenarioData.collection_id,
       title: scenarioData.name,
       description: null,
       provider: scenarioData.configuration.provider,
@@ -127,6 +125,7 @@ export async function saveScenarioAction(
         },
       };
       setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
+      localStorage.setItem("lastUsedScenarioId", newState.currentScenario.id); // Set last used scenario after save
       console.log("Scenario saved. New state:", newState);
       return newState;
     });
