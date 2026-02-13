@@ -179,6 +179,21 @@
   .shadow-right {
     box-shadow: var(--shadow-right);
   }
+  .tab-active-underline {
+    position: relative;
+  }
+  .tab-active-underline:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px !important; /* Thickness of the underline */
+    background: var(--primary);
+    box-shadow: 0 0 8px 0px oklch(from var(--primary) l c h / 0.7);
+    border-radius: 9999px; /* For rounded ends */
+    z-index: 10; /* Ensure it's above other content */
+  }
 }
 
 .resize-handle {

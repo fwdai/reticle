@@ -1,6 +1,7 @@
 import { PROVIDERS_LIST } from '@/constants/providers';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { generateText as generateTextAi } from 'ai';
+import { Message } from 'ai/react'; // Import Message type from ai/react
 
 import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
@@ -39,13 +40,32 @@ const createModel = (config: LLMCallConfig, gateway: GatewayFetch) => {
   })(model);
 }
 
-export const generateText = async (prompt: string, config: LLMCallConfig) => {
+export const generateText = async (
+  userPrompt: string,
+  systemPrompt: string,
+  history: Message[], // Assuming history items are compatible with Message from 'ai/react'
+  config: LLMCallConfig
+) => {
   const gateway = new GatewayFetch();
+
+  const messages: Message[] = [];
+
+  if (systemPrompt) {
+    messages.push({ role: 'system', content: systemPrompt });
+  }
+
+  // Add previous messages from history
+  messages.push(...history);
+
+  // Add the current user prompt
+  messages.push({ role: 'user', content: userPrompt });
 
   const result = await generateTextAi({
     model: createModel(config, gateway),
-    system: config.systemPrompt,
-    prompt,
+    messages: messages,
+    temperature: config.temperature,
+    topP: config.topP,
+    maxTokens: config.maxTokens,
   });
 
   // Get the measured latency

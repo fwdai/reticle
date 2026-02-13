@@ -139,7 +139,7 @@ export async function saveScenarioAction(
 export async function runScenarioAction(studioState: StudioContainerState, setStudioState: SetStudioState) {
   console.log("Running scenario:", studioState);
   const { currentScenario } = studioState;
-  const { systemPrompt, userPrompt, configuration } = currentScenario;
+  const { systemPrompt, userPrompt, configuration, history } = currentScenario;
 
   setStudioState((prev) => ({
     ...prev,
@@ -153,6 +153,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     systemPrompt,
     userPrompt,
     configuration,
+    history,
     tools: currentScenario.tools,
   };
   const snapshot_json = JSON.stringify(snapshot);
@@ -171,7 +172,19 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
   try {
     setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
 
-    const result = await generateText(userPrompt, { systemPrompt, ...configuration });
+    const result = await generateText(
+      userPrompt,
+      systemPrompt,
+      history,
+      {
+        provider: configuration.provider,
+        model: configuration.model,
+        systemPrompt: systemPrompt, // Redundant here, but part of LLMCallConfig
+        temperature: configuration.temperature,
+        topP: configuration.topP,
+        maxTokens: configuration.maxTokens,
+      }
+    );
     const ended_at = Date.now();
 
     const finalExecution: Execution = {

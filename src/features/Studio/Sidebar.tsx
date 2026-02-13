@@ -86,7 +86,7 @@ function Studio() {
       <div>
         <div className="flex items-center justify-between mb-2 pl-4 pr-3">
           <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Collections</h3>
-          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-1 rounded-md">
+          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-0.5 rounded-md">
             <Plus size={16} />
           </button>
         </div>
@@ -94,7 +94,7 @@ function Studio() {
           {collections.map(collection => (
             <div key={collection.id}>
               <div
-                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer px-4 py-1 group"
+                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer pl-4 pr-3 group"
                 onMouseEnter={() => setHoveredCollectionId(collection.id!)}
                 onMouseLeave={() => setHoveredCollectionId(null)}
               >
@@ -119,7 +119,7 @@ function Studio() {
                 {hoveredCollectionId === collection.id && (
                   <button
                     onClick={(event) => handleCreateScenario(collection.id!, event)}
-                    className="ml-auto text-text-muted hover:text-text-main hover:bg-gray-300 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="ml-auto text-text-muted hover:text-text-main hover:bg-gray-300 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                     title="New Scenario"
                   >
                     <Plus size={16} />
@@ -132,7 +132,7 @@ function Studio() {
                     <a
                       key={scenario.id}
                       onClick={() => loadScenario(scenario.id!)}
-                      className={`group flex items-center justify-between pl-6 pr-4 py-1 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
+                      className={`group flex items-center justify-between pl-6 pr-3 py-1 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
                         }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
