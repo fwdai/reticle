@@ -1,9 +1,24 @@
-import { Folder, FileText, ChevronRight, Plus } from "lucide-react";
+import { Folder, FileText, ChevronRight, Plus, MoreHorizontal, Trash2 } from "lucide-react";
 import { useContext, useState } from 'react';
 import Sidebar from "@/components/Layout/Sidebar";
 import { StudioContext } from '@/contexts/StudioContext';
 import { Scenario } from '@/types';
 import NewCollectionModal from './components/NewCollectionModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function Studio() {
   const context = useContext(StudioContext);
@@ -13,12 +28,13 @@ function Studio() {
     return null;
   }
 
-  const { studioState, loadScenario, createCollection } = context;
+  const { studioState, loadScenario, createCollection, deleteScenario } = context;
   const { collections, savedScenarios, currentScenario } = studioState;
 
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
   const [hoveredCollectionId, setHoveredCollectionId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [scenarioToDelete, setScenarioToDelete] = useState<Scenario | null>(null);
 
   const toggleCollapse = (collectionId: string) => {
     setCollapsedCollections(prev => {
@@ -47,8 +63,17 @@ function Studio() {
 
   const handleCreateCollectionSubmit = async (name: string) => {
     await createCollection(name);
-    // Optionally, if the new collection should be immediately expanded or selected, handle it here
-    setIsModalOpen(false); // Close modal after creation
+    setIsModalOpen(false);
+  };
+
+  const handleDeleteClick = (scenario: Scenario) => {
+    setScenarioToDelete(scenario);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!scenarioToDelete) return;
+    await deleteScenario(scenarioToDelete.id!);
+    setScenarioToDelete(null);
   };
 
   return (
@@ -91,13 +116,34 @@ function Studio() {
                     <a
                       key={scenario.id}
                       onClick={() => loadScenario(scenario.id!)}
-                      className={`flex items-center justify-between pl-6 pr-4 py-1 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
+                      className={`group flex items-center justify-between pl-6 pr-4 py-1 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
                         }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <FileText className="text-sm text-sidebar-text" size={16} strokeWidth={1.5} />
-                        <span className="text-sm text-sidebar-text">{scenario.title}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="text-sm text-sidebar-text flex-shrink-0" size={16} strokeWidth={1.5} />
+                        <span className="text-sm text-sidebar-text truncate">{scenario.title}</span>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-shrink-0 p-0.5 rounded text-text-muted hover:text-text-main hover:bg-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Actions"
+                          >
+                            <MoreHorizontal size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            onClick={() => handleDeleteClick(scenario)}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </a>
                   ))}
                 </div>
@@ -111,6 +157,24 @@ function Studio() {
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateCollectionSubmit}
       />
+      <Dialog open={!!scenarioToDelete} onOpenChange={(open) => !open && setScenarioToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete scenario</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{scenarioToDelete?.title}&quot;? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScenarioToDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }

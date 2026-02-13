@@ -71,6 +71,7 @@ interface StudioContextType {
   fetchCollections: () => Promise<void>;
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>; // New function
+  deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
 }
 
@@ -251,9 +252,31 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   }, [fetchCollections]); // Depend on fetchCollections to ensure it's up-to-date
 
+  const deleteScenario = useCallback(async (id: string) => {
+    try {
+      await invoke('db_delete_cmd', { table: 'scenarios', query: { where: { id } } });
+      await fetchScenarios();
+      setStudioState(prev => {
+        if (prev.scenarioId === id || prev.currentScenario.id === id) {
+          return {
+            ...prev,
+            currentScenario: { ...initialScenario, id: uuidv4() },
+            scenarioId: null,
+            isSaved: true,
+            response: null,
+          };
+        }
+        return prev;
+      });
+      setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
+    } catch (error) {
+      console.error(`Failed to delete scenario ${id}:`, error);
+    }
+  }, [fetchScenarios]);
+
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, deleteScenario, runScenario }}>
 
       {children}
 
