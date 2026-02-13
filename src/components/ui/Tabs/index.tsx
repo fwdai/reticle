@@ -42,7 +42,7 @@ function Tabs({ children }: TabsProps) {
       <div className="flex border-b border-border-light px-8 gap-10 bg-white">
         {tabs}
       </div>
-      <div className="flex-1 p-8 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
+      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
         {activeContent}
       </div>
     </div>

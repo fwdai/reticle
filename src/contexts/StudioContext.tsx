@@ -47,6 +47,9 @@ export interface ResponseState {
   error?: string;
 }
 
+// History panel view state (for save flow when in JSON mode)
+export type HistoryViewMode = 'visual' | 'json';
+
 // The top-level state for the studio feature
 export interface StudioContainerState {
   currentScenario: CurrentScenario;
@@ -58,6 +61,8 @@ export interface StudioContainerState {
   isSaved: boolean;
   currentExecutionId: string | null;
   providerModels: Record<string, any[]>;
+  historyViewMode: HistoryViewMode;
+  historyJsonDraft: string;
 }
 
 // --- Context Definition ---
@@ -115,6 +120,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     isSaved: false,
     currentExecutionId: null,
     providerModels: {},
+    historyViewMode: 'visual',
+    historyJsonDraft: '',
   });
 
   const initialScenarioJson = JSON.stringify({ ...initialScenario, id: null });
@@ -171,6 +178,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       scenarioId: null,
       isSaved: true,
       response: null,
+      historyViewMode: 'visual' as const,
+      historyJsonDraft: '',
     }));
     setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
   }, []);
@@ -214,6 +223,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             isSaved: true,
             isLoading: false,
             response: null,
+            historyViewMode: 'visual' as const,
+            historyJsonDraft: '',
           };
           setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
           return newState;
@@ -264,6 +275,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             scenarioId: null,
             isSaved: true,
             response: null,
+            historyViewMode: 'visual' as const,
+            historyJsonDraft: '',
           };
         }
         return prev;

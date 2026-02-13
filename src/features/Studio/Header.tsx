@@ -3,6 +3,7 @@ import { Play, Save, Share, Loader2 } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import Header from "@/components/Layout/Header";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 
 function StudioHeader() {
   const context = useContext(StudioContext);
@@ -18,6 +19,7 @@ function StudioHeader() {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(currentScenario.name);
+  const [viewMode, setViewMode] = useState<"editor" | "visualizer">("editor");
 
   // Update editingName when currentScenario changes (e.g., when a new scenario is loaded)
   useEffect(() => {
@@ -82,10 +84,14 @@ function StudioHeader() {
         {statusBadge}
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex bg-gray-100 p-1 rounded-xl">
-          <button className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-white shadow-sm text-text-main">Editor</button>
-          <button className="px-4 py-1.5 text-xs font-semibold text-text-muted hover:text-text-main transition-colors">Visualizer</button>
-        </div>
+        <SegmentedSwitch
+          options={[
+            { value: "editor", label: "Editor" },
+            { value: "visualizer", label: "Visualizer" },
+          ]}
+          value={viewMode}
+          onChange={(v) => setViewMode(v)}
+        />
         <div className="h-6 w-px bg-border-light"></div>
         <div className="flex items-center gap-2">
           <button

@@ -6,8 +6,24 @@ import {
   updateExecution,
   updateScenario,
 } from '@/lib/storage';
-import { StudioContainerState } from '@/contexts/StudioContext';
+import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
+
+function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (item): item is HistoryItem =>
+        item &&
+        typeof item === 'object' &&
+        (item.role === 'user' || item.role === 'assistant') &&
+        typeof item.content === 'string'
+    );
+  } catch {
+    return null;
+  }
+}
 
 type SetStudioState = React.Dispatch<React.SetStateAction<StudioContainerState>>;
 
@@ -49,6 +65,12 @@ export async function saveScenarioAction(
       scenarioData.name = scenarioName;
     }
 
+    // Use JSON draft when in Raw JSON mode; otherwise use Visual mode history
+    const effectiveHistory =
+      studioState.historyViewMode === 'json'
+        ? parseHistoryJson(studioState.historyJsonDraft) ?? scenarioData.history
+        : scenarioData.history;
+
     const collectionId = await getOrCreateDefaultCollection();
     const now = Date.now();
 
@@ -60,7 +82,7 @@ export async function saveScenarioAction(
       model: scenarioData.configuration.model,
       system_prompt: scenarioData.systemPrompt,
       user_prompt: scenarioData.userPrompt,
-      history_json: JSON.stringify(scenarioData.history),
+      history_json: JSON.stringify(effectiveHistory),
       variables_json: null,
       params_json: JSON.stringify({
         temperature: scenarioData.configuration.temperature,

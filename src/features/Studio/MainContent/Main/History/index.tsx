@@ -1,9 +1,8 @@
 import { useContext, useState, useCallback, useEffect } from "react";
 import { User, Bot, Menu, Braces, Plus, Trash2 } from "lucide-react";
 import { StudioContext } from "@/contexts/StudioContext";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import type { HistoryItem } from "@/contexts/StudioContext";
-
-type ViewMode = "visual" | "json";
 
 function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
   try {
@@ -23,8 +22,6 @@ function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
 
 function History() {
   const context = useContext(StudioContext);
-  const [viewMode, setViewMode] = useState<ViewMode>("visual");
-  const [jsonDraft, setJsonDraft] = useState("");
   const [placeholderPair, setPlaceholderPair] = useState({
     user: "",
     assistant: "",
@@ -36,7 +33,22 @@ function History() {
 
   const { studioState, setStudioState } = context;
   const { history } = studioState.currentScenario;
+  const { historyViewMode: viewMode, historyJsonDraft: jsonDraft } = studioState;
   const hasHistory = history.length > 0;
+
+  const setViewMode = useCallback(
+    (mode: "visual" | "json") => {
+      setStudioState((prev) => ({ ...prev, historyViewMode: mode }));
+    },
+    [setStudioState]
+  );
+
+  const setJsonDraft = useCallback(
+    (value: string) => {
+      setStudioState((prev) => ({ ...prev, historyJsonDraft: value }));
+    },
+    [setStudioState]
+  );
 
   useEffect(() => {
     if (hasHistory) {
@@ -195,32 +207,19 @@ function History() {
   return (
     <div className="max-w-4xl flex flex-col">
       <div className="bg-white border border-border-light rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col">
-        <div className="px-5 py-3 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
+        <div className="h-10 px-5 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
             Conversation History
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={switchToVisual}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors ${viewMode === "visual"
-                ? "bg-primary/10 text-primary border border-primary/30"
-                : "text-text-muted hover:text-text-main hover:bg-gray-100 border border-transparent"
-                }`}
-            >
-              <Menu size={14} strokeWidth={2} />
-              Visual
-            </button>
-            <button
-              onClick={switchToJson}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors ${viewMode === "json"
-                ? "bg-primary/10 text-primary border border-primary/30"
-                : "text-text-muted hover:text-text-main hover:bg-gray-100 border border-transparent"
-                }`}
-            >
-              <Braces size={14} strokeWidth={2} />
-              Raw JSON
-            </button>
-          </div>
+          <SegmentedSwitch
+            size="section"
+            options={[
+              { value: "visual", label: "Visual", icon: <Menu size={12} strokeWidth={2} /> },
+              { value: "json", label: "Raw JSON", icon: <Braces size={12} strokeWidth={2} /> },
+            ]}
+            value={viewMode}
+            onChange={(v) => (v === "visual" ? switchToVisual() : switchToJson())}
+          />
         </div>
 
         <div className="p-6">
@@ -287,23 +286,6 @@ function History() {
                   </div>
                 ))
               )}
-
-              {pairs.length > 0 && (
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-[10px] text-text-muted">
-                    {hasHistory
-                      ? `${history.length} MESSAGES · ${userCount} USER · ${assistantCount} ASSISTANT`
-                      : "0 MESSAGES · 0 USER · 0 ASSISTANT"}
-                  </span>
-                  <button
-                    onClick={addPair}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Plus size={14} strokeWidth={2} />
-                    ADD PAIR
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="flex flex-col h-full min-h-[300px]">
@@ -321,14 +303,28 @@ function History() {
                   </span>{" "}
                   objects
                 </p>
-                <p className="flex items-center gap-1.5 text-[10px] text-text-muted">
-                  <span className="size-1.5 bg-primary rounded-full" />
-                  Changes apply when switching to Visual mode
-                </p>
               </div>
             </div>
           )}
         </div>
+        {pairs.length > 0 && (
+          <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center h-10">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-text-muted uppercase">
+                {hasHistory
+                  ? `${history.length} MESSAGES · ${userCount} USER · ${assistantCount} ASSISTANT`
+                  : "0 MESSAGES · 0 USER · 0 ASSISTANT"}
+              </span>
+            </div>
+            {viewMode === "visual" && <button
+              onClick={addPair}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors"
+            >
+              <Plus size={14} strokeWidth={2} />
+              ADD PAIR
+            </button>}
+          </div>
+        )}
       </div>
     </div>
   );
