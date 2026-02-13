@@ -1,6 +1,7 @@
 import { Eye, EyeOff, Sun, Moon, Monitor, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from "@tauri-apps/api/app";
 
 import MainContent from "@/components/Layout/MainContent";
 import Header from "../Header";
@@ -9,6 +10,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 
 function Settings() {
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const [openaiVisible, setOpenaiVisible] = useState(true);
   const [anthropicVisible, setAnthropicVisible] = useState(false);
   const [googleVisible, setGoogleVisible] = useState(true);
@@ -21,6 +23,10 @@ function Settings() {
     anthropic: 'idle',
     google: 'idle',
   });
+
+  useEffect(() => {
+    getVersion().then(setAppVersion);
+  }, []);
 
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -320,21 +326,19 @@ function Settings() {
               </div>
             </div>
           </section>
+
           <div className="flex flex-col md:flex-row items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-8 border-t border-slate-100">
             <div className="flex gap-8 mb-4 md:mb-0">
               <span className="flex items-center gap-1.5">
-                <span className="size-1.5 bg-green-500 rounded-full"></span> Service: Active
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-1.5 bg-indigo-500 rounded-full"></span> Secure Enclave Enabled
+                <span className="size-1.5 bg-blue-500 rounded-full"></span> v{appVersion ?? "…"}
               </span>
             </div>
             <div className="flex gap-6">
               <a className="hover:text-primary transition-colors" href="#">
-                Security Docs
+                Privacy Policy
               </a>
               <a className="hover:text-primary transition-colors" href="#">
-                Data Handling
+                Terms of Service
               </a>
             </div>
           </div>
