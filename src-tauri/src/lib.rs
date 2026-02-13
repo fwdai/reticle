@@ -49,6 +49,16 @@ async fn db_delete_cmd(
     database::db_delete(&conn, &table, query).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn db_count_cmd(
+    table: String,
+    query: Value,
+    state: tauri::State<'_, Arc<Mutex<rusqlite::Connection>>>,
+) -> Result<i64, String> {
+    let conn = state.lock().unwrap();
+    database::db_count(&conn, &table, query).map_err(|e| e.to_string())
+}
+
 mod server;
 mod database;
 
@@ -71,7 +81,8 @@ pub fn run() {
             db_insert_cmd,
             db_select_cmd,
             db_update_cmd,
-            db_delete_cmd
+            db_delete_cmd,
+            db_count_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
