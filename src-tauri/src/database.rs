@@ -13,6 +13,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0002_create_collections_table.sql")),
         M::up(include_str!("../migrations/0003_create_scenarios_table.sql")),
         M::up(include_str!("../migrations/0004_create_executions_table.sql")),
+        M::up(include_str!("../migrations/0005_add_timestamps_to_api_keys.sql")),
     ])
 }
 
