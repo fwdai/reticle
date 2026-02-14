@@ -1,4 +1,5 @@
-import { Radar, Home, Activity, Layers, Settings, PlayCircle } from "lucide-react";
+import { Home, Activity, Layers, Settings, PlayCircle } from "lucide-react";
+import reticleLogo from "@/assets/reticle-logo.svg";
 import { Page } from "@/types";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipArrow } from "@/components/ui/tooltip";
 import { useAppContext } from "@/contexts/AppContext";
@@ -21,10 +22,10 @@ function Navigation() {
 
   return (
     <TooltipProvider>
-      <nav className="w-16 bg-nav-dark flex flex-col items-center py-6 flex-shrink-0 z-20 rounded-xl mr-1.5 shadow-right">
+      <nav className="w-16 bg-nav-dark flex flex-col items-center py-3 flex-shrink-0 z-20 rounded-xl shadow-right">
         <div className="mb-8">
-          <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white">
-            <Radar className="text-2xl font-bold" strokeWidth={1} size={24} />
+          <div className="size-10 bg-primary rounded-xl flex items-center justify-center overflow-hidden">
+            <img src={reticleLogo} alt="Reticle" className="size-8" />
           </div>
         </div>
         <nav className="flex flex-col gap-6 flex-1 w-full">
@@ -37,12 +38,12 @@ function Navigation() {
                   <button
                     onClick={(e) => handleClick(item.id, e)}
                     className={`${isActive ? "text-white" : "text-white/40 hover:text-white"
-                      } transition-colors flex items-center justify-center relative cursor-pointer`}
+                      } transition-colors flex items-center justify-center relative cursor-pointer h-7`}
                   >
                     {isActive && (
                       <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full"></div>
                     )}
-                    <Icon size={20} className={isActive ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
+                    <Icon size={22} className={isActive ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -59,12 +60,12 @@ function Navigation() {
               <button
                 onClick={(e) => handleClick("settings", e)}
                 className={`${currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white"
-                  } transition-colors flex items-center justify-center relative cursor-pointer`}
+                  } transition-colors flex items-center justify-center relative cursor-pointer h-7`}
               >
                 {currentPage === "settings" && (
                   <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full"></div>
                 )}
-                <Settings size={20} className={currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
+                <Settings size={22} className={currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white/60 transition-colors"} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">

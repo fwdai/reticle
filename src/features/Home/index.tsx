@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import { Key, LayoutDashboard, CheckSquare, ArrowRight, ExternalLink } from "lucide-react";
 
 import MainContent from "@/components/Layout/MainContent";
@@ -5,6 +7,12 @@ import Header from "./Header";
 
 
 function HomePage() {
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    getVersion().then(setAppVersion);
+  }, []);
+
   return (
     <MainContent>
       <Header />
@@ -125,7 +133,7 @@ function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-8 border-t border-slate-100">
             <div className="flex gap-8 mb-4 md:mb-0">
               <span className="flex items-center gap-1.5">
-                <span className="size-1.5 bg-blue-500 rounded-full"></span> v2.4.0 Stable
+                <span className="size-1.5 bg-blue-500 rounded-full"></span> v{appVersion ?? "…"}
               </span>
             </div>
             <div className="flex gap-6">

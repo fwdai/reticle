@@ -17,6 +17,43 @@ export async function updateExecution(id: string, data: Execution): Promise<void
   });
 }
 
+export interface ListExecutionsOptions {
+  offset?: number;
+  limit?: number;
+}
+
+export async function listExecutions(options?: ListExecutionsOptions): Promise<Execution[]> {
+  const { offset = 0, limit } = options ?? {};
+  const query: Record<string, unknown> = {
+    orderBy: 'started_at',
+    orderDirection: 'desc',
+  };
+  if (offset > 0) query.offset = offset;
+  if (limit != null && limit > 0) query.limit = limit;
+
+  const rows = await invoke<Execution[]>('db_select_cmd', {
+    table: 'executions',
+    query,
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function countExecutions(): Promise<number> {
+  const count = await invoke<number>('db_count_cmd', {
+    table: 'executions',
+    query: {},
+  });
+  return typeof count === 'number' ? count : 0;
+}
+
+export async function listScenarios(): Promise<Scenario[]> {
+  const rows = await invoke<Scenario[]>('db_select_cmd', {
+    table: 'scenarios',
+    query: {},
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
 // --- Collections ---
 export async function findCollectionByName(name: string): Promise<{ id: string; name: string } | null> {
   const rows: { id: string; name: string }[] = await invoke('db_select_cmd', {

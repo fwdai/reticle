@@ -1,13 +1,28 @@
 import { generateText } from '@/lib/gateway';
 import {
-  getOrCreateDefaultCollection,
   insertExecution,
   insertScenario,
   updateExecution,
   updateScenario,
 } from '@/lib/storage';
-import { StudioContainerState } from '@/contexts/StudioContext';
+import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
+
+function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (item): item is HistoryItem =>
+        item &&
+        typeof item === 'object' &&
+        (item.role === 'user' || item.role === 'assistant') &&
+        typeof item.content === 'string'
+    );
+  } catch {
+    return null;
+  }
+}
 
 type SetStudioState = React.Dispatch<React.SetStateAction<StudioContainerState>>;
 
@@ -49,18 +64,23 @@ export async function saveScenarioAction(
       scenarioData.name = scenarioName;
     }
 
-    const collectionId = await getOrCreateDefaultCollection();
+    // Use JSON draft when in Raw JSON mode; otherwise use Visual mode history
+    const effectiveHistory =
+      studioState.historyViewMode === 'json'
+        ? parseHistoryJson(studioState.historyJsonDraft) ?? scenarioData.history
+        : scenarioData.history;
+
     const now = Date.now();
 
     const scenarioPayload: Scenario = {
-      collection_id: collectionId,
+      collection_id: scenarioData.collection_id,
       title: scenarioData.name,
       description: null,
       provider: scenarioData.configuration.provider,
       model: scenarioData.configuration.model,
       system_prompt: scenarioData.systemPrompt,
       user_prompt: scenarioData.userPrompt,
-      history_json: JSON.stringify(scenarioData.history),
+      history_json: JSON.stringify(effectiveHistory),
       variables_json: null,
       params_json: JSON.stringify({
         temperature: scenarioData.configuration.temperature,
@@ -105,6 +125,7 @@ export async function saveScenarioAction(
         },
       };
       setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
+      localStorage.setItem("lastUsedScenarioId", newState.currentScenario.id); // Set last used scenario after save
       console.log("Scenario saved. New state:", newState);
       return newState;
     });
@@ -118,7 +139,7 @@ export async function saveScenarioAction(
 export async function runScenarioAction(studioState: StudioContainerState, setStudioState: SetStudioState) {
   console.log("Running scenario:", studioState);
   const { currentScenario } = studioState;
-  const { systemPrompt, userPrompt, configuration } = currentScenario;
+  const { systemPrompt, userPrompt, configuration, history } = currentScenario;
 
   setStudioState((prev) => ({
     ...prev,
@@ -132,6 +153,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     systemPrompt,
     userPrompt,
     configuration,
+    history,
     tools: currentScenario.tools,
   };
   const snapshot_json = JSON.stringify(snapshot);
@@ -150,7 +172,19 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
   try {
     setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
 
-    const result = await generateText(userPrompt, { systemPrompt, ...configuration });
+    const result = await generateText(
+      userPrompt,
+      systemPrompt,
+      history,
+      {
+        provider: configuration.provider,
+        model: configuration.model,
+        systemPrompt: systemPrompt, // Redundant here, but part of LLMCallConfig
+        temperature: configuration.temperature,
+        topP: configuration.topP,
+        maxTokens: configuration.maxTokens,
+      }
+    );
     const ended_at = Date.now();
 
     const finalExecution: Execution = {

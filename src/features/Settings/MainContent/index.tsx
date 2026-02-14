@@ -1,17 +1,20 @@
 import { Eye, EyeOff, Sun, Moon, Monitor, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from "@tauri-apps/api/app";
 
 import MainContent from "@/components/Layout/MainContent";
 import Header from "../Header";
+import { fetchAndNormalizeModels } from "@/lib/modelManager";
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 
 function Settings() {
-  const [openaiVisible, setOpenaiVisible] = useState(true);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+  const [openaiVisible, setOpenaiVisible] = useState(false);
   const [anthropicVisible, setAnthropicVisible] = useState(false);
-  const [googleVisible, setGoogleVisible] = useState(true);
+  const [googleVisible, setGoogleVisible] = useState(false);
   const [telemetryEnabled, setTelemetryEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "system">("light");
 
@@ -21,6 +24,30 @@ function Settings() {
     anthropic: 'idle',
     google: 'idle',
   });
+  const [providerModels, setProviderModels] = useState<Record<string, { id: string; name: string }[]>>({});
+
+  useEffect(() => {
+    getVersion().then(setAppVersion);
+  }, []);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const models = await fetchAndNormalizeModels();
+        setProviderModels(models);
+      } catch (error) {
+        console.error("Failed to fetch provider models:", error);
+      }
+    };
+    loadModels();
+  }, []);
+
+  const getProviderDescription = (providerId: string, fallback: string): string => {
+    const models = providerModels[providerId];
+    if (!models?.length) return fallback;
+    const topModels = models.slice(0, 3).map((m) => m.name).join(", ");
+    return `Enables ${models.length} models including ${topModels}${models.length > 3 ? ", etc" : ""}.`;
+  };
 
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -119,7 +146,7 @@ function Settings() {
         <div className="max-w-3xl mx-auto px-10 py-12 space-y-10">
           <section className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Global API Keys</h2>
+              <h2 className="text-2xl font-bold text-slate-900">API Keys</h2>
               <p className="text-sm text-slate-500 mt-1">
                 Configure your LLM provider credentials. These keys are encrypted at rest and used as defaults across all scenarios.
               </p>
@@ -140,17 +167,23 @@ function Settings() {
                     onBlur={(e) => handleSaveApiKey("openai", e.target.value)}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {renderStatusIcon("openai")}
-                    <button
-                      className="text-slate-400 hover:text-primary transition-colors"
-                      onClick={() => setOpenaiVisible(!openaiVisible)}
-                    >
-                      {openaiVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                    </button>
+                    {saveStatus.openai === "saved" ? (
+                      renderStatusIcon("openai")
+                    ) : (
+                      <>
+                        {renderStatusIcon("openai")}
+                        <button
+                          className="text-slate-400 hover:text-primary transition-colors"
+                          onClick={() => setOpenaiVisible(!openaiVisible)}
+                        >
+                          {openaiVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-2">
-                  Used for GPT-4o, GPT-3.5 Turbo, and DALL-E models.
+                  {getProviderDescription("openai", "Required for OpenAI chat models (GPT-4o, o1, o3, etc.).")}
                 </p>
               </div>
 
@@ -169,17 +202,23 @@ function Settings() {
                     onBlur={(e) => handleSaveApiKey("anthropic", e.target.value)}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {renderStatusIcon("anthropic")}
-                    <button
-                      className="text-slate-400 hover:text-primary transition-colors"
-                      onClick={() => setAnthropicVisible(!anthropicVisible)}
-                    >
-                      {anthropicVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                    </button>
+                    {saveStatus.anthropic === "saved" ? (
+                      renderStatusIcon("anthropic")
+                    ) : (
+                      <>
+                        {renderStatusIcon("anthropic")}
+                        <button
+                          className="text-slate-400 hover:text-primary transition-colors"
+                          onClick={() => setAnthropicVisible(!anthropicVisible)}
+                        >
+                          {anthropicVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-2">
-                  Required for Claude 3.5 Sonnet and Opus models.
+                  {getProviderDescription("anthropic", "Required for Claude models (Claude 3.5 Sonnet, Opus, etc.).")}
                 </p>
               </div>
 
@@ -198,17 +237,23 @@ function Settings() {
                     onBlur={(e) => handleSaveApiKey("google", e.target.value)}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {renderStatusIcon("google")}
-                    <button
-                      className="text-slate-400 hover:text-primary transition-colors"
-                      onClick={() => setGoogleVisible(!googleVisible)}
-                    >
-                      {googleVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                    </button>
+                    {saveStatus.google === "saved" ? (
+                      renderStatusIcon("google")
+                    ) : (
+                      <>
+                        {renderStatusIcon("google")}
+                        <button
+                          className="text-slate-400 hover:text-primary transition-colors"
+                          onClick={() => setGoogleVisible(!googleVisible)}
+                        >
+                          {googleVisible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-2">
-                  Enables Gemini 1.5 Pro and Flash integration.
+                  {getProviderDescription("google", "Required for Google Gemini models (Gemini 1.5 Pro, Flash, etc.).")}
                 </p>
               </div>
             </div>
@@ -250,7 +295,7 @@ function Settings() {
               <p className="text-sm text-slate-500 mt-1">Help us improve by sending anonymous usage data.</p>
             </div>
             <button
-              className={`relative w-14 h-7 rounded-full transition-colors ${telemetryEnabled ? "bg-indigo-600" : "bg-slate-300"}`}
+              className={`relative w-14 h-7 rounded-full transition-colors ${telemetryEnabled ? "bg-primary" : "bg-slate-300"}`}
               onClick={() => setTelemetryEnabled(!telemetryEnabled)}
             >
               <span className="sr-only">Enable telemetry</span>
@@ -320,21 +365,19 @@ function Settings() {
               </div>
             </div>
           </section>
+
           <div className="flex flex-col md:flex-row items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-8 border-t border-slate-100">
             <div className="flex gap-8 mb-4 md:mb-0">
               <span className="flex items-center gap-1.5">
-                <span className="size-1.5 bg-green-500 rounded-full"></span> Service: Active
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-1.5 bg-indigo-500 rounded-full"></span> Secure Enclave Enabled
+                <span className="size-1.5 bg-blue-500 rounded-full"></span> v{appVersion ?? "…"}
               </span>
             </div>
             <div className="flex gap-6">
               <a className="hover:text-primary transition-colors" href="#">
-                Security Docs
+                Privacy Policy
               </a>
               <a className="hover:text-primary transition-colors" href="#">
-                Data Handling
+                Terms of Service
               </a>
             </div>
           </div>

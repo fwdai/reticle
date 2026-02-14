@@ -9,6 +9,9 @@ export type LLMCallConfig = {
   provider: string;
   model: string;
   systemPrompt: string;
+  temperature?: number;
+  topP?: number;
+  maxTokens?: number;
 }
 
 export type Collection = {

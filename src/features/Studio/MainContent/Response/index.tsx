@@ -48,7 +48,7 @@ function Response() {
               <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
                 Status
               </span>
-              <span className={`text-[11px] font-mono font-bold leading-none uppercase ${response?.error ? 'text-red-600' : 'text-green-600'}`}>
+              <span className={`text-[11px] font-bold leading-none uppercase ${response?.error ? 'text-red-600' : 'text-green-600'}`}>
                 {statusCode}
               </span>
             </div>
@@ -59,7 +59,7 @@ function Response() {
                   <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
                     Latency
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-text-main leading-none">
+                  <span className="text-[11px] font-bold text-text-main leading-none">
                     {formatLatency(response.latency)}
                   </span>
                 </div>
@@ -72,7 +72,7 @@ function Response() {
                   <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
                     Usage
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-text-main leading-none">
+                  <span className="text-[11px] font-bold text-text-main leading-none">
                     {formatTokens()}
                   </span>
                 </div>
@@ -95,7 +95,7 @@ function Response() {
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white font-mono text-sm leading-relaxed text-text-main rounded-b-xl">
+      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white text-sm text-text-main rounded-b-xl">
         {isLoading ? (
           <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-4">

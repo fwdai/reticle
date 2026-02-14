@@ -13,6 +13,8 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0002_create_collections_table.sql")),
         M::up(include_str!("../migrations/0003_create_scenarios_table.sql")),
         M::up(include_str!("../migrations/0004_create_executions_table.sql")),
+        M::up(include_str!("../migrations/0005_add_timestamps_to_api_keys.sql")),
+        M::up(include_str!("../migrations/0006_create_settings_table.sql")),
     ])
 }
 
@@ -135,6 +137,27 @@ pub fn db_select(conn: &Connection, table: &str, query: Value) -> AnyhowResult<V
         sql.push_str(&format!(" WHERE {}", where_clauses.join(" AND ")));
     }
 
+    if let Some(order_by) = query_map.get("orderBy").and_then(|v| v.as_str()) {
+        let direction = query_map
+            .get("orderDirection")
+            .and_then(|v| v.as_str())
+            .unwrap_or("ASC");
+        let dir = if direction.eq_ignore_ascii_case("desc") { "DESC" } else { "ASC" };
+        sql.push_str(&format!(" ORDER BY {} {}", order_by, dir));
+    }
+
+    if let Some(limit) = query_map.get("limit").and_then(|v| v.as_i64()) {
+        if limit > 0 {
+            sql.push_str(&format!(" LIMIT {}", limit));
+        }
+    }
+
+    if let Some(offset) = query_map.get("offset").and_then(|v| v.as_i64()) {
+        if offset >= 0 {
+            sql.push_str(&format!(" OFFSET {}", offset));
+        }
+    }
+
     let mut stmt = conn.prepare(&sql)?;
     let column_names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
 
@@ -190,6 +213,32 @@ pub fn db_update(conn: &Connection, table: &str, query: Value, mut data: Value) 
     Ok(changes)
 }
 
+// Generic COUNT operation
+pub fn db_count(conn: &Connection, table: &str, query: Value) -> AnyhowResult<i64> {
+    let query_map = query.as_object().ok_or_else(|| anyhow!("Query must be a JSON object for count"))?;
+
+    let mut sql = format!("SELECT COUNT(*) FROM {}", table);
+    let mut where_clauses = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+    if let Some(where_obj) = query_map.get("where").and_then(|v| v.as_object()) {
+        for (i, (col, val)) in where_obj.iter().enumerate() {
+            where_clauses.push(format!("{} = ?{}", col, i + 1));
+            params_vec.push(json_value_to_sql(val)?);
+        }
+    }
+
+    if !where_clauses.is_empty() {
+        sql.push_str(&format!(" WHERE {}", where_clauses.join(" AND ")));
+    }
+
+    let count: i64 = conn.query_row(
+        &sql,
+        params_from_iter(params_vec.into_iter()),
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
 
 // Generic DELETE operation
 pub fn db_delete(conn: &Connection, table: &str, query: Value) -> AnyhowResult<usize> {

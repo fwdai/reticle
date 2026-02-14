@@ -23,11 +23,11 @@ function Tabs({ children }: TabsProps) {
         <button
           key={index}
           onClick={() => handleTabClick(index)}
-          className={`relative py-4 text-xs font-bold tracking-widest uppercase ${
-            activeIndex === index
-              ? "text-primary border-b-2 border-primary"
-              : "text-text-muted hover:text-text-main border-b-2 border-transparent transition-colors"
-          }`}
+          className={`relative h-full px-4 text-xs font-bold tracking-widest uppercase flex items-center justify-center
+            ${activeIndex === index
+              ? "text-primary tab-active-underline" // New class for active tab underline
+              : "text-text-muted hover:text-text-main transition-colors"
+            }`}
         >
           {child.props.title}
         </button>
@@ -39,11 +39,11 @@ function Tabs({ children }: TabsProps) {
   const activeContent = Children.toArray(children)[activeIndex];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
-      <div className="flex border-b border-border-light px-8 gap-10 bg-white">
+    <div className="flex-1 flex flex-col min-w-0  h-full">
+      <div className="flex border-b border-border-light px-8 gap-5 bg-white h-[45px] items-center">
         {tabs}
       </div>
-      <div className="flex-1 p-8 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
+      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
         {activeContent}
       </div>
     </div>

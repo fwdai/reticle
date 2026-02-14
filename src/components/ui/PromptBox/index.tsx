@@ -134,7 +134,7 @@ function PromptBox({
     <div className="max-w-4xl flex flex-col gap-8">
       {/* Prompt/System Textarea */}
       <div className="flex-1 bg-white border border-border-light rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden min-h-64">
-        <div className="px-5 py-3 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
+        <div className="h-10 px-5 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
             {label}
           </span>
@@ -163,12 +163,12 @@ function PromptBox({
           )}
         </div>
         <textarea
-          className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm font-mono leading-relaxed resize-none text-text-main placeholder:text-gray-300"
+          className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm resize-none text-text-main placeholder:text-gray-300"
           placeholder={placeholder}
           value={prompt}
           onChange={handlePromptChangeInternal}
         />
-        <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center">
+        <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center h-10">
           <div className="flex items-center gap-2">
             {/* <span className="size-1.5 bg-primary rounded-full"></span>
             <span className="text-[10px] text-text-muted font-medium">
@@ -183,7 +183,7 @@ function PromptBox({
 
       {/* Variables Table */}
       <div className="bg-white border border-border-light rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
-        <div className="px-5 py-3 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
+        <div className="h-10 px-5 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
             Variables
           </span>

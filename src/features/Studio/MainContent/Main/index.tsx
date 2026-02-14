@@ -1,6 +1,6 @@
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
-import Context from "./Context";
+import History from "./History";
 import Prompt from "./Prompt";
 import SystemMessage from "./System";
 import Tools from "./Tools";
@@ -14,8 +14,8 @@ function StudioMain() {
       <TabPanel title="Input">
         <Prompt />
       </TabPanel>
-      <TabPanel title="Context">
-        <Context />
+      <TabPanel title="History">
+        <History />
       </TabPanel>
       <TabPanel title="Tools">
         <Tools />
