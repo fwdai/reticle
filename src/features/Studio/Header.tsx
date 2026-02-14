@@ -14,12 +14,11 @@ function StudioHeader() {
     return null;
   }
 
-  const { studioState, saveScenario, runScenario } = context;
+  const { studioState, viewMode, setViewMode, saveScenario, runScenario } = context;
   const { currentScenario, isLoading, isSaved } = studioState;
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(currentScenario.name);
-  const [viewMode, setViewMode] = useState<"editor" | "visualizer">("editor");
 
   // Update editingName when currentScenario changes (e.g., when a new scenario is loaded)
   useEffect(() => {

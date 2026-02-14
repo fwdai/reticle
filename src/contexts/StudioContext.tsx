@@ -67,9 +67,13 @@ export interface StudioContainerState {
 
 // --- Context Definition ---
 
+export type StudioViewMode = 'editor' | 'visualizer';
+
 interface StudioContextType {
   studioState: StudioContainerState;
   setStudioState: React.Dispatch<React.SetStateAction<StudioContainerState>>;
+  viewMode: StudioViewMode;
+  setViewMode: (mode: StudioViewMode) => void;
   saveScenario: (scenarioName: string | null) => Promise<void>;
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
@@ -113,6 +117,7 @@ const initialScenario: CurrentScenario = {
 // --- Provider Component ---
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
+  const [viewMode, setViewMode] = useState<StudioViewMode>('editor');
   const [studioState, setStudioState] = useState<StudioContainerState>({
     currentScenario: { ...initialScenario, id: uuidv4() }, // Temporary new scenario until last used is loaded
     savedScenarios: [],
@@ -346,7 +351,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
 
       {children}
 

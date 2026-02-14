@@ -23,6 +23,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -66,6 +68,8 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.647 0.177 149.214);
+  --warning: oklch(0.769 0.188 70.08);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -105,6 +109,8 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.696 0.17 162.48);
+  --warning: oklch(0.769 0.188 70.08);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -190,10 +196,53 @@
     right: 0;
     height: 2px !important; /* Thickness of the underline */
     background: var(--primary);
-    box-shadow: 0 0 8px 0px oklch(from var(--primary) l c h / 0.7);
+    box-shadow: 0 0 8px 0px oklch(from var(--primary) l c h / 0.5);
     border-radius: 9999px; /* For rounded ends */
     z-index: 10; /* Ensure it's above other content */
   }
+  .shadow-glow-sm {
+    box-shadow: 0 0 12px rgb(6 167 199 / 0.25);
+  }
+  .shadow-glow-success {
+    box-shadow: 0 0 12px rgb(34 197 94 / 0.3);
+  }
+  .shadow-glow {
+    box-shadow: 0 0 16px rgb(6 167 199 / 0.2);
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  .animate-flow-horizontal {
+    animation: flow-horizontal 2s ease-in-out infinite;
+  }
+  .animate-flow-vertical {
+    animation: flow-vertical 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px rgb(6 167 199 / 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 12px 3px rgb(6 167 199 / 0.7);
+  }
+}
+
+@keyframes flow-horizontal {
+  0% { left: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+@keyframes flow-vertical {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
 
 .resize-handle {
