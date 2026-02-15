@@ -39,8 +39,8 @@ function Tabs({ children }: TabsProps) {
   const activeContent = Children.toArray(children)[activeIndex];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0  h-full">
-      <div className="flex border-b border-border-light px-8 gap-5 bg-white h-[45px] items-center">
+    <div className="flex-1 flex flex-col min-w-0 h-full">
+      <div className="flex border-b border-border-light px-8 gap-5 bg-slate-50 h-[45px] items-center">
         {tabs}
       </div>
       <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">

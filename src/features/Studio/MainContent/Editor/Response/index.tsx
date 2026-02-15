@@ -1,6 +1,9 @@
 import { useContext } from "react";
 import { Copy, Code } from "lucide-react";
 import { StudioContext } from "@/contexts/StudioContext";
+import { calculateRequestCost } from "@/lib/modelPricing";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown
 
 function Response() {
   const context = useContext(StudioContext);
@@ -10,6 +13,7 @@ function Response() {
   }
 
   const { isLoading, response } = context.studioState;
+  const { currentScenario } = context.studioState;
 
   console.log('Response:', response);
 
@@ -28,6 +32,18 @@ function Response() {
   const formatTokens = () => {
     if (!response?.usage?.totalTokens) return '-';
     return `${response.usage.totalTokens} tokens`;
+  };
+
+  const formatCost = () => {
+    const usage = response?.usage;
+    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return '-';
+    const provider = currentScenario?.configuration?.provider;
+    const model = currentScenario?.configuration?.model;
+    if (!provider || !model) return '-';
+    const inputTokens = usage.promptTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.8) : 0);
+    const outputTokens = usage.completionTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.2) : 0);
+    const cost = calculateRequestCost(provider, model, { inputTokens, outputTokens });
+    return cost != null ? `$${cost.toFixed(4)}` : '-';
   };
 
   const statusColor = response?.error ? 'bg-red-500' : 'bg-green-500';
@@ -76,6 +92,15 @@ function Response() {
                     {formatTokens()}
                   </span>
                 </div>
+                <div className="h-6 w-px bg-gray-200"></div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
+                    Cost
+                  </span>
+                  <span className="text-[11px] font-bold text-text-main leading-none">
+                    {formatCost()}
+                  </span>
+                </div>
               </>
             )}
           </div>
@@ -111,8 +136,37 @@ function Response() {
             </div>
           </div>
         ) : response?.text ? (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="whitespace-pre-wrap">{response.text}</div>
+          <div className="max-w-4xl mx-auto space-y-6 markdown-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-2" {...props} />,
+                code: (codeProps) => {
+                  const { node, className, children, inline, ...props } = codeProps as typeof codeProps & { inline?: boolean };
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline && match ? (
+                    <pre className="bg-gray-100 p-2 rounded-md mb-2 overflow-x-auto">
+                      <code className={`language-${match[1]}`} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  ) : (
+                    <code className="bg-gray-200 px-1 py-0.5 rounded-md" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+              }}
+            >
+              {response.text}
+            </ReactMarkdown>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto flex items-center justify-center h-full">

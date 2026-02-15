@@ -44,6 +44,20 @@ export type Scenario = {
   archived_at?: number | null;
 }
 
+export type PromptTemplate = {
+  id?: string;
+  type: "system" | "user";
+  name: string;
+  description?: string | null;
+  content: string;
+  variables_json?: string | null;
+  last_used_at?: number | null;
+  is_pinned?: number;
+  created_at?: number;
+  updated_at?: number;
+  archived_at?: number | null;
+};
+
 export type Execution = {
   id?: string;
   type: ExecutionType;
