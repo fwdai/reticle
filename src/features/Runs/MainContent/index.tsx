@@ -9,6 +9,7 @@ import { listExecutions, listScenarios, countExecutions } from "@/lib/storage";
 import { formatDuration, formatRelativeTime } from "@/lib/helpers/time";
 import { calculateRequestCost } from "@/lib/modelPricing";
 import Header from "../Header";
+import { RunDetail } from "./RunDetail";
 
 interface Run {
   id: string;
@@ -93,6 +94,7 @@ function Runs() {
   const [totalRuns, setTotalRuns] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRun, setSelectedRun] = useState<Run | null>(null);
 
   const loadPage = useCallback(async (pageNum: number) => {
     try {
@@ -121,6 +123,14 @@ function Runs() {
   useEffect(() => {
     loadPage(page);
   }, [page, loadPage]);
+
+  if (selectedRun) {
+    return (
+      <MainContent>
+        <RunDetail run={selectedRun} onBack={() => setSelectedRun(null)} />
+      </MainContent>
+    );
+  }
 
   return (
     <MainContent>
@@ -223,7 +233,11 @@ function Runs() {
                 )}
                 {!isLoading &&
                   runs.map((run) => (
-                    <tr key={run.id} className="table-row-hover transition-colors group">
+                    <tr
+                      key={run.id}
+                      onClick={() => setSelectedRun(run)}
+                      className="table-row-hover transition-colors group cursor-pointer"
+                    >
                       <td className="px-8 py-4">
                         {run.status === "success" ? (
                           <CheckCircle className="text-green-500 size-5" />

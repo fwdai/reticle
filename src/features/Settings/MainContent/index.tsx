@@ -142,7 +142,7 @@ function Settings() {
   return (
     <MainContent>
       <Header />
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50">
         <div className="max-w-3xl mx-auto px-10 py-12 space-y-10">
           <section className="space-y-6">
             <div>
