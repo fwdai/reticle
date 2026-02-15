@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Collection, Execution, Scenario } from '@/types';
+import { Collection, Execution, PromptTemplate, Scenario } from '@/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 
@@ -96,5 +96,33 @@ export async function updateScenario(id: string, data: Scenario): Promise<void> 
     table: 'scenarios',
     query: { where: { id } },
     data: data,
+  });
+}
+
+// --- Prompt Templates ---
+export async function listPromptTemplates(): Promise<PromptTemplate[]> {
+  const rows = await invoke<PromptTemplate[]>('db_select_cmd', {
+    table: 'prompt_templates',
+    query: { orderBy: 'updated_at', orderDirection: 'desc' },
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function insertPromptTemplate(data: Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+  return invoke<string>('db_insert_cmd', { table: 'prompt_templates', data });
+}
+
+export async function updatePromptTemplate(id: string, data: Partial<PromptTemplate>): Promise<void> {
+  await invoke('db_update_cmd', {
+    table: 'prompt_templates',
+    query: { where: { id } },
+    data,
+  });
+}
+
+export async function deletePromptTemplate(id: string): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'prompt_templates',
+    query: { where: { id } },
   });
 }
