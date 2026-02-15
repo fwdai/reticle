@@ -72,11 +72,12 @@ export function SaveTemplate({
       );
       console.log("Saving template to database:", newTemplate);
       await invoke("db_insert_cmd", {
-        table: "templates",
+        table: "prompt_templates",
         data: {
           name: newTemplate.name,
-          prompt: newTemplate.prompt,
-          variables: JSON.stringify(newTemplate.variables),
+          type: "system",
+          content: newTemplate.prompt,
+          variables_json: JSON.stringify(newTemplate.variables),
         },
       });
       setSelectedTemplateName(newTemplate.name);
