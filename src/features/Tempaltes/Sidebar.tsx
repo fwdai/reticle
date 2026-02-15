@@ -1,7 +1,6 @@
-import { Plus, Filter, FileCode, FolderOpen, Star, Clock } from "lucide-react";
+import { Filter, FileCode, Star, Clock } from "lucide-react";
 
 import Sidebar, { SidebarSection, SidebarItem } from "@/components/Layout/Sidebar";
-import { Button } from "@/components/ui/button";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
 
 function TemplatesSidebar() {
@@ -9,7 +8,6 @@ function TemplatesSidebar() {
     templates,
     typeFilter,
     setTypeFilter,
-    onCreateTemplate,
   } = useTemplatesContext();
 
   const starredCount = templates.filter((t) => t.is_pinned).length;

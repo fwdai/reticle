@@ -1,30 +1,31 @@
 import { Folder, FileText, ChevronRight, Plus, MoreHorizontal, Trash2 } from "lucide-react";
-import { useContext, useState } from 'react';
-import Sidebar from "@/components/Layout/Sidebar";
-import { StudioContext } from '@/contexts/StudioContext';
-import { Scenario } from '@/types';
-import NewCollectionModal from './components/NewCollectionModal';
+import { useContext, useState } from "react";
+
+import Sidebar, { SidebarSection, SidebarItem } from "@/components/Layout/Sidebar";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import { StudioContext } from "@/contexts/StudioContext";
+import type { Scenario } from "@/types";
+import NewCollectionModal from "./components/NewCollectionModal";
 
 function Studio() {
   const context = useContext(StudioContext);
 
   if (!context) {
-    console.error('StudioContext not found in Studio sidebar');
+    console.error("StudioContext not found in Studio sidebar");
     return null;
   }
 
@@ -37,7 +38,7 @@ function Studio() {
   const [scenarioToDelete, setScenarioToDelete] = useState<Scenario | null>(null);
 
   const toggleCollapse = (collectionId: string) => {
-    setCollapsedCollections(prev => {
+    setCollapsedCollections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(collectionId)) {
         newSet.delete(collectionId);
@@ -83,62 +84,68 @@ function Studio() {
 
   return (
     <Sidebar title="Scenarios">
-      <div>
-        <div className="flex items-center justify-between mb-2 pl-4 pr-3">
-          <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Collections</h3>
-          <button onClick={handleCreateCollection} className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-0.5 rounded-md">
+      <SidebarSection
+        title="Collections"
+        headerAction={
+          <button
+            onClick={handleCreateCollection}
+            className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-0.5 rounded-md"
+            type="button"
+          >
             <Plus size={16} />
           </button>
-        </div>
-        <nav className="space-y-1">
-          {collections.map(collection => (
-            <div key={collection.id}>
-              <div
-                className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer pl-4 pr-3 group"
-                onMouseEnter={() => setHoveredCollectionId(collection.id!)}
-                onMouseLeave={() => setHoveredCollectionId(null)}
+        }
+      >
+        {collections.map((collection) => (
+          <div key={collection.id}>
+            <div
+              className="flex items-center justify-between text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer pl-4 pr-3 group"
+              onMouseEnter={() => setHoveredCollectionId(collection.id!)}
+              onMouseLeave={() => setHoveredCollectionId(null)}
+            >
+              <button
+                type="button"
+                className="flex items-center gap-2 flex-grow py-1 text-left"
+                onClick={() => toggleCollapse(collection.id!)}
               >
-                <a
-                  className="flex items-center gap-2 flex-grow py-1"
-                  onClick={() => toggleCollapse(collection.id!)}
+                <div className="relative w-4 h-4 flex items-center justify-center">
+                  <Folder
+                    className={`absolute text-sm text-sidebar-text transition-opacity duration-200 ${
+                      hoveredCollectionId === collection.id ? "opacity-0" : "opacity-100"
+                    }`}
+                    size={16}
+                  />
+                  <ChevronRight
+                    className={`absolute text-sm text-gray-400 transition-[opacity,transform] duration-200 ease-in-out ${
+                      hoveredCollectionId === collection.id ? "opacity-100" : "opacity-0 pointer-events-none"
+                    } ${collapsedCollections.has(collection.id!) ? "" : "rotate-90"}`}
+                    size={16}
+                  />
+                </div>
+                <span className="text-sm text-sidebar-text">{collection.name}</span>
+              </button>
+              {hoveredCollectionId === collection.id && (
+                <button
+                  type="button"
+                  onClick={(event) => handleCreateScenario(collection.id!, event)}
+                  className="ml-auto text-text-muted hover:text-text-main hover:bg-gray-300 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="New Scenario"
                 >
-                  <div className="relative w-4 h-4 flex items-center justify-center">
-                    <Folder
-                      className={`absolute text-sm text-sidebar-text transition-opacity duration-200 ${hoveredCollectionId === collection.id ? 'opacity-0' : 'opacity-100'
-                        }`}
-                      size={16}
-                    />
-                    <ChevronRight
-                      className={`absolute text-sm text-gray-400 transition-[opacity,transform] duration-200 ease-in-out ${hoveredCollectionId === collection.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                        } ${collapsedCollections.has(collection.id!) ? '' : 'rotate-90'}`}
-                      size={16}
-                    />
-                  </div>
-                  <span className="text-sm text-sidebar-text">{collection.name}</span>
-                </a>
-                {hoveredCollectionId === collection.id && (
-                  <button
-                    onClick={(event) => handleCreateScenario(collection.id!, event)}
-                    className="ml-auto text-text-muted hover:text-text-main hover:bg-gray-300 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="New Scenario"
-                  >
-                    <Plus size={16} />
-                  </button>
-                )}
-              </div>
-              {!collapsedCollections.has(collection.id!) && (
-                <div className="space-y-1">
-                  {(scenariosByCollection[collection.id!] || []).map(scenario => (
-                    <a
-                      key={scenario.id}
-                      onClick={() => loadScenario(scenario.id!)}
-                      className={`group flex items-center justify-between pl-6 pr-3 py-1 text-sidebar-text hover:bg-gray-200 transition-colors cursor-pointer ${currentScenario?.id === scenario.id ? 'bg-gray-200' : ''
-                        }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileText className="text-sm text-sidebar-text flex-shrink-0" size={16} strokeWidth={1.5} />
-                        <span className="text-sm text-sidebar-text truncate">{scenario.title}</span>
-                      </div>
+                  <Plus size={16} />
+                </button>
+              )}
+            </div>
+            {!collapsedCollections.has(collection.id!) && (
+              <div className="space-y-1">
+                {(scenariosByCollection[collection.id!] || []).map((scenario) => (
+                  <SidebarItem
+                    key={scenario.id}
+                    icon={FileText}
+                    label={scenario.title}
+                    active={currentScenario?.id === scenario.id}
+                    onClick={() => loadScenario(scenario.id!)}
+                    indent
+                    actions={
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
@@ -160,14 +167,14 @@ function Studio() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-      </div>
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </SidebarSection>
       <NewCollectionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
