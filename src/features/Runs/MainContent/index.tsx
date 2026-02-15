@@ -7,6 +7,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { listExecutions, listScenarios, countExecutions } from "@/lib/storage";
 import { formatDuration, formatRelativeTime } from "@/lib/helpers/time";
+import { calculateRequestCost } from "@/lib/modelPricing";
 import Header from "../Header";
 
 interface Run {
@@ -24,9 +25,11 @@ interface Run {
 
 function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): Run {
   let model = "—";
+  let provider = "";
   try {
     const snapshot = exec.snapshot_json ? JSON.parse(exec.snapshot_json) : {};
     model = snapshot.configuration?.model ?? "—";
+    provider = snapshot.configuration?.provider ?? "";
   } catch {
     /* ignore */
   }
@@ -38,10 +41,22 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): R
     const usage = exec.usage_json ? JSON.parse(exec.usage_json) : {};
     const latencyMs = usage.latency_ms ?? (exec.ended_at != null && exec.started_at != null ? exec.ended_at - exec.started_at : null);
     latency = latencyMs != null ? formatDuration(latencyMs) : "—";
-    const prompt = usage.prompt_tokens ?? usage.promptTokens ?? 0;
-    const completion = usage.completion_tokens ?? usage.completionTokens ?? 0;
+    const prompt = usage.input_tokents ?? usage.inputTokens ?? 0;
+    const completion = usage.output_tokens ?? usage.outputTokens ?? 0;
     tokens = (prompt + completion) || (usage.total_tokens ?? usage.totalTokens ?? 0);
     costUsd = usage.cost_usd ?? usage.costUsd ?? 0;
+
+    if (costUsd === 0 && provider && model && model !== "—" && (prompt > 0 || completion > 0)) {
+
+      const calculated = calculateRequestCost(provider, model, {
+        inputTokens: prompt,
+        outputTokens: completion,
+        cachedTokens: usage.cached_tokens ?? usage.cachedTokens,
+      });
+
+
+      if (calculated != null) costUsd = calculated;
+    }
   } catch {
     if (exec.ended_at != null && exec.started_at != null) {
       latency = formatDuration(exec.ended_at - exec.started_at);
