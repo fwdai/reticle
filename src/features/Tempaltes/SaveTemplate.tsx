@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 // shadcn components and types
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,11 @@ import { Label } from "@/components/ui/label";
 // types
 import { Template } from "@/components/ui/PromptBox/types";
 
+// components
 import { SaveTemplateAlert } from "./Alert";
+
+// server actions
+import { invoke } from "@tauri-apps/api/core";
 
 interface SaveTemplateProps {
   templates: Template[];
@@ -51,26 +55,39 @@ export function SaveTemplate({
     return {
       name: trimmedName,
       prompt: prompt,
-      variableKeys: variables
-        .map((v) => v.key)
-        .filter((key) => key.trim() !== ""),
+      variables,
     };
   };
 
-  const persistTemplate = (newTemplate: Template) => {
-    const finalUpdatedTemplates = [
-      ...templates.filter((t) => t.name !== newTemplate.name),
-      newTemplate,
-    ];
-    setTemplates(finalUpdatedTemplates);
-    localStorage.setItem(
-      "promptTemplates",
-      JSON.stringify(finalUpdatedTemplates)
-    );
-    setSelectedTemplateName(newTemplate.name);
-    setIsOpen(false);
-    setTemplateName("");
+  const persistTemplate = async (newTemplate: Template) => {
+    try {
+      const finalUpdatedTemplates = [
+        ...templates.filter((t) => t.name !== newTemplate.name),
+        newTemplate,
+      ];
+      setTemplates(finalUpdatedTemplates);
+      localStorage.setItem(
+        "promptTemplates",
+        JSON.stringify(finalUpdatedTemplates)
+      );
+      console.log("Saving template to database:", newTemplate);
+      await invoke("db_insert_cmd", {
+        table: "templates",
+        data: {
+          name: newTemplate.name,
+          prompt: newTemplate.prompt,
+          variables: JSON.stringify(newTemplate.variables),
+        },
+      });
+      setSelectedTemplateName(newTemplate.name);
+      setIsOpen(false);
+      setTemplateName("");
+    } catch (error) {
+      console.error("Failed to save template:", error);
+    }
   };
+
+  const [isPending, startTransition] = useTransition();
 
   const handleSaveTemplate = () => {
     const newTemplate = buildTemplate();
@@ -84,17 +101,21 @@ export function SaveTemplate({
       return;
     }
 
-    persistTemplate(newTemplate);
+    startTransition(async () => {
+      await persistTemplate(newTemplate);
+    });
   };
 
-  const handleAlertConfirm = () => {
+  const handleAlertConfirm = async () => {
     if (!pendingTemplate) {
       return;
     }
 
     setIsAlertOpen(false);
     setPendingTemplate(null);
-    persistTemplate(pendingTemplate);
+    startTransition(async () => {
+      await persistTemplate(pendingTemplate);
+    });
   };
 
   const handleAlertCancel = () => {

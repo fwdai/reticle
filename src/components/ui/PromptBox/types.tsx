@@ -7,7 +7,7 @@ export interface Variable {
 export interface Template {
   name: string;
   prompt: string;
-  variableKeys: string[];
+  variables: Variable[];
 }
 
 export interface PromptBoxProps {
