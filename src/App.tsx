@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import Navigation from "./components/Layout/Nav";
+import Navigation from "./components/layout/Nav";
 import Home from "./features/Home";
 import Studio from "./features/Studio";
 import Environments from "./features/Environments";
@@ -9,7 +9,6 @@ import Templates from "./features/Tempaltes";
 import { Page } from "./types";
 import { useAppContext } from "./contexts/AppContext";
 import "./App.css";
-
 
 const pages: Partial<Record<Page, ComponentType>> = {
   home: Home,
@@ -25,7 +24,7 @@ function App() {
   const PageComponent = pages[appState.currentPage] as ComponentType;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden p-[3px] bg-sidebar-light">
+    <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light">
       <Navigation />
       <PageComponent />
     </div>

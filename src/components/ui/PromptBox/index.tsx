@@ -1,26 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Save } from "lucide-react";
-
-export interface Variable {
-  id: number;
-  key: string;
-  value: string;
-}
-
-interface Template {
-  name: string;
-  prompt: string;
-  variableKeys: string[];
-}
-
-interface PromptBoxProps {
-  type: "system" | "user";
-  initialPromptValue?: string;
-  initialVariables?: Variable[];
-  onPromptChange: (prompt: string) => void;
-  onVariablesChange: (variables: Variable[]) => void;
-  showTemplateManager?: boolean;
-}
+import { Plus, Trash2 } from "lucide-react";
+import { SaveTemplate } from "@/features/Tempaltes/SaveTemplate";
+// types
+import { Template, PromptBoxProps, Variable } from "./types";
 
 function PromptBox({
   type,
@@ -47,7 +29,9 @@ function PromptBox({
     }
   }, []); // Empty dependency array means this runs once on mount
 
-  const handlePromptChangeInternal = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handlePromptChangeInternal = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
     const newPrompt = event.target.value;
     setPrompt(newPrompt);
     onPromptChange(newPrompt);
@@ -76,32 +60,6 @@ function PromptBox({
     const updatedVariables = variables.filter((v) => v.id !== id);
     setVariables(updatedVariables);
     onVariablesChange(updatedVariables);
-  };
-
-  const handleSaveTemplate = () => {
-    const templateName = window.prompt("Enter a name for this template:");
-    if (templateName && templateName.trim() !== "") {
-      const newTemplate: Template = {
-        name: templateName.trim(),
-        prompt: prompt,
-        variableKeys: variables.map((v) => v.key).filter(key => key.trim() !== ""), // Save only non-empty keys
-      };
-
-      // Check if template name already exists
-      if (templates.some(t => t.name === newTemplate.name)) {
-        if (!window.confirm(`Template "${newTemplate.name}" already exists. Overwrite?`)) {
-          return;
-        }
-        // Remove existing template with the same name
-        const updatedTemplates = templates.filter(t => t.name !== newTemplate.name);
-        setTemplates(updatedTemplates);
-      }
-
-      const finalUpdatedTemplates = [...templates.filter(t => t.name !== newTemplate.name), newTemplate]; // Add new or updated template
-      setTemplates(finalUpdatedTemplates);
-      localStorage.setItem("promptTemplates", JSON.stringify(finalUpdatedTemplates));
-      setSelectedTemplateName(newTemplate.name);
-    }
   };
 
   const handleLoadTemplate = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -152,13 +110,13 @@ function PromptBox({
                   </option>
                 ))}
               </select>
-              <button
-                onClick={handleSaveTemplate}
-                className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-primary transition-colors"
-              >
-                <Save size={14} />
-                SAVE AS TEMPLATE
-              </button>
+              <SaveTemplate
+                prompt={prompt}
+                variables={variables}
+                templates={templates}
+                setTemplates={setTemplates}
+                setSelectedTemplateName={setSelectedTemplateName}
+              />
             </div>
           )}
         </div>
@@ -176,7 +134,9 @@ function PromptBox({
             </span> */}
           </div>
           <span className="text-[9px] text-text-muted uppercase">
-            <span className="font-medium">{characterCount}</span> CHARACTERS • ~<span className="font-me">{estimatedTokenCount}</span> TOKENS (approx.)
+            <span className="font-medium">{characterCount}</span> CHARACTERS • ~
+            <span className="font-me">{estimatedTokenCount}</span> TOKENS
+            (approx.)
           </span>
         </div>
       </div>
