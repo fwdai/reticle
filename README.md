@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./src/assets/reticle-logo.svg" alt="Reticle Logo" width="48" />
+  <img src="./.github/screenshots/logo.svg" alt="Reticle Logo" width="48" />
 </p>
 
 <h1 align="center">
