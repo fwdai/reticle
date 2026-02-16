@@ -126,3 +126,29 @@ export async function deletePromptTemplate(id: string): Promise<void> {
     query: { where: { id } },
   });
 }
+
+// --- Settings (key-value) ---
+
+export async function getSetting(key: string): Promise<string | null> {
+  const rows: { key: string; value: string }[] = await invoke('db_select_cmd', {
+    table: 'settings',
+    query: { where: { key } },
+  });
+  return rows.length > 0 ? rows[0].value : null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const existing = await getSetting(key);
+  if (existing !== null) {
+    await invoke('db_update_cmd', {
+      table: 'settings',
+      query: { where: { key } },
+      data: { value },
+    });
+  } else {
+    await invoke('db_insert_cmd', {
+      table: 'settings',
+      data: { key, value },
+    });
+  }
+}

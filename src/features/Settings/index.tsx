@@ -1,12 +1,25 @@
-import Sidebar from './Sidebar';
-import MainContent from './MainContent';
+import { useState } from "react";
+import Sidebar from "./Sidebar";
+import MainContent from "./MainContent";
+
+export type SettingsSectionId =
+  | "preferences"
+  | "account"
+  | "api-keys"
+  | "integrations";
 
 function SettingsPage() {
+  const [activeSection, setActiveSection] =
+    useState<SettingsSectionId>("preferences");
+
   return (
     <>
-      <Sidebar />
-      <MainContent />
-    </ >
+      <Sidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+      <MainContent activeSection={activeSection} />
+    </>
   );
 }
 

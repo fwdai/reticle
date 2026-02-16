@@ -1,45 +1,46 @@
-import { useState } from "react";
 import { Settings as SettingsIcon, User, Key, Plug } from "lucide-react";
 
 import Sidebar, { SidebarSection, SidebarItem } from "@/components/Layout/Sidebar";
+import type { SettingsSectionId } from "./index";
 
-type SectionId = "preferences" | "account" | "api-keys" | "integrations";
+interface SettingsSidebarProps {
+  activeSection: SettingsSectionId;
+  onSectionChange: (section: SettingsSectionId) => void;
+}
 
-function Settings() {
-  const [activeSection, setActiveSection] = useState<SectionId>("preferences");
-
+function SettingsSidebar({ activeSection, onSectionChange }: SettingsSidebarProps) {
   return (
     <Sidebar title="Settings">
       <SidebarSection title="General">
         <SidebarItem
-          icon={SettingsIcon}
-          label="Preferences"
-          active={activeSection === "preferences"}
-          onClick={() => setActiveSection("preferences")}
-        />
-        <SidebarItem
           icon={User}
           label="Account"
           active={activeSection === "account"}
-          onClick={() => setActiveSection("account")}
+          onClick={() => onSectionChange("account")}
         />
-      </SidebarSection>
-      <SidebarSection title="Advanced">
+        <SidebarItem
+          icon={SettingsIcon}
+          label="Preferences"
+          active={activeSection === "preferences"}
+          onClick={() => onSectionChange("preferences")}
+        />
         <SidebarItem
           icon={Key}
           label="API Keys"
           active={activeSection === "api-keys"}
-          onClick={() => setActiveSection("api-keys")}
+          onClick={() => onSectionChange("api-keys")}
         />
+      </SidebarSection>
+      <SidebarSection title="Advanced">
         <SidebarItem
           icon={Plug}
           label="Integrations"
           active={activeSection === "integrations"}
-          onClick={() => setActiveSection("integrations")}
+          onClick={() => onSectionChange("integrations")}
         />
       </SidebarSection>
     </Sidebar>
   );
 }
 
-export default Settings;
+export default SettingsSidebar;

@@ -69,9 +69,9 @@ function PromptBox({
     if (templateToLoad) {
       setPrompt(templateToLoad.prompt);
       onPromptChange(templateToLoad.prompt); // Inform parent about prompt change
-      const loadedVariables = templateToLoad.variableKeys.map((key, index) => ({
-        id: Date.now() + index, // Use Date.now() + index for unique IDs
-        key: key,
+      const loadedVariables = templateToLoad.variables.map((v, index) => ({
+        id: Date.now() + index,
+        key: v.key,
         value: "", // Reset values when loading template
       }));
       setVariables(loadedVariables);
