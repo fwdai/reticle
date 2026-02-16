@@ -20,8 +20,8 @@ function HomePage() {
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-5xl mx-auto px-10 py-12 space-y-12">
           <section className="text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              <span className="size-1.5 bg-indigo-600 rounded-full animate-pulse"></span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium uppercase tracking-wider mb-4">
+              <span className="size-1.5 bg-primary rounded-full animate-pulse"></span>
               Reticle Dashboard
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">

@@ -16,6 +16,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0005_add_timestamps_to_api_keys.sql")),
         M::up(include_str!("../migrations/0006_create_settings_table.sql")),
         M::up(include_str!("../migrations/0007_create_prompt_templates_table.sql")),
+        M::up(include_str!("../migrations/0008_add_attachments_to_scenarios.sql")),
     ])
 }
 

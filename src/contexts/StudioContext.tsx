@@ -21,6 +21,13 @@ export interface HistoryItem {
   content: string;
 }
 
+export interface AttachedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
 // This represents the scenario being actively edited in the UI
 export interface CurrentScenario {
   id: string; // Can be a client-side UUID or a DB ULID
@@ -31,6 +38,7 @@ export interface CurrentScenario {
   userPrompt: string;
   tools: Tool[];
   history: HistoryItem[];
+  attachments: AttachedFile[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -95,6 +103,24 @@ interface StudioProviderProps {
 
 const LAST_USED_SCENARIO_ID_KEY = 'lastUsedScenarioId';
 
+function parseAttachmentsJson(jsonStr: string): AttachedFile[] {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is AttachedFile =>
+        item &&
+        typeof item === 'object' &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        typeof item.size === 'number' &&
+        typeof item.type === 'string'
+    );
+  } catch {
+    return [];
+  }
+}
+
 // --- Initial State ---
 
 const initialScenario: CurrentScenario = {
@@ -112,6 +138,7 @@ const initialScenario: CurrentScenario = {
   userPrompt: 'Hello, world!',
   tools: [],
   history: [],
+  attachments: [],
 };
 
 // --- Provider Component ---
@@ -233,6 +260,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           userPrompt: dbScenario.user_prompt,
           tools: JSON.parse(dbScenario.tools_json || '[]'),
           history: JSON.parse(dbScenario.history_json || '[]'),
+          attachments: parseAttachmentsJson(dbScenario.attachments_json || '[]'),
           createdAt: dbScenario.created_at?.toString(),
           updatedAt: dbScenario.updated_at?.toString(),
         };
@@ -279,6 +307,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         params_json: JSON.stringify(initialScenario.configuration),
         tools_json: JSON.stringify(initialScenario.tools),
         history_json: JSON.stringify(initialScenario.history),
+        attachments_json: JSON.stringify(initialScenario.attachments),
       };
 
       const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });

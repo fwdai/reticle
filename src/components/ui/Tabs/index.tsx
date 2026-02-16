@@ -2,7 +2,7 @@ import React, { useState, Children, isValidElement } from "react";
 import TabPanel from "./TabPanel";
 
 interface TabPanelProps {
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -40,7 +40,7 @@ function Tabs({ children }: TabsProps) {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full">
-      <div className="flex border-b border-border-light px-8 gap-5 bg-slate-50 h-[45px] items-center">
+      <div className="flex border-b border-border-light px-8 gap-4 bg-slate-50 h-[45px] items-center">
         {tabs}
       </div>
       <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">

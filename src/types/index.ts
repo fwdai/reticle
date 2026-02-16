@@ -37,6 +37,7 @@ export type Scenario = {
   params_json: string;
   response_format_json?: string | null;
   tools_json?: string | null;
+  attachments_json?: string | null;
   provider_meta_json?: string | null;
   version?: number;
   created_at?: number;

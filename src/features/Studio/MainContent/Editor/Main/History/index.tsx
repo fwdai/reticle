@@ -205,7 +205,7 @@ function History() {
   const assistantCount = history.filter((h) => h.role === "assistant").length;
 
   return (
-    <div className="max-w-4xl flex flex-col">
+    <div className="max-w-4xl flex flex-col mx-auto">
       <div className="bg-white border border-border-light rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col">
         <div className="h-10 px-5 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
