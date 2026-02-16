@@ -121,7 +121,7 @@ function PromptBox({
           )}
         </div>
         <textarea
-          className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm resize-none text-text-main placeholder:text-gray-300"
+          className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm resize-none text-text-main placeholder:text-gray-400"
           placeholder={placeholder}
           value={prompt}
           onChange={handlePromptChangeInternal}

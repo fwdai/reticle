@@ -1,4 +1,5 @@
 import { useState, useTransition } from "react";
+import { Save } from "lucide-react";
 // shadcn components and types
 import { Button } from "@/components/ui/button";
 import {
@@ -138,12 +139,13 @@ export function SaveTemplate({
         }}
       >
         <DialogTrigger asChild>
-          <Button
+          <button
+            onClick={handleSaveTemplate}
             className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-primary transition-colors"
-            variant="outline"
           >
+            <Save size={14} />
             SAVE AS TEMPLATE
-          </Button>
+          </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
