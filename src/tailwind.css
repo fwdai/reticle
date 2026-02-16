@@ -212,6 +212,9 @@
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
   .animate-flow-horizontal {
     animation: flow-horizontal 2s ease-in-out infinite;
   }
@@ -228,6 +231,17 @@
   50% {
     opacity: 0.8;
     box-shadow: 0 0 12px 3px rgb(6 167 199 / 0.7);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.92);
   }
 }
 

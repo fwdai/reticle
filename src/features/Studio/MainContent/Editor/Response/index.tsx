@@ -46,28 +46,32 @@ function Response() {
     return cost != null ? `$${cost.toFixed(4)}` : '-';
   };
 
-  const statusColor = response?.error ? 'bg-red-500' : 'bg-green-500';
-  const statusCode = response?.error ? 'ERROR' : isLoading ? '...' : '200 OK';
+  const isStandby = !response && !isLoading;
+  const isIdle = isStandby || isLoading;
+  const statusColor = response?.error ? 'bg-red-500' : isIdle ? 'bg-gray-400' : 'bg-green-500';
+  const statusCode = response?.error ? 'ERROR' : isLoading ? '...' : isStandby ? '...' : '200 OK';
 
   return (
     <section className="h-full flex flex-col rounded-b-xl">
-      <div className="h-11 border-b border-border-light flex items-center justify-between px-8 bg-sidebar-light/40">
+      <div className="h-11 border-b border-border-light flex items-center justify-between px-6 bg-sidebar-light/40">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
-            <span className={`size-2 ${statusColor} rounded-full ${isLoading ? 'animate-pulse' : ''}`}></span>
+            <span className={`size-2 ${statusColor} rounded-full ${isLoading ? 'animate-pulse-subtle' : ''}`}></span>
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-main">
               Response Console
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
-                Status
-              </span>
-              <span className={`text-[11px] font-bold leading-none uppercase ${response?.error ? 'text-red-600' : 'text-green-600'}`}>
-                {statusCode}
-              </span>
-            </div>
+            {response && (
+              <div className="flex flex-col">
+                <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
+                  Status
+                </span>
+                <span className={`text-[11px] font-bold leading-none uppercase ${response?.error ? 'text-red-600' : isStandby ? 'text-text-muted' : 'text-green-600'}`}>
+                  {statusCode}
+                </span>
+              </div>
+            )}
             {response?.latency !== undefined && (
               <>
                 <div className="h-6 w-px bg-gray-200"></div>
