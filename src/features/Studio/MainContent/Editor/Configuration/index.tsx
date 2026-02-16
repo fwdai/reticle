@@ -32,7 +32,7 @@ function Configuration() {
 
   return (
     <aside className="w-full h-full flex-shrink-0 bg-slate-50 overflow-y-auto custom-scrollbar">
-      <div className="p-8">
+      <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">
             Configuration
@@ -50,12 +50,12 @@ function Configuration() {
               value={configuration.provider}
               onValueChange={(value) => handleValueChange('provider', value)}
             >
-              <SelectTrigger className="w-full text-sm rounded-xl border-border-light bg-white py-2.5 px-3 shadow-sm focus:ring-primary focus:border-primary transition-all cursor-pointer">
+              <SelectTrigger className="w-full text-sm rounded-lg border border-border-light bg-white py-2.5 px-3 shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all cursor-pointer text-text-main [&>svg]:text-text-muted">
                 <SelectValue placeholder="Select a provider" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-lg border border-border-light bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] py-1">
                 {PROVIDERS_LIST.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
+                  <SelectItem key={provider.id} value={provider.id} className="py-2.5 pl-8 pr-3 text-text-main focus:bg-slate-50">
                     {provider.name}
                   </SelectItem>
                 ))}
@@ -69,12 +69,12 @@ function Configuration() {
               value={configuration.model}
               onValueChange={(value) => handleValueChange('model', value)}
             >
-              <SelectTrigger className="w-full text-sm rounded-xl border-border-light bg-white py-2.5 px-3 shadow-sm focus:ring-primary focus:border-primary transition-all cursor-pointer">
+              <SelectTrigger className="w-full text-sm rounded-lg border border-border-light bg-white py-2.5 px-3 shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all cursor-pointer text-text-main [&>svg]:text-text-muted">
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-lg border border-border-light bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] py-1">
                 {studioState.providerModels[configuration.provider]?.map((model: any) => (
-                  <SelectItem key={model.id} value={model.id}>
+                  <SelectItem key={model.id} value={model.id} className="py-2.5 pl-8 pr-3 text-text-main focus:bg-slate-50">
                     {model.name}
                   </SelectItem>
                 ))}

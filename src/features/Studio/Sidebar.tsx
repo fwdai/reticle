@@ -110,15 +110,13 @@ function Studio() {
               >
                 <div className="relative w-4 h-4 flex items-center justify-center">
                   <Folder
-                    className={`absolute text-sm text-sidebar-text transition-opacity duration-200 ${
-                      hoveredCollectionId === collection.id ? "opacity-0" : "opacity-100"
-                    }`}
+                    className={`absolute text-sm text-sidebar-text transition-opacity duration-200 ${hoveredCollectionId === collection.id ? "opacity-0" : "opacity-100"
+                      }`}
                     size={16}
                   />
                   <ChevronRight
-                    className={`absolute text-sm text-gray-400 transition-[opacity,transform] duration-200 ease-in-out ${
-                      hoveredCollectionId === collection.id ? "opacity-100" : "opacity-0 pointer-events-none"
-                    } ${collapsedCollections.has(collection.id!) ? "" : "rotate-90"}`}
+                    className={`absolute text-sm text-gray-400 transition-[opacity,transform] duration-200 ease-in-out ${hoveredCollectionId === collection.id ? "opacity-100" : "opacity-0 pointer-events-none"
+                      } ${collapsedCollections.has(collection.id!) ? "" : "rotate-90"}`}
                     size={16}
                   />
                 </div>
@@ -157,7 +155,11 @@ function Studio() {
                             <MoreHorizontal size={14} />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={(e) => e.stopPropagation()}
+                          className="min-w-48 rounded-lg border border-border-light bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] py-1"
+                        >
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive focus:bg-destructive/10"
                             onClick={() => handleDeleteClick(scenario)}
