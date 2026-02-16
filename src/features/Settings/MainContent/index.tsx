@@ -19,13 +19,14 @@ function SettingsMainContent({ activeSection }: SettingsMainContentProps) {
         return <Account />;
       case "integrations":
         return (
-          <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
+          <div className="flex items-center justify-center py-48 text-slate-500 text-sm">
             Coming soon
           </div>
         );
       case "preferences":
-      default:
         return <Preferences />;
+      default:
+        return <Account />;
     }
   };
 

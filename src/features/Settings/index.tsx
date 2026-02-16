@@ -10,7 +10,7 @@ export type SettingsSectionId =
 
 function SettingsPage() {
   const [activeSection, setActiveSection] =
-    useState<SettingsSectionId>("preferences");
+    useState<SettingsSectionId>("account");
 
   return (
     <>

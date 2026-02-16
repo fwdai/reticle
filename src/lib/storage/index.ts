@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Collection, Execution, PromptTemplate, Scenario } from '@/types';
+import { Account, Collection, Execution, PromptTemplate, Scenario } from '@/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 
@@ -125,6 +125,68 @@ export async function deletePromptTemplate(id: string): Promise<void> {
     table: 'prompt_templates',
     query: { where: { id } },
   });
+}
+
+// --- Accounts ---
+
+export async function getOrCreateAccount(): Promise<Account> {
+  const rows: Account[] = await invoke('db_select_cmd', {
+    table: 'accounts',
+    query: {},
+  });
+  const existing = rows.length > 0 ? rows[0] : null;
+  if (existing) return existing;
+
+  const id = await invoke<string>('db_insert_cmd', {
+    table: 'accounts',
+    data: {},
+  });
+  const inserted: Account[] = await invoke('db_select_cmd', {
+    table: 'accounts',
+    query: { where: { id } },
+  });
+  return inserted[0] ?? { id };
+}
+
+/**
+ * Upserts account: inserts if table is empty, updates if account exists.
+ */
+export async function upsertAccount(
+  data: Partial<Pick<Account, 'first_name' | 'last_name' | 'avatar' | 'role' | 'use_case' | 'timezone' | 'usage_context'>>
+): Promise<Account> {
+  const rows: Account[] = await invoke('db_select_cmd', {
+    table: 'accounts',
+    query: {},
+  });
+  const existing = rows.length > 0 ? rows[0] : null;
+  const payload = {
+    first_name: data.first_name ?? null,
+    last_name: data.last_name ?? null,
+    avatar: data.avatar ?? null,
+    role: data.role ?? null,
+    use_case: data.use_case ?? null,
+    timezone: data.timezone ?? null,
+    usage_context: data.usage_context ?? null,
+  };
+
+  if (existing?.id) {
+    await invoke('db_update_cmd', {
+      table: 'accounts',
+      query: { where: { id: existing.id } },
+      data: payload,
+    });
+    return { ...existing, ...payload };
+  }
+
+  const id = await invoke<string>('db_insert_cmd', {
+    table: 'accounts',
+    data: payload,
+  });
+  const inserted: Account[] = await invoke('db_select_cmd', {
+    table: 'accounts',
+    query: { where: { id } },
+  });
+  return inserted[0] ?? { id, ...payload };
 }
 
 // --- Settings (key-value) ---

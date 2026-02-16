@@ -59,6 +59,19 @@ export type PromptTemplate = {
   archived_at?: number | null;
 };
 
+export type Account = {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar?: string | null; // base64 data URL
+  role?: string | null;
+  use_case?: string | null;
+  timezone?: string | null;
+  usage_context?: "work" | "personal" | "education" | "other" | null;
+  created_at?: number;
+  updated_at?: number;
+};
+
 export type Execution = {
   id?: string;
   type: ExecutionType;
