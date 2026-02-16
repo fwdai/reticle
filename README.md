@@ -3,15 +3,13 @@
 </p>
 
 <h1 align="center">
-  <br />
-  ◉ Reticle
-  <br />
+  Reticle
 </h1>
 
 <p align="center">
-  <strong>The AI Engineering Workbench.</strong>
+  <strong>AI Engineering DevTools</strong>
   <br />
-  <em>Build, test, and iterate on LLM workflows with surgical precision.</em>
+  <em>Design, simulate, and debug LLM interactions with full transparency.</em>
 </p>
 
 <p align="center">
@@ -27,10 +25,6 @@
 <p align="center">
   <img src="./.github/screenshots/app_window.png" alt="Reticle app" width="860" />
 </p>
-
-<br />
-
----
 
 <br />
 
@@ -59,7 +53,6 @@ Design and run fully-configurable LLM calls with deterministic control.
 - Inspect raw request/response payloads
 - Latency, token breakdown, and per-run cost estimation
 
----
 
 ### 🔍 Execution Trace
 See what actually happened — not just the final output.
@@ -69,7 +62,6 @@ See what actually happened — not just the final output.
 - Tool call arguments and intermediate outputs
 - Reproducible runs with explicit parameters
 
----
 
 ### 🛠 Tool Definitions
 Define and simulate function/tool calls before writing backend code.
@@ -79,7 +71,6 @@ Define and simulate function/tool calls before writing backend code.
 - Toggle between structured and raw modes
 - Copy-ready schema export
 
----
 
 ### 📎 Multimodal Inputs
 Test real-world scenarios with structured and unstructured data.
@@ -88,7 +79,6 @@ Test real-world scenarios with structured and unstructured data.
 - Batch management with size tracking
 - File-aware execution context
 
----
 
 ### 🧩 Prompt Templates
 Reusable building blocks for consistent AI behavior.
@@ -97,7 +87,6 @@ Reusable building blocks for consistent AI behavior.
 - Inline highlighting and validation
 - Versioned usage across scenarios
 
----
 
 ### 🔄 Model Comparison
 Validate behavior across providers before committing.
@@ -106,7 +95,6 @@ Validate behavior across providers before committing.
 - Compare outputs, latency, and cost side-by-side
 - Identify drift or regression quickly
 
----
 
 ### 🧠 Agent Simulation *(coming soon)*
 Design and simulate multi-step tool-calling agents.
@@ -116,13 +104,9 @@ Design and simulate multi-step tool-calling agents.
 - Token and cost accumulation per cycle
 - Export agent configuration for production integration
 
-___
 
 > All execution happens locally. API keys and credentials never leave your machine.
 
-<br />
-
----
 
 <br />
 
@@ -164,8 +148,6 @@ Contributions are welcome! Here's how to get started:
 MIT — do whatever you want. Just build cool things.
 
 <br />
-
----
 
 <p align="center">
   <sub>Built for engineers who want to see what their AI is actually doing.</sub>
