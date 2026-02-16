@@ -1,56 +1,172 @@
-# Reticle: Build, Test, and Deploy AI Scenarios
+<p align="center">
+  <img src="./src/assets/reticle-logo.svg" alt="Reticle Logo" width="48" />
+</p>
 
-Reticle is a desktop application built with **Tauri**, featuring a **React (TypeScript)** frontend and a **Rust** backend. It provides a powerful environment for building, testing, and deploying AI scenarios, offering robust tools for managing LLM interactions, configurations, and data.
+<h1 align="center">
+  <br />
+  ◉ Reticle
+  <br />
+</h1>
 
-## Features
+<p align="center">
+  <strong>The AI Engineering Workbench.</strong>
+  <br />
+  <em>Build, test, and iterate on LLM workflows with surgical precision.</em>
+</p>
 
-*   **AI Scenario Studio:** A dedicated UI for crafting and testing AI scenarios.
-*   **LLM Provider Integration:** Seamlessly connect with various LLM providers (OpenAI, Anthropic, Google).
-*   **Local Proxy Server:** Securely route API calls through a local Rust-powered proxy.
-*   **API Key Management:** Store and retrieve API keys securely using an embedded SQLite database.
-*   **Scenario Versioning & History:** Track changes and execution history of your AI scenarios.
-*   **Extendable Architecture:** Designed for easy integration of new LLMs, tools, and functionalities.
+<p align="center">
+  <img src="https://img.shields.io/badge/status-alpha-0bb89c?style=flat-square&labelColor=1a1f2e" />
+  <img src="https://img.shields.io/badge/react-18-61dafb?style=flat-square&labelColor=1a1f2e&logo=react&logoColor=61dafb" />
+  <img src="https://img.shields.io/badge/typescript-5-3178c6?style=flat-square&labelColor=1a1f2e&logo=typescript&logoColor=3178c6" />
+  <img src="https://img.shields.io/badge/tailwind-4-38bdf8?style=flat-square&labelColor=1a1f2e&logo=tailwindcss&logoColor=38bdf8" />
+  <img src="https://img.shields.io/badge/license-MIT-ffffff?style=flat-square&labelColor=1a1f2e" />
+</p>
 
-## Recommended IDE Setup
+<br />
 
--   [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+<p align="center">
+  <img src="./.github/screenshots/app_window.png" alt="Reticle app" width="860" />
+</p>
 
-## Getting Started
+<br />
 
-### Prerequisites
+---
 
-Before you begin, ensure you have the following installed:
+<br />
 
-*   **Node.js** (v20.19+ or v22.12+ recommended by Vite) and **Bun** (as package manager).
-*   **Rust** (latest stable version, via [rustup](https://rustup.rs/)).
-*   **Tauri CLI** (`cargo install tauri-cli --version "2.0.0-beta.19"` or later compatible beta version).
+## What is Reticle?
 
-### Setup Instructions
+Reticle is a local-first DevTools environment for designing, simulating, and debugging LLM and agent executions before they reach your codebase.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-repo/reticle.git
-    cd reticle
-    ```
+Define prompts, tools, model parameters, and full execution scenarios in one place — then inspect exactly what happened: request payloads, tool call sequences, token usage, latency, and cost. No hidden system prompts. No playground guesswork.
 
-2.  **Install frontend dependencies:**
-    ```bash
-    bun install
-    ```
+When you're satisfied, export the scenario or agent configuration and integrate it into your production stack.
 
-3.  **Run the application in development mode:**
-    This command will build both the Rust backend and the React frontend, and launch the Tauri desktop application. It will also automatically apply any pending database migrations.
-    ```bash
-    bun run tauri dev
-    ```
+### Not a Chat App. Not Observability.
 
-4.  **Database & Migrations:**
-    Reticle uses SQLite for local data storage. Database schema migrations are automatically applied on application startup (when running `bun run tauri dev`). If you encounter issues with database schema (e.g., "no such table" errors after changes), you may need to:
-    *   **Close the application.**
-    *   **Delete the development database file:**
-        *   **macOS:** `rm "~/Library/Application Support/com.alchaplinsky.reticle/reticle.db"`
-        *   **Linux:** `rm "~/.config/com.alchaplinsky.reticle/reticle.db"`
-        *   **Windows:** `del "%APPDATA%\com.alchaplinsky.reticle\reticle.db"`
-    *   **Rerun `bun run tauri dev`** to create a fresh database with all migrations applied.
+Reticle focuses on the design phase of AI development — helping engineers understand and validate execution behavior before production. It does not trace arbitrary runtime code or replace production monitoring tools.
 
-This completes the initial setup. Explore the Studio UI to start building your AI scenarios!
+<br />
+
+## ✦ Features
+
+### ⚙️ Scenario Execution
+Design and run fully-configurable LLM calls with deterministic control.
+
+- System & user prompts with live token estimation
+- Full model configuration (provider, variant, temperature, top-p, max tokens, seed)
+- Attach conversation history and contextual files
+- Inspect raw request/response payloads
+- Latency, token breakdown, and per-run cost estimation
+
+---
+
+### 🔍 Execution Trace
+See what actually happened — not just the final output.
+
+- Visual flow from prompt → model → tool calls → response
+- Expandable steps with timing and metadata
+- Tool call arguments and intermediate outputs
+- Reproducible runs with explicit parameters
+
+---
+
+### 🛠 Tool Definitions
+Define and simulate function/tool calls before writing backend code.
+
+- JSON schema builder with OpenAI-compatible output
+- Mock tool responses to test agent behavior
+- Toggle between structured and raw modes
+- Copy-ready schema export
+
+---
+
+### 📎 Multimodal Inputs
+Test real-world scenarios with structured and unstructured data.
+
+- Drag-and-drop file attachments (PDF, CSV, images, etc.)
+- Batch management with size tracking
+- File-aware execution context
+
+---
+
+### 🧩 Prompt Templates
+Reusable building blocks for consistent AI behavior.
+
+- Variable-based templates (`{{var}}`)
+- Inline highlighting and validation
+- Versioned usage across scenarios
+
+---
+
+### 🔄 Model Comparison
+Validate behavior across providers before committing.
+
+- Run the same scenario against multiple models
+- Compare outputs, latency, and cost side-by-side
+- Identify drift or regression quickly
+
+---
+
+### 🧠 Agent Simulation *(coming soon)*
+Design and simulate multi-step tool-calling agents.
+
+- Step-by-step execution graph
+- Loop and retry visibility
+- Token and cost accumulation per cycle
+- Export agent configuration for production integration
+
+___
+
+> All execution happens locally. API keys and credentials never leave your machine.
+
+<br />
+
+---
+
+<br />
+
+## 🛠 Development Setup
+
+### Requirements
+
+- Rust
+- Node.js ≥ 22
+- bun
+
+### Run Locally
+
+```bash
+git clone https://github.com/fwdai/reticle.git
+cd reticle
+
+bun install
+bun tauri dev
+```
+
+<br />
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. **Fork** the repo
+2. **Create a branch** — `git checkout -b feat/my-feature`
+3. **Commit** — `git commit -m "feat: add my feature"`
+4. **Push** — `git push origin feat/my-feature`
+5. **Open a Pull Request**
+
+
+<br />
+
+## 📄 License
+
+MIT — do whatever you want. Just build cool things.
+
+<br />
+
+---
+
+<p align="center">
+  <sub>Built for engineers who want to see what their AI is actually doing.</sub>
+</p>
