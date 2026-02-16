@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
+import { TabTitle } from "@/components/ui/Tabs/TabTitle";
 import { StudioContext } from "@/contexts/StudioContext";
 import Files from "./Files";
 import History from "./History";
@@ -11,12 +12,7 @@ import Tools from "./Tools";
 function StudioMain() {
   const context = useContext(StudioContext);
   const fileCount = context?.studioState.currentScenario.attachments?.length ?? 0;
-  const filesTabTitle = (
-    <span className="flex items-center gap-1.5">
-      Files
-      <span className="rounded-md bg-primary/15 px-1 py-0.5 text-[10px] font-bold text-primary">{fileCount}</span>
-    </span>
-  );
+  const toolsCount = context?.studioState.currentScenario.tools?.length ?? 0;
 
   return (
     <Tabs>
@@ -29,10 +25,10 @@ function StudioMain() {
       <TabPanel title="History">
         <History />
       </TabPanel>
-      <TabPanel title={filesTabTitle}>
+      <TabPanel title={<TabTitle label="Files" count={fileCount} />}>
         <Files />
       </TabPanel>
-      <TabPanel title="Tools">
+      <TabPanel title={<TabTitle label="Tools" count={toolsCount} />}>
         <Tools />
       </TabPanel>
     </Tabs>
