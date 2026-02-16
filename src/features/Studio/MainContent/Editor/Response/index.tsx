@@ -1,11 +1,15 @@
-import { useContext } from "react";
-import { Copy, Code } from "lucide-react";
+import { useContext, useState } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
 import { calculateRequestCost } from "@/lib/modelPricing";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
+import { CopyButton } from "@/components/ui/CopyButton";
+import MarkdownPreview from "./MarkdownPreview";
+import RawJsonView from "./RawJsonView";
+
+export type ResponseViewMode = "text" | "raw";
 
 function Response() {
+  const [viewMode, setViewMode] = useState<ResponseViewMode>("text");
   const context = useContext(StudioContext);
 
   if (!context) {
@@ -15,13 +19,11 @@ function Response() {
   const { isLoading, response } = context.studioState;
   const { currentScenario } = context.studioState;
 
-  console.log('Response:', response);
-
-  const handleCopy = () => {
-    if (response?.text) {
-      navigator.clipboard.writeText(response.text);
-    }
-  };
+  const copyText =
+    response &&
+    (viewMode === "raw"
+      ? JSON.stringify(response, null, 2)
+      : response.text ?? response.error ?? "");
 
   const formatLatency = (ms?: number) => {
     if (!ms) return '-';
@@ -111,16 +113,17 @@ function Response() {
         </div>
         {response && (
           <div className="flex items-center gap-4">
-            <button className="text-[10px] font-bold text-text-muted hover:text-primary transition-colors flex items-center gap-1">
-              <Code size={14} />
-              RAW JSON
-            </button>
-            <button
-              onClick={handleCopy}
-              className="text-[10px] font-bold text-text-muted hover:text-primary transition-colors flex items-center gap-1">
-              <Copy size={14} />
-              COPY
-            </button>
+            <CopyButton text={copyText ?? ""} />
+            <div className="h-5 w-px bg-border-light"></div>
+            <SegmentedSwitch<ResponseViewMode>
+              options={[
+                { value: "text", label: "Text" },
+                { value: "raw", label: "Raw JSON" },
+              ]}
+              value={viewMode}
+              onChange={setViewMode}
+              size="compact"
+            />
           </div>
         )}
       </div>
@@ -132,46 +135,23 @@ function Response() {
               <p className="text-text-muted text-sm">Generating response...</p>
             </div>
           </div>
-        ) : response?.error ? (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <h3 className="text-red-800 font-bold mb-2">Error</h3>
-              <p className="text-red-700">{response.error}</p>
+        ) : response ? (
+          viewMode === "raw" ? (
+            <RawJsonView response={response} />
+          ) : response.error ? (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                <h3 className="text-red-800 font-bold mb-2">Error</h3>
+                <p className="text-red-700">{response.error}</p>
+              </div>
             </div>
-          </div>
-        ) : response?.text ? (
-          <div className="max-w-4xl mx-auto space-y-6 markdown-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}
-              components={{
-                h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
-                h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
-                p: ({ node, ...props }) => <p className="mb-2" {...props} />,
-                ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
-                ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
-                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-2" {...props} />,
-                code: (codeProps) => {
-                  const { node, className, children, inline, ...props } = codeProps as typeof codeProps & { inline?: boolean };
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <pre className="bg-gray-100 p-2 rounded-md mb-2 overflow-x-auto">
-                      <code className={`language-${match[1]}`} {...props}>
-                        {children}
-                      </code>
-                    </pre>
-                  ) : (
-                    <code className="bg-gray-200 px-1 py-0.5 rounded-md" {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
-              }}
-            >
-              {response.text}
-            </ReactMarkdown>
-          </div>
+          ) : response.text ? (
+            <MarkdownPreview content={response.text} />
+          ) : (
+            <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
+              <p className="text-text-muted text-sm">No response text.</p>
+            </div>
+          )
         ) : (
           <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
             <p className="text-text-muted text-sm">No response yet. Click Run to generate a response.</p>
