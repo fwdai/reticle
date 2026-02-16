@@ -42,7 +42,7 @@ Reticle focuses on the design phase of AI development — helping engineers unde
 
 <br />
 
-## ✦ Features
+## 🌟 Features
 
 ### ⚙️ Scenario Execution
 Design and run fully-configurable LLM calls with deterministic control.
