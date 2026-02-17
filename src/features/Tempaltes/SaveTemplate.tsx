@@ -1,4 +1,4 @@
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Save } from "lucide-react";
 // shadcn components and types
 import { Button } from "@/components/ui/button";
@@ -52,62 +52,71 @@ export function SaveTemplate({
   );
 
   // builds a PromptTemplate object from the current prompt, variables, and template name.
-  const buildTemplate = (variables: Variable[]): PromptTemplate | null => {
-    const trimmedName = templateName.trim();
-    if (!trimmedName) {
-      return null;
-    }
+  const buildTemplate = useCallback(
+    (variables: Variable[]): PromptTemplate | null => {
+      const trimmedName = templateName.trim();
+      if (!trimmedName) {
+        return null;
+      }
 
-    // ensure all keys are not empty
-    const validVariables = variables.filter((v) => v.key.trim() !== "");
+      // ensure all keys are not empty
+      const validVariables = variables.filter((v) => v.key.trim() !== "");
 
-    return {
-      name: trimmedName,
-      type,
-      content,
-      variables_json: JSON.stringify(validVariables),
-    };
-  };
-
-  const insertTemplate = async (newTemplate: PromptTemplate) => {
-    try {
-      const data = {
-        name: newTemplate.name,
-        type: newTemplate.type,
-        content: newTemplate.content,
-        variables_json: newTemplate.variables_json,
+      return {
+        name: trimmedName,
+        type,
+        content,
+        variables_json: JSON.stringify(validVariables),
       };
-      const inserted = await insertPromptTemplate(data);
-      const templateWithId: PromptTemplate = {
-        ...newTemplate,
-        // assume the insert action returns an object with the generated `id`
-        id: (inserted as any).id,
-      };
-      onTemplateSaved(templateWithId);
+    },
+    [content, templateName, type]
+  );
 
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to save template:", error);
-    }
-  };
+  const insertTemplate = useCallback(
+    async (newTemplate: PromptTemplate) => {
+      try {
+        const data = {
+          name: newTemplate.name,
+          type: newTemplate.type,
+          content: newTemplate.content,
+          variables_json: newTemplate.variables_json,
+        };
+        const insertedId = await insertPromptTemplate(data);
 
-  const handleUpdateTemplate = async (template: PromptTemplate) => {
-    try {
-      const data = {
-        content: template.content || "",
-        variables_json: template.variables_json || "[]",
-      };
-      await updatePromptTemplate(template.id || "", data);
-      onTemplateSaved(template);
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to update template:", error);
-    }
-  };
+        const templateWithId: PromptTemplate = {
+          ...newTemplate,
+          // assume the insert action returns an object with the generated `id`
+          id: insertedId,
+        };
+        onTemplateSaved(templateWithId);
+        setIsOpen(false);
+      } catch (error) {
+        console.error("Failed to save template:", error);
+      }
+    },
+    [onTemplateSaved]
+  );
+
+  const updateTemplate = useCallback(
+    async (template: PromptTemplate) => {
+      try {
+        const data = {
+          content: template.content || "",
+          variables_json: template.variables_json || "[]",
+        };
+        await updatePromptTemplate(template.id || "", data);
+        onTemplateSaved(template);
+        setIsOpen(false);
+      } catch (error) {
+        console.error("Failed to update template:", error);
+      }
+    },
+    [onTemplateSaved]
+  );
 
   const [_, startTransition] = useTransition();
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = useCallback(() => {
     const newTemplate = buildTemplate(variables);
     if (!newTemplate) {
       return;
@@ -127,9 +136,9 @@ export function SaveTemplate({
     startTransition(async () => {
       await insertTemplate(newTemplate);
     });
-  };
+  }, [buildTemplate, insertTemplate, startTransition, templates, variables]);
 
-  const handleAlertConfirm = async () => {
+  const handleAlertConfirm = useCallback(async () => {
     if (!pendingTemplate) {
       return;
     }
@@ -137,14 +146,14 @@ export function SaveTemplate({
     setIsAlertOpen(false);
     setPendingTemplate(null);
     startTransition(async () => {
-      await handleUpdateTemplate(pendingTemplate);
+      await updateTemplate(pendingTemplate);
     });
-  };
+  }, [pendingTemplate, startTransition, updateTemplate]);
 
-  const handleAlertCancel = () => {
+  const handleAlertCancel = useCallback(() => {
     setIsAlertOpen(false);
     setPendingTemplate(null);
-  };
+  }, []);
 
   return (
     <>
