@@ -170,7 +170,7 @@ export function SaveTemplate({
       >
         <DialogTrigger asChild>
           <button
-            onClick={handleSaveTemplate}
+            onClick={() => setIsOpen(true)}
             className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-primary transition-colors"
           >
             <Save size={14} />
