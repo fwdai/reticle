@@ -112,6 +112,7 @@ function PromptBox({
               </select>
               <SaveTemplate
                 prompt={prompt}
+                promptType={type}
                 variables={variables}
                 templates={templates}
                 setTemplates={setTemplates}

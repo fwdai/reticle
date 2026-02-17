@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // types
-import { Template } from "@/components/ui/PromptBox/types";
+import { Template, Variable } from "@/components/ui/PromptBox/types";
 
 // components
 import { SaveTemplateAlert } from "./Alert";
@@ -28,13 +28,15 @@ import { invoke } from "@tauri-apps/api/core";
 interface SaveTemplateProps {
   templates: Template[];
   prompt: string;
-  variables: { id: number; key: string; value: string }[];
+  promptType: "system" | "user";
+  variables: Variable[];
   setTemplates: (templates: Template[]) => void;
   setSelectedTemplateName: (name: string) => void;
 }
 
 export function SaveTemplate({
   prompt,
+  promptType,
   variables,
   templates,
   setTemplates,
@@ -46,17 +48,20 @@ export function SaveTemplate({
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
 
-  //builds a Template object from the current prompt, variables, and template name.
-  const buildTemplate = (): Template | null => {
+  // builds a Template object from the current prompt, variables, and template name.
+  const buildTemplate = (variables: Variable[]): Template | null => {
     const trimmedName = templateName.trim();
     if (!trimmedName) {
       return null;
     }
 
+    // ensure all keys are not empty
+    const validVariables = variables.filter((v) => v.key.trim() !== "");
+
     return {
       name: trimmedName,
       prompt: prompt,
-      variables,
+      variables: validVariables,
     };
   };
 
@@ -67,32 +72,27 @@ export function SaveTemplate({
         newTemplate,
       ];
       setTemplates(finalUpdatedTemplates);
-      localStorage.setItem(
-        "promptTemplates",
-        JSON.stringify(finalUpdatedTemplates)
-      );
-      console.log("Saving template to database:", newTemplate);
       await invoke("db_insert_cmd", {
         table: "prompt_templates",
         data: {
           name: newTemplate.name,
-          type: "system",
+          type: promptType,
           content: newTemplate.prompt,
           variables_json: JSON.stringify(newTemplate.variables),
         },
       });
       setSelectedTemplateName(newTemplate.name);
+      setTimeout(() => console.log("Template saved:", newTemplate), 1000000); // Debug log after state update
       setIsOpen(false);
-      setTemplateName("");
     } catch (error) {
       console.error("Failed to save template:", error);
     }
   };
 
-  const [isPending, startTransition] = useTransition();
+  const [_, startTransition] = useTransition();
 
   const handleSaveTemplate = () => {
-    const newTemplate = buildTemplate();
+    const newTemplate = buildTemplate(variables);
     if (!newTemplate) {
       return;
     }
