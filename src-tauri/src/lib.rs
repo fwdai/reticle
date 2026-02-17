@@ -59,8 +59,9 @@ async fn db_count_cmd(
     database::db_count(&conn, &table, query).map_err(|e| e.to_string())
 }
 
-mod server;
+mod blobs;
 mod database;
+mod server;
 
 use std::sync::{Arc, Mutex}; // Needed for State in commands
 
@@ -78,6 +79,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
+            blobs::store_attachment_blob,
             db_insert_cmd,
             db_select_cmd,
             db_update_cmd,
