@@ -71,6 +71,7 @@ export function SaveTemplate({
 
   const insertTemplate = async (newTemplate: PromptTemplate) => {
     try {
+
       const data = {
         name: newTemplate.name,
         type: newTemplate.type,
@@ -79,6 +80,7 @@ export function SaveTemplate({
       };
       await insertPromptTemplate(data);
       onTemplateSaved(newTemplate);
+
       setIsOpen(false);
     } catch (error) {
       console.error("Failed to save template:", error);
