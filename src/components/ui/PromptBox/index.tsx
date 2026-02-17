@@ -77,7 +77,7 @@ function PromptBox({
     upsertTemplate(newTemplate);
   };
 
-  const characterCount = prompt?.length;
+  const characterCount = prompt.length;
   const estimatedTokenCount = Math.round(characterCount / 4); // Simple heuristic
 
   const label = type === "system" ? "System Instructions" : "User Prompt";
