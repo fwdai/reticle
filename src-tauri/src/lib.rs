@@ -88,6 +88,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             blobs::store_attachment_blob,
+            blobs::read_attachment_blob,
             blobs::delete_attachment_blob,
             db_insert_cmd,
             db_select_cmd,

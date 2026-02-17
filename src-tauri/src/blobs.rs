@@ -52,6 +52,30 @@ pub async fn store_attachment_blob(
         .ok_or_else(|| "Invalid path".to_string())
 }
 
+/// Reads a blob file and returns its content as base64.
+/// Validates that the path is within workspaces/<account_id>/blobs/ to prevent path traversal.
+#[tauri::command]
+pub async fn read_attachment_blob(app: tauri::AppHandle, blob_path: String) -> Result<String, String> {
+    let root = app_data_root(&app)?;
+    let path = std::path::PathBuf::from(&blob_path);
+
+    if !path.exists() {
+        return Err("Blob file not found".to_string());
+    }
+
+    let path = path
+        .canonicalize()
+        .map_err(|e| format!("Invalid path: {}", e))?;
+
+    let workspaces = root.join("workspaces");
+    if !path.starts_with(&workspaces) {
+        return Err("Path is outside workspace blobs directory".to_string());
+    }
+
+    let bytes = std::fs::read(&path).map_err(|e| format!("Failed to read blob: {}", e))?;
+    Ok(BASE64_STANDARD.encode(&bytes))
+}
+
 /// Deletes a blob file from the app data workspace folder.
 /// Validates that the path is within workspaces/<account_id>/blobs/ to prevent path traversal.
 #[tauri::command]
