@@ -39,7 +39,7 @@ export function MetricsBar() {
   const statusIcon = response?.error ? XCircle : CheckCircle2;
 
   return (
-    <div className="flex items-center gap-3 border-b border-border bg-panel px-6 py-3 bg-slate-50">
+    <div className="flex items-center gap-3 border-b border-border px-6 py-3 bg-slate-50">
       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-foreground">
         <Layers className="h-3.5 w-3.5" />
         Pipeline Overview
