@@ -1,4 +1,3 @@
-import { useContext } from "react";
 import {
   MessageSquare,
   Settings2,
@@ -16,8 +15,11 @@ import {
 import { FlowNode, FlowConnector } from "./FlowNode";
 import { MiniTag } from "./MiniTag";
 import { ConfigChip } from "./ConfigChip";
-import { StudioContext } from "@/contexts/StudioContext";
 import { PROVIDERS_LIST } from "@/constants/providers";
+import { cn } from "@/lib/utils";
+import type { ConfigurationState, HistoryItem, AttachedFile, ResponseState } from "@/contexts/StudioContext";
+import type { Tool } from "@/features/Studio/MainContent/Editor/Main/Tools/types";
+import type { EditorTabIndex } from "@/contexts/StudioContext";
 
 /** Rough estimate: ~4 chars per token for English text */
 function estimateTokens(text: string): number {
@@ -28,22 +30,41 @@ function getProviderDisplayName(providerId: string): string {
   return PROVIDERS_LIST.find((p) => p.id === providerId)?.name ?? providerId;
 }
 
-function getModelDisplayName(providerModels: Record<string, any[]>, providerId: string, modelId: string): string {
-  const models = providerModels[providerId] ?? [];
-  const model = models.find((m: { id: string }) => m.id === modelId);
+function getModelDisplayName(providerModels: Record<string, unknown[]>, providerId: string, modelId: string): string {
+  const models = (providerModels[providerId] ?? []) as { id?: string; name?: string }[];
+  const model = models.find((m) => m.id === modelId);
   return model?.name ?? modelId;
 }
 
-export function FlowCanvas() {
-  const context = useContext(StudioContext);
-  if (!context) {
-    throw new Error("FlowCanvas must be used within a StudioProvider");
-  }
+export interface FlowCanvasProps {
+  systemPrompt: string;
+  userPrompt: string;
+  attachments: AttachedFile[];
+  tools: Tool[];
+  configuration: ConfigurationState;
+  history: HistoryItem[];
+  response: ResponseState | null;
+  providerModels: Record<string, unknown[]>;
+  isLoading?: boolean;
+  /** When provided, enables Run scenario button and navigation. Omit for read-only (e.g. Runs view). */
+  runScenario?: () => Promise<void>;
+  /** When provided, nodes are clickable and navigate to editor. Omit for read-only. */
+  navigateToEditor?: (tab?: EditorTabIndex) => void;
+}
 
-  const { studioState, runScenario, navigateToEditor } = context;
-  const { currentScenario, response, providerModels, isLoading } = studioState;
-  const { systemPrompt, userPrompt, attachments, tools, configuration, history } = currentScenario;
-
+export function FlowCanvas({
+  systemPrompt,
+  userPrompt,
+  attachments,
+  tools,
+  configuration,
+  history,
+  response,
+  providerModels,
+  isLoading = false,
+  runScenario,
+  navigateToEditor,
+}: FlowCanvasProps) {
   const hasSystemPrompt = systemPrompt.trim().length > 0;
   const hasUserPrompt = userPrompt.trim().length > 0;
   const hasAttachments = attachments.length > 0;
@@ -64,6 +85,9 @@ export function FlowCanvas() {
 
   const inputMergeStatus = hasSystemPrompt || hasUserPrompt || hasHistory || hasAttachments ? "success" : "idle";
 
+  const onNodeClick = (tab: EditorTabIndex) => navigateToEditor?.(tab);
+  const onModelNodeClick = () => onNodeClick(0);
+
   return (
     <div className="flex-1 overflow-auto p-8">
       <div className="flex min-h-full items-start justify-center">
@@ -75,7 +99,7 @@ export function FlowCanvas() {
               title="SYSTEM PROMPT"
               subtitle="Instructions"
               status={systemPromptStatus}
-              onClick={() => navigateToEditor(0)}
+              onClick={navigateToEditor ? () => onNodeClick(0) : undefined}
             >
               <div className="space-y-1.5">
                 {hasSystemPrompt ? (
@@ -109,7 +133,7 @@ export function FlowCanvas() {
                 title="USER INPUT"
                 subtitle="Query"
                 status={userPromptStatus}
-                onClick={() => navigateToEditor(1)}
+                onClick={navigateToEditor ? () => onNodeClick(1) : undefined}
               >
                 <div className="space-y-1.5">
                   {hasUserPrompt ? (
@@ -154,7 +178,7 @@ export function FlowCanvas() {
                   subtitle="Conversation"
                   status={historyStatus}
                   className="w-[160px]"
-                  onClick={() => navigateToEditor(2)}
+                  onClick={navigateToEditor ? () => onNodeClick(2) : undefined}
                 >
                   <div className="space-y-1.5">
                     {hasHistory ? (
@@ -188,7 +212,7 @@ export function FlowCanvas() {
                   subtitle="Attachments"
                   status={filesStatus}
                   className="w-[160px]"
-                  onClick={() => navigateToEditor(3)}
+                  onClick={navigateToEditor ? () => onNodeClick(3) : undefined}
                 >
                   <div className="text-[11px] text-muted-foreground">
                     {hasAttachments ? (
@@ -210,7 +234,7 @@ export function FlowCanvas() {
               subtitle="Function Calling"
               status={toolsStatus}
               className="w-[180px]"
-              onClick={() => navigateToEditor(4)}
+              onClick={navigateToEditor ? () => onNodeClick(4) : undefined}
             >
               <div className="text-[11px] text-muted-foreground">
                 {hasTools ? (
@@ -231,11 +255,14 @@ export function FlowCanvas() {
             {/* Central Model Node - larger and emphasized */}
             <div className="relative">
               <div
-                role="button"
-                tabIndex={0}
-                onClick={() => navigateToEditor(0)}
-                onKeyDown={(e) => e.key === 'Enter' && navigateToEditor(0)}
-                className="relative rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-glow transition-all min-w-[260px] cursor-pointer hover:border-primary/50 select-none"
+                role={navigateToEditor ? "button" : undefined}
+                tabIndex={navigateToEditor ? 0 : undefined}
+                onClick={navigateToEditor ? onModelNodeClick : undefined}
+                onKeyDown={navigateToEditor ? (e) => e.key === "Enter" && onModelNodeClick() : undefined}
+                className={cn(
+                  "relative rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-glow transition-all min-w-[260px] select-none",
+                  navigateToEditor && "cursor-pointer hover:border-primary/50"
+                )}
               >
                 <div className="absolute inset-0 -z-10 rounded-2xl bg-primary/5 blur-xl" />
                 <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-card bg-primary animate-pulse" />
@@ -284,7 +311,7 @@ export function FlowCanvas() {
             subtitle="Completion"
             status={responseStatus}
             className="w-[500px]"
-            onClick={() => navigateToEditor(0)}
+            onClick={navigateToEditor ? onModelNodeClick : undefined}
           >
             {response ? (
               <div className="space-y-3">
@@ -317,7 +344,7 @@ export function FlowCanvas() {
                   </>
                 )}
               </div>
-            ) : (
+            ) : runScenario ? (
               <div className="flex flex-col items-center justify-center gap-4 py-4">
                 <p className="text-[11px] text-muted-foreground/50 italic text-center">
                   Run the scenario to see the response
@@ -335,6 +362,12 @@ export function FlowCanvas() {
                   )}
                   Run scenario
                 </button>
+              </div>
+            ) : (
+              <div className="py-4">
+                <p className="text-[11px] text-muted-foreground/50 italic text-center">
+                  No response data
+                </p>
               </div>
             )}
           </FlowNode>
