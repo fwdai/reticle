@@ -71,15 +71,19 @@ export function SaveTemplate({
 
   const insertTemplate = async (newTemplate: PromptTemplate) => {
     try {
-
       const data = {
         name: newTemplate.name,
         type: newTemplate.type,
         content: newTemplate.content,
         variables_json: newTemplate.variables_json,
       };
-      await insertPromptTemplate(data);
-      onTemplateSaved(newTemplate);
+      const inserted = await insertPromptTemplate(data);
+      const templateWithId: PromptTemplate = {
+        ...newTemplate,
+        // assume the insert action returns an object with the generated `id`
+        id: (inserted as any).id,
+      };
+      onTemplateSaved(templateWithId);
 
       setIsOpen(false);
     } catch (error) {
