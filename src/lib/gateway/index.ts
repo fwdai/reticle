@@ -17,6 +17,16 @@ import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types
 const GATEWAY_URL = 'http://localhost:11513/v1';
 const API_KEY = '1';
 
+/** OpenAI reasoning models require max_completion_tokens instead of max_tokens. */
+const REASONING_MODEL_PREFIXES = [
+  'o1',
+  'o3',
+  'o4-mini',
+  'codex-mini',
+  'computer-use-preview',
+  'gpt-5',
+];
+
 const getProviderHeaders = (providerId: string) => {
   const providerConfig = PROVIDERS_LIST.find(p => p.id === providerId);
 
@@ -35,6 +45,11 @@ const getProviderHeaders = (providerId: string) => {
   return headers;
 }
 
+function isReasoningModel(modelId: string): boolean {
+  if (modelId.startsWith('gpt-5-chat')) return false;
+  return REASONING_MODEL_PREFIXES.some((p) => modelId.startsWith(p));
+}
+
 const createModel = (config: LLMCallConfig, gateway: GatewayFetch) => {
   const { provider, model } = config;
 
@@ -45,6 +60,17 @@ const createModel = (config: LLMCallConfig, gateway: GatewayFetch) => {
     includeUsage: true, // Important: must match original
     headers: getProviderHeaders(provider),
     fetch: gateway.fetch, // Use our latency-measuring fetch
+    // OpenAI reasoning models require max_completion_tokens instead of max_tokens.
+    // This is a workaround to support the OpenAI API for reasoning models as @ai-sdk/openai-compatible doesn't handle this.
+    transformRequestBody: (args) => {
+      if (provider === 'openai' && isReasoningModel(args.model ?? '')) {
+        if (args.max_tokens != null) {
+          args.max_completion_tokens = args.max_tokens;
+          delete args.max_tokens;
+        }
+      }
+      return args;
+    },
   })(model);
 }
 
