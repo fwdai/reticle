@@ -209,6 +209,10 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
         result.toolCalls?.length ?
           JSON.stringify(result.toolCalls) :
           undefined,
+      steps_json:
+        result.modelSteps?.length ?
+          JSON.stringify(result.modelSteps) :
+          undefined,
       status: 'succeeded',
       started_at,
       ended_at,

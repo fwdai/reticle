@@ -14,7 +14,10 @@ import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
-import type { PersistedToolCall } from '@/features/Runs/MainContent/RunDetail/executionToTraceSteps';
+import type {
+  PersistedToolCall,
+  PersistedModelStep,
+} from '@/features/Runs/MainContent/RunDetail/executionToTraceSteps';
 
 const GATEWAY_URL = 'http://localhost:11513/v1';
 const API_KEY = '1';
@@ -48,30 +51,57 @@ const getProviderHeaders = (providerId: string) => {
   return headers;
 }
 
-/** Extract tool calls from AI SDK steps into PersistedToolCall format. */
-function extractToolCallsFromSteps(
+/** Extract model steps and tool calls from AI SDK steps. */
+function extractStepsAndToolCalls(
   steps: Array<{
+    text: string;
+    finishReason: string;
+    usage?: { promptTokens?: number; outputTokens?: number; totalTokens?: number; inputTokens?: number };
     toolCalls: Array<{ toolCallId: string; toolName: string; input: unknown }>;
     toolResults: Array<{ toolCallId: string; output: unknown }>;
   }>
-): PersistedToolCall[] {
-  const result: PersistedToolCall[] = [];
+): { modelSteps: PersistedModelStep[]; toolCalls: PersistedToolCall[] } {
+  const modelSteps: PersistedModelStep[] = [];
+  const toolCalls: PersistedToolCall[] = [];
   let elapsedMs = 0;
-  for (const step of steps) {
-    const resultsById = new Map((step.toolResults ?? []).map((r) => [r.toolCallId, r]));
-    for (const tc of step.toolCalls ?? []) {
-      const tr = resultsById.get(tc.toolCallId);
-      result.push({
+
+  for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
+    const step = steps[stepIndex];
+    const usage = step.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
+    const promptTokens = Number(usage?.inputTokens) || 0;
+    const completionTokens = Number(usage?.outputTokens) || 0;
+    const totalTokens = Number(usage?.totalTokens) || promptTokens + completionTokens;
+
+    const stepToolCalls =
+      step.toolCalls?.map((tc) => ({
         id: tc.toolCallId,
         name: tc.toolName,
         arguments: (tc.input as Record<string, unknown>) ?? {},
+      })) ?? [];
+    modelSteps.push({
+      stepIndex,
+      text: step.text ?? '',
+      finishReason: step.finishReason ?? 'unknown',
+      usage: { prompt_tokens: promptTokens, completion_tokens: completionTokens, total_tokens: totalTokens },
+      ...(stepToolCalls.length > 0 ? { toolCalls: stepToolCalls } : {}),
+    });
+
+    const resultsById = new Map((step.toolResults ?? []).map((r) => [r.toolCallId, r]));
+    for (const tc of step.toolCalls ?? []) {
+      const tr = resultsById.get(tc.toolCallId);
+      toolCalls.push({
+        id: tc.toolCallId,
+        name: tc.toolName,
+        arguments: (tc.input as Record<string, unknown>) ?? {},
+        stepIndex,
         result: tr?.output,
         elapsed_ms: elapsedMs,
       });
     }
-    elapsedMs += 100; // Approximate step duration
+    elapsedMs += 100;
   }
-  return result;
+
+  return { modelSteps, toolCalls };
 }
 
 function isReasoningModel(modelId: string): boolean {
@@ -216,11 +246,11 @@ export const generateText = async (
   // Get the measured latency
   const latency = gateway.getLatency();
 
-  // Extract tool calls from all steps (multi-step can have tool calls in each step)
-  const toolCalls =
-    result.steps?.length && result.steps.some((s) => s.toolCalls?.length)
-      ? extractToolCallsFromSteps(result.steps)
-      : [];
+  // Extract model steps and tool calls from all steps
+  const { modelSteps, toolCalls } =
+    result.steps?.length
+      ? extractStepsAndToolCalls(result.steps)
+      : { modelSteps: [], toolCalls: [] };
 
   // Map the result properties: generateTextAi returns output and totalUsage,
   // but we need to map them to text and usage for consistency
@@ -230,6 +260,7 @@ export const generateText = async (
     usage: result.totalUsage ?? result.usage, // Use totalUsage if available, fallback to usage
     latency: latency ?? undefined,
     toolCalls,
+    modelSteps,
   };
 }
 

@@ -1,11 +1,10 @@
-import { Clock, Zap, Coins, Hash, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
+import { Clock, Zap, Coins, Hash, CheckCircle2, XCircle } from "lucide-react";
 import { MetricPill } from "@/components/ui/MetricPill";
 import type { RunDetailRun } from "./types";
 import type { RunViewMode } from "./Header";
 
 interface MetricsBarProps {
   run: RunDetailRun;
-  stepCount: number;
   viewMode: RunViewMode;
   onExpandAll: () => void;
   onCollapseAll: () => void;
@@ -13,7 +12,6 @@ interface MetricsBarProps {
 
 export function MetricsBar({
   run,
-  stepCount,
   viewMode,
   onExpandAll,
   onCollapseAll,
@@ -33,7 +31,6 @@ export function MetricsBar({
         <MetricPill icon={Hash} label="Tokens" value={run.tokens.toLocaleString()} />
         <MetricPill icon={Coins} label="Cost" value={run.cost} />
         <MetricPill icon={Zap} label="Model" value={run.model} mono />
-        <MetricPill icon={MessageSquare} label="Steps" value={String(stepCount)} />
       </div>
 
       <div className="ml-auto flex items-center shrink-0">

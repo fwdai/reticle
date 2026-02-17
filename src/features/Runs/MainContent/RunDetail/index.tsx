@@ -5,7 +5,11 @@ import { Timeline, type TraceStep } from "./Timeline";
 import { Visualizer } from "./Visualizer";
 import type { RunDetailRun } from "./types";
 import { getExecutionById } from "@/lib/storage";
-import { executionToTraceSteps, type PersistedToolCall } from "./executionToTraceSteps";
+import {
+  executionToTraceSteps,
+  type PersistedToolCall,
+  type PersistedModelStep,
+} from "./executionToTraceSteps";
 
 export type { RunDetailRun } from "./types";
 
@@ -30,6 +34,7 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         if (cancelled) return;
         if (execution) {
           let toolCalls: PersistedToolCall[] | undefined;
+          let modelSteps: PersistedModelStep[] | undefined;
           if (execution.tool_calls_json) {
             try {
               toolCalls = JSON.parse(execution.tool_calls_json) as PersistedToolCall[];
@@ -37,15 +42,22 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
               toolCalls = undefined;
             }
           }
-          const steps = executionToTraceSteps(execution, toolCalls);
+          if (execution.steps_json) {
+            try {
+              modelSteps = JSON.parse(execution.steps_json) as PersistedModelStep[];
+            } catch {
+              modelSteps = undefined;
+            }
+          }
+          const steps = executionToTraceSteps(execution, toolCalls, modelSteps);
           setTraceSteps(steps);
-          // Expand first step + first tool_call and tool_response when present
+          // Expand first step + first model_step and tool_call when present
           const initialExpanded = new Set<string>();
           if (steps[0]) initialExpanded.add(steps[0].id);
+          const firstModelStep = steps.find((s) => s.type === "model_step");
           const firstToolCall = steps.find((s) => s.type === "tool_call");
-          const firstToolResp = steps.find((s) => s.type === "tool_response");
+          if (firstModelStep) initialExpanded.add(firstModelStep.id);
           if (firstToolCall) initialExpanded.add(firstToolCall.id);
-          if (firstToolResp) initialExpanded.add(firstToolResp.id);
           setExpandedSteps(initialExpanded);
         } else {
           setTraceSteps([]);
@@ -88,7 +100,6 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
       />
       <MetricsBar
         run={run}
-        stepCount={traceSteps.length}
         viewMode={viewMode}
         onExpandAll={expandAll}
         onCollapseAll={collapseAll}

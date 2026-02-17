@@ -39,8 +39,15 @@ function renderStepContent(step: TraceStep): string {
       2
     );
   }
-  if (step.type === "model_response") {
-    return (c.chunks as string[]).join("") + `\n\n// finish_reason: "${c.finish_reason}"`;
+  if (step.type === "model_step" || step.type === "model_response") {
+    const text = (c.chunks as string[] | undefined)?.join("") ?? "";
+    const reason = c.finish_reason ? `\n\n// finish_reason: "${c.finish_reason}"` : "";
+    const toolCalls = c.tool_calls as Array<{ id: string; name: string; arguments?: Record<string, unknown> }> | undefined;
+    const toolCallsSection =
+      toolCalls?.length
+        ? `\n\n// tool_calls requested:\n${JSON.stringify(toolCalls.map((tc) => ({ id: tc.id, name: tc.name, arguments: tc.arguments ?? {} })), null, 2)}`
+        : "";
+    return (text + reason + toolCallsSection) || "—";
   }
   if (step.type === "tool_call") {
     return JSON.stringify(

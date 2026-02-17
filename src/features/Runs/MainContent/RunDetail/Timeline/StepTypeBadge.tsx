@@ -6,6 +6,7 @@ interface StepTypeBadgeProps {
 
 const TYPE_STYLES: Record<string, { label: string; className: string }> = {
   prompt_assembly: { label: "ASSEMBLY", className: "text-primary border-primary/30 bg-primary/10" },
+  model_step: { label: "MODEL", className: "text-blue-600 border-blue-200 bg-blue-50" },
   model_response: { label: "MODEL", className: "text-blue-600 border-blue-200 bg-blue-50" },
   tool_call: { label: "TOOL CALL", className: "text-amber-700 border-amber-200 bg-amber-50" },
   tool_response: { label: "TOOL RESP", className: "text-purple-600 border-purple-200 bg-purple-50" },
