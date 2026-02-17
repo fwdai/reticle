@@ -4,8 +4,12 @@ import type { AttachedFile } from "@/contexts/StudioContext";
 import { FileDropZone } from "./FileDropZone";
 import { FileList as AttachedFileList } from "./FileList";
 import { SupportedFormatsHint } from "./SupportedFormatsHint";
-import { storeFileAsBlob } from "./attachmentService";
-import { insertAttachment } from "@/lib/storage";
+import { storeFileAsBlob, deleteBlob } from "./attachmentService";
+import {
+  insertAttachment,
+  deleteAttachmentById,
+  deleteAttachmentsByScenarioId,
+} from "@/lib/storage";
 
 function Files() {
   const context = useContext(StudioContext);
@@ -69,11 +73,40 @@ function Files() {
   );
 
   const removeFile = useCallback(
-    (id: string) => {
-      setFiles((prev) => prev.filter((f) => f.id !== id));
+    async (id: string) => {
+      const file = files.find((f) => f.id === id);
+      if (!file) return;
+
+      try {
+        if (file.path) {
+          await deleteBlob(file.path);
+        }
+        if (scenarioId) {
+          await deleteAttachmentById(id);
+        }
+        setFiles((prev) => prev.filter((f) => f.id !== id));
+      } catch (err) {
+        console.error("Failed to remove file:", err);
+      }
     },
-    [setFiles]
+    [setFiles, scenarioId, files]
   );
+
+  const handleClearAll = useCallback(async () => {
+    try {
+      for (const file of files) {
+        if (file.path) {
+          await deleteBlob(file.path);
+        }
+      }
+      if (scenarioId) {
+        await deleteAttachmentsByScenarioId(scenarioId);
+      }
+      setFiles([]);
+    } catch (err) {
+      console.error("Failed to clear files:", err);
+    }
+  }, [setFiles, scenarioId, files]);
 
   return (
     <div className="max-w-4xl flex flex-col space-y-5 mx-auto">
@@ -83,7 +116,7 @@ function Files() {
         <AttachedFileList
           files={files}
           onRemove={removeFile}
-          onClearAll={() => setFiles([])}
+          onClearAll={handleClearAll}
         />
       )}
 

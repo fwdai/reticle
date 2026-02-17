@@ -2,6 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { getOrCreateAccount } from "@/lib/storage";
 
 /**
+ * Deletes a blob file from the app data workspace folder.
+ */
+export async function deleteBlob(blobPath: string): Promise<void> {
+  await invoke("delete_attachment_blob", { blobPath });
+}
+
+/**
  * Reads a File and returns its content as base64 string.
  */
 function fileToBase64(file: File): Promise<string> {

@@ -336,6 +336,13 @@ export async function deleteAttachmentsByScenarioId(scenarioId: string): Promise
   });
 }
 
+export async function deleteAttachmentById(id: string): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'attachments',
+    query: { where: { id } },
+  });
+}
+
 /**
  * Replace all attachments for a scenario with the given list.
  */
