@@ -192,7 +192,8 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
         temperature: configuration.temperature,
         topP: configuration.topP,
         maxTokens: configuration.maxTokens,
-      }
+      },
+      currentScenario.tools
     );
     const ended_at = Date.now();
 

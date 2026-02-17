@@ -1,10 +1,16 @@
 import { PROVIDERS_LIST } from '@/constants/providers';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { generateText as generateTextAi } from 'ai';
-import { Message } from 'ai/react'; // Import Message type from ai/react
+import {
+  generateText as generateTextAi,
+  jsonSchema,
+  tool,
+  type ModelMessage,
+  type ToolSet,
+} from 'ai';
 
 import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
+import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 
 const GATEWAY_URL = 'http://localhost:11513/v1';
 const API_KEY = '1';
@@ -40,15 +46,54 @@ const createModel = (config: LLMCallConfig, gateway: GatewayFetch) => {
   })(model);
 }
 
+/** Convert scenario tools to AI SDK tool format. Uses mockResponse for execute. */
+function scenarioToolsToAiSdkTools(tools: Tool[]): ToolSet {
+  const result: ToolSet = {};
+  for (const t of tools) {
+    const properties: Record<string, { type: 'string' | 'number' | 'boolean' | 'object' | 'array'; description?: string }> = {};
+    const required: string[] = [];
+    for (const p of t.parameters) {
+      properties[p.name] = {
+        type: p.type,
+        ...(p.description ? { description: p.description } : {}),
+      };
+      if (p.required) required.push(p.name);
+    }
+    const mockResponse = t.mockResponse;
+    const mockMode = t.mockMode ?? 'json';
+    result[t.name] = tool({
+      description: t.description,
+      inputSchema: jsonSchema({
+        type: 'object',
+        properties: Object.keys(properties).length ? properties : {},
+        required,
+        additionalProperties: false,
+      }),
+      execute: async () => {
+        if (mockMode === 'json') {
+          try {
+            return JSON.parse(mockResponse);
+          } catch {
+            return mockResponse;
+          }
+        }
+        return mockResponse;
+      },
+    });
+  }
+  return result;
+}
+
 export const generateText = async (
   userPrompt: string,
   systemPrompt: string,
-  history: Message[], // Assuming history items are compatible with Message from 'ai/react'
-  config: LLMCallConfig
+  history: ModelMessage[],
+  config: LLMCallConfig,
+  tools?: Tool[]
 ) => {
   const gateway = new GatewayFetch();
 
-  const messages: Message[] = [];
+  const messages: ModelMessage[] = [];
 
   if (systemPrompt) {
     messages.push({ role: 'system', content: systemPrompt });
@@ -60,12 +105,15 @@ export const generateText = async (
   // Add the current user prompt
   messages.push({ role: 'user', content: userPrompt });
 
+  const aiTools = tools?.length ? scenarioToolsToAiSdkTools(tools) : undefined;
+
   const result = await generateTextAi({
     model: createModel(config, gateway),
     messages: messages,
     temperature: config.temperature,
     topP: config.topP,
-    maxTokens: config.maxTokens,
+    maxOutputTokens: config.maxTokens,
+    ...(aiTools ? { tools: aiTools } : {}),
   });
 
   // Get the measured latency
