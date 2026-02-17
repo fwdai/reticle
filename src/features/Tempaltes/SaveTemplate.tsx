@@ -17,39 +17,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // types
-import { Template, Variable } from "@/components/ui/PromptBox/types";
+import { PromptTemplate, Variable } from "@/components/ui/PromptBox/types";
 
 // components
 import { SaveTemplateAlert } from "./Alert";
 
 // server actions
-import { invoke } from "@tauri-apps/api/core";
+import {
+  insertPromptTemplate,
+  updatePromptTemplate,
+} from "@/lib/storage/index";
 
 interface SaveTemplateProps {
-  templates: Template[];
-  prompt: string;
-  promptType: "system" | "user";
+  templates: PromptTemplate[];
+  content: string;
+  type: "system" | "user";
   variables: Variable[];
-  setTemplates: (templates: Template[]) => void;
-  setSelectedTemplateName: (name: string) => void;
+  onTemplateSaved: (template: PromptTemplate) => void;
 }
 
 export function SaveTemplate({
-  prompt,
-  promptType,
+  content,
+  type,
   variables,
   templates,
-  setTemplates,
-  setSelectedTemplateName,
+  onTemplateSaved,
 }: SaveTemplateProps) {
   // local state management
   const [templateName, setTemplateName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<PromptTemplate | null>(
+    null
+  );
 
-  // builds a Template object from the current prompt, variables, and template name.
-  const buildTemplate = (variables: Variable[]): Template | null => {
+  // builds a PromptTemplate object from the current prompt, variables, and template name.
+  const buildTemplate = (variables: Variable[]): PromptTemplate | null => {
     const trimmedName = templateName.trim();
     if (!trimmedName) {
       return null;
@@ -60,32 +63,39 @@ export function SaveTemplate({
 
     return {
       name: trimmedName,
-      prompt: prompt,
-      variables: validVariables,
+      type,
+      content,
+      variables_json: JSON.stringify(validVariables),
     };
   };
 
-  const persistTemplate = async (newTemplate: Template) => {
+  const insertTemplate = async (newTemplate: PromptTemplate) => {
     try {
-      const finalUpdatedTemplates = [
-        ...templates.filter((t) => t.name !== newTemplate.name),
-        newTemplate,
-      ];
-      setTemplates(finalUpdatedTemplates);
-      await invoke("db_insert_cmd", {
-        table: "prompt_templates",
-        data: {
-          name: newTemplate.name,
-          type: promptType,
-          content: newTemplate.prompt,
-          variables_json: JSON.stringify(newTemplate.variables),
-        },
-      });
-      setSelectedTemplateName(newTemplate.name);
-      setTimeout(() => console.log("Template saved:", newTemplate), 1000000); // Debug log after state update
+      const data = {
+        name: newTemplate.name,
+        type: newTemplate.type,
+        content: newTemplate.content,
+        variables_json: newTemplate.variables_json,
+      };
+      await insertPromptTemplate(data);
+      onTemplateSaved(newTemplate);
       setIsOpen(false);
     } catch (error) {
       console.error("Failed to save template:", error);
+    }
+  };
+
+  const handleUpdateTemplate = async (template: PromptTemplate) => {
+    try {
+      const data = {
+        content: template.content || "",
+        variables_json: template.variables_json || "[]",
+      };
+      await updatePromptTemplate(template.id || "", data);
+      onTemplateSaved(template);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to update template:", error);
     }
   };
 
@@ -97,14 +107,19 @@ export function SaveTemplate({
       return;
     }
 
-    if (templates.some((t) => t.name === newTemplate.name)) {
-      setPendingTemplate(newTemplate);
+    const existingTemplate = templates.find((t) => t.name === newTemplate.name);
+    if (existingTemplate) {
+      setPendingTemplate({
+        ...existingTemplate,
+        content: newTemplate.content,
+        variables_json: newTemplate.variables_json,
+      });
       setIsAlertOpen(true);
       return;
     }
 
     startTransition(async () => {
-      await persistTemplate(newTemplate);
+      await insertTemplate(newTemplate);
     });
   };
 
@@ -116,7 +131,7 @@ export function SaveTemplate({
     setIsAlertOpen(false);
     setPendingTemplate(null);
     startTransition(async () => {
-      await persistTemplate(pendingTemplate);
+      await handleUpdateTemplate(pendingTemplate);
     });
   };
 

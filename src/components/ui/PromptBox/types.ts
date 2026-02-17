@@ -1,13 +1,9 @@
+import { PromptTemplate } from "@/types/index";
+
 export interface Variable {
   id: number;
   key: string;
   value: string;
-}
-
-export interface Template {
-  name: string;
-  prompt: string;
-  variables: Variable[];
 }
 
 export interface PromptBoxProps {
@@ -18,3 +14,6 @@ export interface PromptBoxProps {
   onVariablesChange: (variables: Variable[]) => void;
   showTemplateManager?: boolean;
 }
+
+// Re-export PromptTemplate for convenience
+export type { PromptTemplate };

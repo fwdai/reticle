@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import PromptBox from "@/components/ui/PromptBox"; // Adjust path as needed
 import { StudioContext } from "@/contexts/StudioContext";
-import { Variable } from "@/components/ui/PromptBox";
+import { Variable } from "@/components/ui/PromptBox/types";
 
 function Prompt() {
   const context = useContext(StudioContext);
