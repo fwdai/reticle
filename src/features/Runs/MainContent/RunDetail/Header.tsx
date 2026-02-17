@@ -22,7 +22,7 @@ export function Header({ run, viewMode, onViewModeChange, onBack }: HeaderProps)
           className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-main transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Runs
+          Runs
         </button>
         <div className="h-5 w-px bg-border-light" />
         <div className="flex items-center gap-3 leading-none">

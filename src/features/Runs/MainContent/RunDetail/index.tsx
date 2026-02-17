@@ -84,24 +84,26 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         <div
           className={`flex-1 overflow-y-auto custom-scrollbar ${viewMode === "timeline" ? "p-6" : "p-0"}`}
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full text-text-muted text-sm">
-              Loading execution…
-            </div>
-          ) : traceSteps.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-text-muted text-sm">
-              Execution not found
-            </div>
-          ) : viewMode === "timeline" ? (
-            <Timeline
-              traceSteps={traceSteps}
-              expandedSteps={expandedSteps}
-              onToggleStep={toggleStep}
-              onCopyContent={copyContent}
-              copiedId={copiedId}
-            />
+          {viewMode === "timeline" ? (
+            isLoading ? (
+              <div className="flex items-center justify-center h-full text-text-muted text-sm">
+                Loading execution…
+              </div>
+            ) : traceSteps.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-text-muted text-sm">
+                Execution not found
+              </div>
+            ) : (
+              <Timeline
+                traceSteps={traceSteps}
+                expandedSteps={expandedSteps}
+                onToggleStep={toggleStep}
+                onCopyContent={copyContent}
+                copiedId={copiedId}
+              />
+            )
           ) : (
-            <Visualizer traceSteps={traceSteps} run={run} />
+            <Visualizer run={run} />
           )}
         </div>
       </div>

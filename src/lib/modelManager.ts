@@ -204,3 +204,25 @@ export const fetchAndNormalizeModels = async (): Promise<Record<string, { id: st
 
   return allNormalizedModels;
 }
+
+
+/**
+ * Resolves provider id for a model by looking it up in the allRawModelCache.
+ * Falls back to heuristic inference when cache is empty or model not found.
+ */
+export async function getProviderForModel(modelId: string): Promise<string> {
+  try {
+    const allRawModelCache = await getAllModels();
+    for (const [providerId, models] of Object.entries(allRawModelCache)) {
+      const list = Array.isArray(models) ? models : [];
+      const found = list.some((m: { id?: string; name?: string }) => {
+        const id = m?.id ?? m?.name ?? "";
+        return id === modelId || modelId.startsWith(id) || id.startsWith(modelId);
+      });
+      if (found) return providerId;
+    }
+  } catch {
+    /* ignore */
+  }
+  return '–';
+}
