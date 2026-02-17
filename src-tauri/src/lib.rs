@@ -1,4 +1,5 @@
 use tauri::Manager;
+use tauri::WebviewWindowBuilder;
 use serde_json::Value;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -74,6 +75,13 @@ pub fn run() {
                 .expect("Failed to initialize database");
             app.manage(db_conn);
             tauri::async_runtime::spawn(server::start_proxy_server(app_handle.clone()));
+
+            // Create main window with drag-drop disabled so HTML5 drop zone works
+            let window_config = app.config().app.windows.first().expect("main window config");
+            WebviewWindowBuilder::from_config(app_handle, window_config)?
+                .disable_drag_drop_handler()
+                .build()?;
+
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())

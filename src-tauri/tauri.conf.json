@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "reticle",
+  "productName": "Reticle",
   "version": "0.1.0",
   "identifier": "dev.reticle.app",
   "build": {
@@ -12,11 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "reticle",
+        "title": "Reticle",
         "width": 1280,
         "height": 800,
         "minHeight": 768,
-        "minWidth": 1024
+        "minWidth": 1024,
+        "create": false,
+        "label": "main"
       }
     ],
     "security": {
