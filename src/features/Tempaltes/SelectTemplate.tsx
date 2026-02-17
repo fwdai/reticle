@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { PromptTemplate } from "@/components/ui/PromptBox/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TemplateLoadProps {
   templates: PromptTemplate[];
@@ -28,8 +35,7 @@ export function SelectTemplate({
     }
   }, [selectedTemplateName, templates]);
 
-  const handleLoadTemplate = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const templateName = event.target.value;
+  const handleLoadTemplate = (templateName: string) => {
     setSelectedTemplateName(templateName);
 
     const templateToLoad = templates.find((t) => t.name === templateName);
@@ -39,20 +45,26 @@ export function SelectTemplate({
     }
   };
 
+  const filteredTemplates = templates.filter(
+    (template) => template.type === type
+  );
+
   return (
-    <select
-      value={selectedTemplateName}
-      onChange={handleLoadTemplate}
-      className="text-[10px] font-bold text-text-muted hover:text-primary transition-colors bg-transparent border-none focus:ring-0 p-0 cursor-pointer"
-    >
-      <option value="">Load Template...</option>
-      {templates
-        .filter((template) => template.type === type)
-        .map((template) => (
-          <option key={template.name} value={template.name}>
+    <Select value={selectedTemplateName} onValueChange={handleLoadTemplate}>
+      <SelectTrigger className="h-6 border-0 bg-transparent px-0 py-0 text-[10px] font-bold text-text-muted shadow-none focus:ring-0 hover:text-primary">
+        <SelectValue placeholder="Load Template..." />
+      </SelectTrigger>
+      <SelectContent className="min-w-45 rounded-xl border border-border-light bg-white text-text-main shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)]">
+        {filteredTemplates.map((template) => (
+          <SelectItem
+            key={template.name}
+            value={template.name}
+            className="text-xs font-medium text-text-main focus:bg-sidebar-light/60 focus:text-text-main"
+          >
             {template.name}
-          </option>
+          </SelectItem>
         ))}
-    </select>
+      </SelectContent>
+    </Select>
   );
 }
