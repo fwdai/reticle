@@ -82,7 +82,6 @@ export function SaveTemplate({
         },
       });
       setSelectedTemplateName(newTemplate.name);
-      setTimeout(() => console.log("Template saved:", newTemplate), 1000000); // Debug log after state update
       setIsOpen(false);
     } catch (error) {
       console.error("Failed to save template:", error);
