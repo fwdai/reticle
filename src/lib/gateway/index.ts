@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { PROVIDERS_LIST } from '@/constants/providers';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
@@ -10,6 +11,7 @@ import {
 
 import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
+import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 
 const GATEWAY_URL = 'http://localhost:11513/v1';
@@ -44,6 +46,33 @@ const createModel = (config: LLMCallConfig, gateway: GatewayFetch) => {
     headers: getProviderHeaders(provider),
     fetch: gateway.fetch, // Use our latency-measuring fetch
   })(model);
+}
+
+/** Load attachment blobs and build content parts for the user message. */
+async function loadAttachmentsAsContentParts(
+  attachments: AttachedFile[]
+): Promise<Array<{ type: 'text'; text: string } | { type: 'image'; image: string; mediaType?: string } | { type: 'file'; data: string; mediaType: string; filename?: string }>> {
+  const parts: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; image: string; mediaType?: string }
+    | { type: 'file'; data: string; mediaType: string; filename?: string }
+  > = [];
+  for (const att of attachments) {
+    if (!att.path) continue;
+    try {
+      const base64 = await invoke<string>('read_attachment_blob', { blobPath: att.path });
+      const mediaType = att.type || 'application/octet-stream';
+      const dataUrl = `data:${mediaType};base64,${base64}`;
+      if (mediaType.startsWith('image/')) {
+        parts.push({ type: 'image', image: dataUrl, mediaType });
+      } else {
+        parts.push({ type: 'file', data: dataUrl, mediaType, filename: att.name });
+      }
+    } catch (err) {
+      console.warn(`Failed to load attachment ${att.name}:`, err);
+    }
+  }
+  return parts;
 }
 
 /** Convert scenario tools to AI SDK tool format. Uses mockResponse for execute. */
@@ -89,7 +118,8 @@ export const generateText = async (
   systemPrompt: string,
   history: ModelMessage[],
   config: LLMCallConfig,
-  tools?: Tool[]
+  tools?: Tool[],
+  attachments?: AttachedFile[]
 ) => {
   const gateway = new GatewayFetch();
 
@@ -102,8 +132,17 @@ export const generateText = async (
   // Add previous messages from history
   messages.push(...history);
 
-  // Add the current user prompt
-  messages.push({ role: 'user', content: userPrompt });
+  // Build user message: text + optional file/image parts
+  let userContent: string | Array<{ type: 'text'; text: string } | { type: 'image'; image: string; mediaType?: string } | { type: 'file'; data: string; mediaType: string; filename?: string }>;
+  if (attachments?.length) {
+    const fileParts = await loadAttachmentsAsContentParts(attachments);
+    userContent = fileParts.length
+      ? [{ type: 'text', text: userPrompt }, ...fileParts]
+      : userPrompt;
+  } else {
+    userContent = userPrompt;
+  }
+  messages.push({ role: 'user', content: userContent });
 
   const aiTools = tools?.length ? scenarioToolsToAiSdkTools(tools) : undefined;
 

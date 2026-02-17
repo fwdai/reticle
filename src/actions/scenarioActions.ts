@@ -164,6 +164,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     configuration,
     history,
     tools: currentScenario.tools,
+    attachments: currentScenario.attachments,
   };
   const snapshot_json = JSON.stringify(snapshot);
   const input_json = JSON.stringify(snapshot);
@@ -193,7 +194,8 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
         topP: configuration.topP,
         maxTokens: configuration.maxTokens,
       },
-      currentScenario.tools
+      currentScenario.tools,
+      currentScenario.attachments
     );
     const ended_at = Date.now();
 
