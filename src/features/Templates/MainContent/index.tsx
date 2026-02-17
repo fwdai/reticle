@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { Clock, Variable } from "lucide-react";
 
 import MainContent from "@/components/Layout/MainContent";
-import Header from "@/features/Tempaltes/Header";
+import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
 import type { PromptTemplate } from "@/types";
 import { TemplateDetail } from "./TemplateDetail";

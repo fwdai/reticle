@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { SaveTemplate } from "@/features/Tempaltes/SaveTemplate";
-import { SelectTemplate } from "@/features/Tempaltes/SelectTemplate";
+import { SaveTemplate } from "@/features/Templates/SaveTemplate";
+import { SelectTemplate } from "@/features/Templates/SelectTemplate";
 import { usePromptTemplates } from "@/hooks/usePromptTemplates";
 // types
 import { PromptBoxProps, PromptTemplate, Variable } from "./types";

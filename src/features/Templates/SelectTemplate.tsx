@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { PromptTemplate } from "@/components/ui/PromptBox/types";
 import {
   Select,
