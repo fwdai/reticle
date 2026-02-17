@@ -94,45 +94,48 @@ export function FlowCanvas({
         <div className="flex flex-col items-center gap-0">
           {/* Row 1: System Prompt (left) → User Input (center) ← History/Files (right, stacked) */}
           <div className="flex items-center gap-0">
-            <FlowNode
-              icon={MessageSquare}
-              title="SYSTEM PROMPT"
-              subtitle="Instructions"
-              status={systemPromptStatus}
-              onClick={navigateToEditor ? () => onNodeClick(0) : undefined}
-            >
-              <div className="space-y-1.5">
-                {hasSystemPrompt ? (
-                  <>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                      &quot;{systemPrompt}&quot;
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <MiniTag>{systemPrompt.length} chars</MiniTag>
-                      <MiniTag>~{estimateTokens(systemPrompt)} tokens</MiniTag>
+            <div className="flex items-center gap-0 -mt-4">
+              <FlowNode
+                icon={MessageSquare}
+                title="SYSTEM PROMPT"
+                subtitle="Instructions"
+                status={systemPromptStatus}
+                className="w-64 shrink-0"
+                onClick={navigateToEditor ? () => onNodeClick(0) : undefined}
+              >
+                <div className="space-y-1.5">
+                  {hasSystemPrompt ? (
+                    <>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                        &quot;{systemPrompt}&quot;
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <MiniTag>{systemPrompt.length} chars</MiniTag>
+                        <MiniTag>~{estimateTokens(systemPrompt)} tokens</MiniTag>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[11px] text-muted-foreground/50 italic">
+                      No system prompt
                     </div>
-                  </>
-                ) : (
-                  <div className="text-[11px] text-muted-foreground/50 italic">
-                    No system prompt
-                  </div>
-                )}
-              </div>
-            </FlowNode>
+                  )}
+                </div>
+              </FlowNode>
 
-            <FlowConnector
-              direction="horizontal"
-              status={systemPromptStatus}
-              animated={hasSystemPrompt}
-              length="medium"
-            />
-
+              <FlowConnector
+                direction="horizontal"
+                status={systemPromptStatus}
+                animated={hasSystemPrompt}
+                length="medium"
+              />
+            </div>
             <div className="flex flex-col items-center gap-0">
               <FlowNode
                 icon={FileText}
                 title="USER INPUT"
                 subtitle="Query"
                 status={userPromptStatus}
+                className="w-64 shrink-0 mt-12"
                 onClick={navigateToEditor ? () => onNodeClick(1) : undefined}
               >
                 <div className="space-y-1.5">
@@ -158,7 +161,7 @@ export function FlowCanvas({
                 direction="vertical"
                 status={inputMergeStatus}
                 animated={inputMergeStatus === "success"}
-                length="long"
+                length="medium"
                 label="merge"
               />
             </div>
@@ -177,7 +180,7 @@ export function FlowCanvas({
                   title="HISTORY"
                   subtitle="Conversation"
                   status={historyStatus}
-                  className="w-[160px]"
+                  className="w-64 shrink-0"
                   onClick={navigateToEditor ? () => onNodeClick(2) : undefined}
                 >
                   <div className="space-y-1.5">
@@ -211,7 +214,7 @@ export function FlowCanvas({
                   title="FILES"
                   subtitle="Attachments"
                   status={filesStatus}
-                  className="w-[160px]"
+                  className="w-64 shrink-0"
                   onClick={navigateToEditor ? () => onNodeClick(3) : undefined}
                 >
                   <div className="text-[11px] text-muted-foreground">
@@ -233,7 +236,7 @@ export function FlowCanvas({
               title="TOOLS"
               subtitle="Function Calling"
               status={toolsStatus}
-              className="w-[180px]"
+              className="w-64 shrink-0"
               onClick={navigateToEditor ? () => onNodeClick(4) : undefined}
             >
               <div className="text-[11px] text-muted-foreground">
@@ -260,12 +263,12 @@ export function FlowCanvas({
                 onClick={navigateToEditor ? onModelNodeClick : undefined}
                 onKeyDown={navigateToEditor ? (e) => e.key === "Enter" && onModelNodeClick() : undefined}
                 className={cn(
-                  "relative rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-glow transition-all min-w-[260px] select-none",
+                  "relative rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-glow transition-all w-64 shrink-0 select-none",
                   navigateToEditor && "cursor-pointer hover:border-primary/50"
                 )}
               >
                 <div className="absolute inset-0 -z-10 rounded-2xl bg-primary/5 blur-xl" />
-                <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-card bg-primary animate-pulse" />
+                <div className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full border-2 border-card bg-primary animate-pulse" />
 
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -290,7 +293,7 @@ export function FlowCanvas({
               </div>
             </div>
 
-            <div className="w-[180px] flex-shrink-0" aria-hidden />
+            <div className="w-80 shrink-0" aria-hidden />
           </div>
 
           {/* Vertical Connector */}
@@ -310,7 +313,7 @@ export function FlowCanvas({
             title="RESPONSE"
             subtitle="Completion"
             status={responseStatus}
-            className="w-[500px]"
+            className="w-128 shrink-0"
             onClick={navigateToEditor ? onModelNodeClick : undefined}
           >
             {response ? (

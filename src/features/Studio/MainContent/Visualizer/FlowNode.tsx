@@ -147,7 +147,7 @@ export function FlowConnector({ direction = "horizontal", animated, status = "id
       {label && (
         <div className={cn(
           "absolute text-[9px] font-medium tracking-wider uppercase text-text-muted",
-          isH ? "-top-4" : "-right-12 top-1/2 -translate-y-1/2"
+          isH ? "-top-4" : "left-4 top-1/2 -translate-y-1/2"
         )}>
           {label}
         </div>
