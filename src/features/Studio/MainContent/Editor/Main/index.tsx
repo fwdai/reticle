@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
-import { StudioContext } from "@/contexts/StudioContext";
+import { StudioContext, type EditorTabIndex } from "@/contexts/StudioContext";
 import Files from "./Files";
 import History from "./History";
 import Prompt from "./Prompt";
@@ -15,7 +15,10 @@ function StudioMain() {
   const toolsCount = context?.studioState.currentScenario.tools?.length ?? 0;
 
   return (
-    <Tabs>
+    <Tabs
+      activeIndex={context?.activeEditorTab ?? 0}
+      onActiveIndexChange={(index) => context?.setActiveEditorTab(index as EditorTabIndex)}
+    >
       <TabPanel title="System">
         <SystemMessage />
       </TabPanel>

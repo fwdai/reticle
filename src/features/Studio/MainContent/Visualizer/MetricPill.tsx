@@ -18,7 +18,7 @@ export function MetricPill({ icon: Icon, label, value, variant = "default" }: Me
     )}>
       <Icon className="h-3.5 w-3.5 opacity-60" />
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-mono font-semibold">{value}</span>
+      <span className="font-mono font-semibold text-foreground">{value}</span>
     </div>
   );
 }

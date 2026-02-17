@@ -48,6 +48,19 @@ export async function countExecutions(): Promise<number> {
   return typeof count === 'number' ? count : 0;
 }
 
+export async function getLastExecutionForScenario(scenarioId: string): Promise<Execution | null> {
+  const rows = await invoke<Execution[]>('db_select_cmd', {
+    table: 'executions',
+    query: {
+      where: { type: 'scenario', runnable_id: scenarioId },
+      orderBy: 'started_at',
+      orderDirection: 'desc',
+      limit: 1,
+    },
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
 export async function listScenarios(): Promise<Scenario[]> {
   const rows = await invoke<Scenario[]>('db_select_cmd', {
     table: 'scenarios',

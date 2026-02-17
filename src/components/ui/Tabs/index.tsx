@@ -8,13 +8,22 @@ interface TabPanelProps {
 
 interface TabsProps {
   children: React.ReactNode;
+  /** Controlled: when provided, tab selection is controlled externally */
+  activeIndex?: number;
+  onActiveIndexChange?: (index: number) => void;
 }
 
-function Tabs({ children }: TabsProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
+function Tabs({ children, activeIndex: controlledIndex, onActiveIndexChange }: TabsProps) {
+  const [internalIndex, setInternalIndex] = useState(0);
+  const isControlled = controlledIndex !== undefined;
+  const activeIndex = isControlled ? controlledIndex : internalIndex;
 
   const handleTabClick = (index: number) => {
-    setActiveIndex(index);
+    if (isControlled) {
+      onActiveIndexChange?.(index);
+    } else {
+      setInternalIndex(index);
+    }
   };
 
   const tabs = Children.map(children, (child, index) => {

@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core';
-import { listToolsByScenarioId, listAttachmentsByScenarioId } from '@/lib/storage';
+import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
@@ -80,11 +80,18 @@ export interface StudioContainerState {
 
 export type StudioViewMode = 'editor' | 'visualizer';
 
+/** Tab indices: 0=System, 1=Input, 2=History, 3=Files, 4=Tools */
+export type EditorTabIndex = 0 | 1 | 2 | 3 | 4;
+
 interface StudioContextType {
   studioState: StudioContainerState;
   setStudioState: React.Dispatch<React.SetStateAction<StudioContainerState>>;
   viewMode: StudioViewMode;
   setViewMode: (mode: StudioViewMode) => void;
+  activeEditorTab: EditorTabIndex;
+  setActiveEditorTab: (tab: EditorTabIndex) => void;
+  /** Switch to editor view and optionally focus a specific tab */
+  navigateToEditor: (tab?: EditorTabIndex) => void;
   saveScenario: (scenarioName: string | null) => Promise<void>;
   createNewScenario: () => void;
   loadScenario: (id: string) => Promise<void>;
@@ -130,6 +137,14 @@ const initialScenario: CurrentScenario = {
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const [viewMode, setViewMode] = useState<StudioViewMode>('editor');
+  const [activeEditorTab, setActiveEditorTab] = useState<EditorTabIndex>(0);
+
+  const navigateToEditor = useCallback((tab?: EditorTabIndex) => {
+    setViewMode('editor');
+    if (tab !== undefined) {
+      setActiveEditorTab(tab);
+    }
+  }, []);
   const [studioState, setStudioState] = useState<StudioContainerState>({
     currentScenario: { ...initialScenario, id: uuidv4() }, // Temporary new scenario until last used is loaded
     savedScenarios: [],
@@ -238,6 +253,35 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
         const attachments = await listAttachmentsByScenarioId(dbScenario.id!);
 
+        let lastRunResponse: StudioContainerState['response'] = null;
+        const lastExecution = await getLastExecutionForScenario(dbScenario.id!);
+        if (lastExecution) {
+          if (lastExecution.status === 'succeeded' && lastExecution.result_json) {
+            try {
+              const result = JSON.parse(lastExecution.result_json) as { text?: string; usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number } };
+              const usageData = lastExecution.usage_json ? JSON.parse(lastExecution.usage_json) as { latency_ms?: number } : {};
+              lastRunResponse = {
+                text: result.text ?? '',
+                usage: result.usage,
+                latency: usageData.latency_ms,
+                error: undefined,
+              };
+            } catch {
+              // Ignore parse errors
+            }
+          } else if (lastExecution.status === 'failed' && lastExecution.error_json) {
+            try {
+              const err = JSON.parse(lastExecution.error_json) as { message?: string };
+              lastRunResponse = {
+                text: '',
+                error: err.message ?? 'Execution failed',
+              };
+            } catch {
+              lastRunResponse = { text: '', error: 'Execution failed' };
+            }
+          }
+        }
+
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
           name: dbScenario.title,
@@ -265,7 +309,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             scenarioId: loadedScenario.id,
             isSaved: true,
             isLoading: false,
-            response: null,
+            response: lastRunResponse,
             historyViewMode: 'visual' as const,
             historyJsonDraft: '',
           };
@@ -372,7 +416,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
 
       {children}
 

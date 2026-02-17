@@ -75,9 +75,11 @@ interface FlowConnectorProps {
   status?: "active" | "idle" | "success";
   label?: string;
   length?: "short" | "medium" | "long";
+  /** When true, arrow points toward the start (e.g. left for horizontal) instead of the end */
+  reversed?: boolean;
 }
 
-export function FlowConnector({ direction = "horizontal", animated, status = "idle", label, length = "medium" }: FlowConnectorProps) {
+export function FlowConnector({ direction = "horizontal", animated, status = "idle", label, length = "medium", reversed = false }: FlowConnectorProps) {
   const isH = direction === "horizontal";
   const lengthClass = length === "short" ? (isH ? "w-12" : "h-12") : length === "long" ? (isH ? "w-24" : "h-24") : (isH ? "w-16" : "h-16");
 
@@ -85,6 +87,7 @@ export function FlowConnector({ direction = "horizontal", animated, status = "id
     <div className={cn(
       "relative flex items-center justify-center flex-shrink-0",
       isH ? "flex-row" : "flex-col",
+      reversed && (isH ? "flex-row-reverse" : "flex-col-reverse"),
       lengthClass
     )}>
       {/* Line */}
@@ -93,13 +96,19 @@ export function FlowConnector({ direction = "horizontal", animated, status = "id
         isH ? "h-px w-full" : "w-px h-full",
         status === "active" && "bg-primary/40",
         status === "success" && "bg-primary/40",
-        status === "idle" && "bg-border",
+        status === "idle" && "bg-muted-foreground/30",
       )}>
         {/* Animated pulse */}
         {animated && (
           <div className={cn(
             "absolute rounded-full",
-            isH ? "h-1.5 w-1.5 left-0 -top-[2.5px] animate-flow-horizontal" : "h-1.5 w-1.5 top-0 -left-[2.5px] animate-flow-vertical",
+            isH
+              ? reversed
+                ? "h-1.5 w-1.5 -top-[2.5px] animate-flow-horizontal-reversed"
+                : "h-1.5 w-1.5 left-0 -top-[2.5px] animate-flow-horizontal"
+              : reversed
+                ? "h-1.5 w-1.5 -left-[2.5px] animate-flow-vertical-reversed"
+                : "h-1.5 w-1.5 top-0 -left-[2.5px] animate-flow-vertical",
             status === "active" && "bg-primary shadow-glow-sm",
             status === "success" && "bg-primary shadow-glow-sm",
             status === "idle" && "bg-muted-foreground",
@@ -111,12 +120,14 @@ export function FlowConnector({ direction = "horizontal", animated, status = "id
       <div className={cn(
         "flex-shrink-0",
         isH ? "-ml-px" : "-mt-px",
+        reversed && (isH ? "ml-0 -mr-px" : "mt-0 -mb-px"),
       )}>
         {isH ? (
           <svg width="6" height="10" viewBox="0 0 6 10" className={cn(
             status === "active" && "text-primary/60",
             status === "success" && "text-primary/60",
-            status === "idle" && "text-border",
+            status === "idle" && "text-muted-foreground/60",
+            reversed && "rotate-180",
           )}>
             <path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -124,7 +135,8 @@ export function FlowConnector({ direction = "horizontal", animated, status = "id
           <svg width="10" height="6" viewBox="0 0 10 6" className={cn(
             status === "active" && "text-primary/60",
             status === "success" && "text-primary/60",
-            status === "idle" && "text-border",
+            status === "idle" && "text-muted-foreground/60",
+            reversed && "rotate-180",
           )}>
             <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

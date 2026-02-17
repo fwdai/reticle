@@ -221,6 +221,12 @@
   .animate-flow-vertical {
     animation: flow-vertical 2s ease-in-out infinite;
   }
+  .animate-flow-horizontal-reversed {
+    animation: flow-horizontal-reversed 2s ease-in-out infinite;
+  }
+  .animate-flow-vertical-reversed {
+    animation: flow-vertical-reversed 2s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse-glow {
@@ -257,6 +263,20 @@
   10% { opacity: 1; }
   90% { opacity: 1; }
   100% { top: 100%; opacity: 0; }
+}
+
+@keyframes flow-horizontal-reversed {
+  0% { left: 100%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 0%; opacity: 0; }
+}
+
+@keyframes flow-vertical-reversed {
+  0% { top: 100%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 0%; opacity: 0; }
 }
 
 .resize-handle {
