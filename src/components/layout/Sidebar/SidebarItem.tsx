@@ -42,19 +42,26 @@ function SidebarItem({
 
   const wrapperClass = `${baseClass} ${activeClass} ${indentClass} ${hasTrailing ? "justify-between" : ""} ${actions ? "group" : ""}`;
 
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`${wrapperClass} ${interactiveClass}`}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={wrapperClass}>{content}</div>;
+  return (
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClick();
+            }
+          }
+          : undefined
+      }
+      className={`${wrapperClass} ${interactiveClass}`}
+    >
+      {content}
+    </div>
+  );
 }
 
 export default SidebarItem;
