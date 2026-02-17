@@ -1,22 +1,19 @@
-import { useState } from "react";
 import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
+import { useAppContext } from "@/contexts/AppContext";
+import type { SettingsSectionId } from "@/types";
 
-export type SettingsSectionId =
-  | "preferences"
-  | "account"
-  | "api-keys"
-  | "integrations";
+export type { SettingsSectionId };
 
 function SettingsPage() {
-  const [activeSection, setActiveSection] =
-    useState<SettingsSectionId>("account");
+  const { appState, setSettingsSection } = useAppContext();
+  const activeSection = appState.settingsSection;
 
   return (
     <>
       <Sidebar
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={setSettingsSection}
       />
       <MainContent activeSection={activeSection} />
     </>

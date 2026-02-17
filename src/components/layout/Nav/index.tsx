@@ -1,11 +1,40 @@
-import { Home, Activity, Layers, Settings, PlayCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Home, Activity, Layers, Settings, PlayCircle, User } from "lucide-react";
 import reticleLogo from "@/assets/reticle-logo.svg";
-import { Page } from "@/types";
+import { Page, type SettingsSectionId } from "@/types";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipArrow } from "@/components/ui/tooltip";
 import { useAppContext } from "@/contexts/AppContext";
+import { getOrCreateAccount } from "@/lib/storage";
+import type { Account } from "@/types";
+
+function getInitials(account: Account | null): string {
+  if (!account) return "";
+  const first = (account.first_name ?? "").trim();
+  const last = (account.last_name ?? "").trim();
+  if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
+  if (first) return first.slice(0, 2).toUpperCase();
+  if (last) return last.slice(0, 2).toUpperCase();
+  return "";
+}
 
 function Navigation() {
   const { appState, setCurrentPage } = useAppContext();
+  const [account, setAccount] = useState<Account | null>(null);
+
+  const prevPageRef = useRef(appState.currentPage);
+
+  useEffect(() => {
+    getOrCreateAccount().then(setAccount).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const prev = prevPageRef.current;
+    prevPageRef.current = appState.currentPage;
+    if (prev === "settings" && appState.currentPage !== "settings") {
+      getOrCreateAccount().then(setAccount).catch(console.error);
+    }
+  }, [appState.currentPage]);
+
   const currentPage = appState.currentPage;
   const navItems = [
     { id: "home" as Page, icon: Home, label: "Home" },
@@ -15,9 +44,9 @@ function Navigation() {
     { id: "runs" as Page, icon: Activity, label: "Runs" },
   ];
 
-  const handleClick = (page: Page, e: React.MouseEvent) => {
+  const handleClick = (page: Page, e: React.MouseEvent, options?: { settingsSection?: SettingsSectionId }) => {
     e.preventDefault();
-    setCurrentPage(page);
+    setCurrentPage(page, options);
   };
 
   return (
@@ -58,7 +87,7 @@ function Navigation() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={(e) => handleClick("settings", e)}
+                onClick={(e) => handleClick("settings", e, { settingsSection: "api-keys" })}
                 className={`${currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white"
                   } transition-colors flex items-center justify-center relative cursor-pointer h-7`}
               >
@@ -73,13 +102,36 @@ function Navigation() {
               <TooltipArrow />
             </TooltipContent>
           </Tooltip>
-          <div className="size-8 rounded-full overflow-hidden border-2 border-white/10 cursor-pointer mx-auto">
-            <img
-              alt="Avatar"
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkKKn7XRblGUMGxsqsk2XQ42Af2nXd9Zjvl6ghD9eD8LJeT2k6r_TWMMjk-oJNVZZOT5cLajAOXlUKrJmN7hOOt2LW9rqGGZ3X0mvRVaLOhk2Tvq9t5qvtOBOjTdlDYVb3Oy9y8Ny6tX9vRrDrIvvAcile489RHN_xKJI031AiWh319tpkbzybLFPPz7ruZIde-61-xLzT7reyL1CpztCIr11BVSuJ14kVe0kqFRuTQHDSdCo1ugXH1lIHPoP-Y45Ugq-l9kCSdbc"
-            />
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={(e) => handleClick("settings", e, { settingsSection: "account" })}
+                className="size-8 rounded-full overflow-hidden border-2 border-white/10 cursor-pointer mx-auto flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                {account?.avatar ? (
+                  <img
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                    src={account.avatar}
+                  />
+                ) : getInitials(account) ? (
+                  <span className="text-xs font-medium text-white/90">
+                    {getInitials(account)}
+                  </span>
+                ) : (
+                  <User size={18} className="text-white/60" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>
+                {account?.first_name || account?.last_name
+                  ? [account.first_name, account.last_name].filter(Boolean).join(" ")
+                  : "Account"}
+              </p>
+              <TooltipArrow />
+            </TooltipContent>
+          </Tooltip>
         </div>
       </nav>
     </TooltipProvider>

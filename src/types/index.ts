@@ -1,5 +1,11 @@
 export type Page = "home" | "studio" | "environments" | "runs" | "settings" | "templates";
 
+export type SettingsSectionId =
+  | "preferences"
+  | "account"
+  | "api-keys"
+  | "integrations";
+
 export type SidebarItem = Exclude<Page, "home">;
 
 export type ExecutionStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';

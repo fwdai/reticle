@@ -19,16 +19,16 @@ function SettingsSidebar({ activeSection, onSectionChange }: SettingsSidebarProp
           onClick={() => onSectionChange("account")}
         />
         <SidebarItem
-          icon={SettingsIcon}
-          label="Preferences"
-          active={activeSection === "preferences"}
-          onClick={() => onSectionChange("preferences")}
-        />
-        <SidebarItem
           icon={Key}
           label="API Keys"
           active={activeSection === "api-keys"}
           onClick={() => onSectionChange("api-keys")}
+        />
+        <SidebarItem
+          icon={SettingsIcon}
+          label="Preferences"
+          active={activeSection === "preferences"}
+          onClick={() => onSectionChange("preferences")}
         />
       </SidebarSection>
       <SidebarSection title="Advanced">

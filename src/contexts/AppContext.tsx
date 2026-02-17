@@ -1,12 +1,12 @@
 import React, { createContext, useState, ReactNode, useContext } from 'react';
-import { Page } from '@/types';
+import { Page, SettingsSectionId } from '@/types';
 
 // Define the shape of the global application state
 interface AppState {
   isSidebarOpen: boolean;
   theme: 'light' | 'dark';
-  currentPage: Page; // Added currentPage
-  // Add other global state here as needed
+  currentPage: Page;
+  settingsSection: SettingsSectionId;
 }
 
 // Define the shape of the context object
@@ -15,7 +15,8 @@ interface AppContextType {
   setAppState: React.Dispatch<React.SetStateAction<AppState>>;
   toggleSidebar: () => void;
   toggleTheme: () => void;
-  setCurrentPage: (page: Page) => void; // Added setCurrentPage
+  setCurrentPage: (page: Page, options?: { settingsSection?: SettingsSectionId }) => void;
+  setSettingsSection: (section: SettingsSectionId) => void;
 }
 
 // Create the AppContext
@@ -37,9 +38,10 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [appState, setAppState] = useState<AppState>({
-    isSidebarOpen: true, // Default to open
-    theme: 'light',      // Default theme
-    currentPage: 'studio', // Initial page
+    isSidebarOpen: true,
+    theme: 'light',
+    currentPage: 'studio',
+    settingsSection: 'api-keys',
   });
 
   const toggleSidebar = () => {
@@ -56,15 +58,25 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }));
   };
 
-  const setCurrentPage = (page: Page) => {
+  const setCurrentPage = (page: Page, options?: { settingsSection?: SettingsSectionId }) => {
     setAppState(prevState => ({
       ...prevState,
       currentPage: page,
+      ...(page === 'settings' && options?.settingsSection != null && {
+        settingsSection: options.settingsSection,
+      }),
+    }));
+  };
+
+  const setSettingsSection = (section: SettingsSectionId) => {
+    setAppState(prevState => ({
+      ...prevState,
+      settingsSection: section,
     }));
   };
 
   return (
-    <AppContext.Provider value={{ appState, setAppState, toggleSidebar, toggleTheme, setCurrentPage }}>
+    <AppContext.Provider value={{ appState, setAppState, toggleSidebar, toggleTheme, setCurrentPage, setSettingsSection }}>
       {children}
     </AppContext.Provider>
   );
