@@ -1,11 +1,13 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core';
-import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario } from '@/lib/storage';
+import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario, getSetting } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
 import { Collection, Scenario } from '@/types';
+import { useAppContext } from '@/contexts/AppContext';
+import { PROVIDERS_LIST } from '@/constants/providers';
 
 // --- State Interfaces ---
 
@@ -93,8 +95,8 @@ interface StudioContextType {
   /** Switch to editor view and optionally focus a specific tab */
   navigateToEditor: (tab?: EditorTabIndex) => void;
   saveScenario: (scenarioName: string | null) => Promise<void>;
-  createNewScenario: () => void;
-  loadScenario: (id: string) => Promise<void>;
+  createNewScenario: (overrides?: { provider?: string; model?: string }) => void;
+  loadScenario: (id: string, defaults?: { provider: string; model: string }) => Promise<void>;
   fetchCollections: () => Promise<void>;
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>;
@@ -136,6 +138,7 @@ const initialScenario: CurrentScenario = {
 // --- Provider Component ---
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
+  const { appState, setAppState } = useAppContext();
   const [viewMode, setViewMode] = useState<StudioViewMode>('editor');
   const [activeEditorTab, setActiveEditorTab] = useState<EditorTabIndex>(0);
 
@@ -192,11 +195,31 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       await fetchCollections();
       await fetchScenarios();
 
+      // Load models and default provider/model from settings together
+      const [models, savedProvider, savedModel] = await Promise.all([
+        fetchAndNormalizeModels(),
+        getSetting('default_provider'),
+        getSetting('default_model'),
+      ]);
+      setStudioState(prev => ({ ...prev, providerModels: models }));
+
+      // Validate and set defaults in AppContext
+      const provider =
+        savedProvider && PROVIDERS_LIST.some((p) => p.id === savedProvider)
+          ? savedProvider
+          : PROVIDERS_LIST[0]?.id ?? 'openai';
+      const modelsForProvider = models[provider] ?? [];
+      const model =
+        savedModel && modelsForProvider.some((m) => m.id === savedModel)
+          ? savedModel
+          : modelsForProvider[0]?.id ?? initialScenario.configuration.model;
+      setAppState(prev => ({ ...prev, defaultProvider: provider, defaultModel: model }));
+
       const lastUsedScenarioId = localStorage.getItem(LAST_USED_SCENARIO_ID_KEY);
       if (lastUsedScenarioId) {
-        await loadScenario(lastUsedScenarioId);
+        await loadScenario(lastUsedScenarioId, { provider, model });
       } else {
-        createNewScenario();
+        createNewScenario({ provider, model });
       }
       setStudioState(prev => ({ ...prev, isLoading: false }));
     };
@@ -204,36 +227,43 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     initializeStudio();
   }, []); // Empty dependency array means this runs once on mount
 
-  useEffect(() => {
-    const loadModels = async () => {
-      const models = await fetchAndNormalizeModels();
-      setStudioState(prev => ({ ...prev, providerModels: models }));
-    };
-    loadModels();
-  }, []);
-
   const saveScenario = useCallback(async (scenarioName: string | null) => {
     await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);
     await fetchCollections();
     await fetchScenarios();
   }, [studioState, setStudioState, setPrevScenarioJson]);
 
-  const createNewScenario = useCallback(() => {
-    const newId = uuidv4();
-    setStudioState(prev => ({
-      ...prev,
-      currentScenario: { ...initialScenario, id: newId },
-      scenarioId: newId,
-      isSaved: true,
-      response: null,
-      historyViewMode: 'visual' as const,
-      historyJsonDraft: '',
-    }));
-    setPrevScenarioJson(JSON.stringify({ ...initialScenario, id: null }));
-    localStorage.setItem(LAST_USED_SCENARIO_ID_KEY, newId);
-  }, [setStudioState, setPrevScenarioJson]);
+  const createNewScenario = useCallback(
+    (overrides?: { provider?: string; model?: string }) => {
+      const provider = overrides?.provider ?? appState.defaultProvider ?? initialScenario.configuration.provider;
+      const model = overrides?.model ?? appState.defaultModel ?? initialScenario.configuration.model;
+      const newId = uuidv4();
+      const scenarioConfig = {
+        ...initialScenario.configuration,
+        provider,
+        model,
+      };
+      const newScenario = {
+        ...initialScenario,
+        id: newId,
+        configuration: scenarioConfig,
+      };
+      setStudioState(prev => ({
+        ...prev,
+        currentScenario: newScenario,
+        scenarioId: newId,
+        isSaved: true,
+        response: null,
+        historyViewMode: 'visual' as const,
+        historyJsonDraft: '',
+      }));
+      setPrevScenarioJson(JSON.stringify({ ...newScenario, id: null }));
+      localStorage.setItem(LAST_USED_SCENARIO_ID_KEY, newId);
+    },
+    [appState.defaultProvider, appState.defaultModel]
+  );
 
-  const loadScenario = useCallback(async (id: string) => {
+  const loadScenario = useCallback(async (id: string, defaults?: { provider: string; model: string }) => {
     try {
       setStudioState(prev => ({ ...prev, isLoading: true }));
       const result: Scenario[] = await invoke('db_select_cmd', {
@@ -323,7 +353,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         setStudioState(prev => ({ ...prev, isLoading: false }));
         // If not found, clear from local storage and create a new scenario
         localStorage.removeItem(LAST_USED_SCENARIO_ID_KEY);
-        createNewScenario();
+        createNewScenario(defaults ? { provider: defaults.provider, model: defaults.model } : undefined);
       }
     } catch (error) {
       console.error(`Failed to load scenario ${id}:`, error);
@@ -331,30 +361,40 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, [setStudioState, setPrevScenarioJson, createNewScenario]);
 
-  const createScenario = useCallback(async (collectionId: string) => {
-    try {
-      setStudioState(prev => ({ ...prev, isLoading: true }));
-      const newScenario: Omit<Scenario, 'id' | 'created_at' | 'updated_at'> = {
-        title: `New Scenario`,
-        collection_id: collectionId,
-        provider: initialScenario.configuration.provider,
-        model: initialScenario.configuration.model,
-        system_prompt: initialScenario.systemPrompt,
-        user_prompt: initialScenario.userPrompt,
-        params_json: JSON.stringify(initialScenario.configuration),
-        tools_json: JSON.stringify(initialScenario.tools),
-        history_json: JSON.stringify(initialScenario.history),
-      };
+  const createScenario = useCallback(
+    async (collectionId: string) => {
+      try {
+        setStudioState(prev => ({ ...prev, isLoading: true }));
+        const provider = appState.defaultProvider ?? initialScenario.configuration.provider;
+        const model = appState.defaultModel ?? initialScenario.configuration.model;
+        const config = {
+          ...initialScenario.configuration,
+          provider,
+          model,
+        };
+        const newScenario: Omit<Scenario, 'id' | 'created_at' | 'updated_at'> = {
+          title: `New Scenario`,
+          collection_id: collectionId,
+          provider,
+          model,
+          system_prompt: initialScenario.systemPrompt,
+          user_prompt: initialScenario.userPrompt,
+          params_json: JSON.stringify(config),
+          tools_json: JSON.stringify(initialScenario.tools),
+          history_json: JSON.stringify(initialScenario.history),
+        };
 
-      const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });
-      await fetchScenarios();
-      await loadScenario(scenarioId);
-      setStudioState(prev => ({ ...prev, isLoading: false }));
-    } catch (error) {
-      console.error(`Failed to create scenario in collection ${collectionId}:`, error);
-      setStudioState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, [setStudioState, fetchScenarios, loadScenario]);
+        const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });
+        await fetchScenarios();
+        await loadScenario(scenarioId);
+        setStudioState(prev => ({ ...prev, isLoading: false }));
+      } catch (error) {
+        console.error(`Failed to create scenario in collection ${collectionId}:`, error);
+        setStudioState(prev => ({ ...prev, isLoading: false }));
+      }
+    },
+    [appState.defaultProvider, appState.defaultModel, fetchScenarios, loadScenario]
+  );
 
   const runScenario = useCallback(async () => {
 

@@ -7,6 +7,9 @@ interface AppState {
   theme: 'light' | 'dark';
   currentPage: Page;
   settingsSection: SettingsSectionId;
+  /** Default provider/model from settings; used when creating new scenarios */
+  defaultProvider: string | null;
+  defaultModel: string | null;
 }
 
 // Define the shape of the context object
@@ -42,6 +45,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     theme: 'light',
     currentPage: 'studio',
     settingsSection: 'api-keys',
+    defaultProvider: null,
+    defaultModel: null,
   });
 
   const toggleSidebar = () => {
