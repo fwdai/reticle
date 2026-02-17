@@ -14,6 +14,7 @@ import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
+import type { PersistedToolCall } from '@/features/Runs/MainContent/RunDetail/executionToTraceSteps';
 
 const GATEWAY_URL = 'http://localhost:11513/v1';
 const API_KEY = '1';
@@ -45,6 +46,32 @@ const getProviderHeaders = (providerId: string) => {
     headers['anthropic-version'] = '2023-06-01'; // Required for Anthropic API
   }
   return headers;
+}
+
+/** Extract tool calls from AI SDK steps into PersistedToolCall format. */
+function extractToolCallsFromSteps(
+  steps: Array<{
+    toolCalls: Array<{ toolCallId: string; toolName: string; input: unknown }>;
+    toolResults: Array<{ toolCallId: string; output: unknown }>;
+  }>
+): PersistedToolCall[] {
+  const result: PersistedToolCall[] = [];
+  let elapsedMs = 0;
+  for (const step of steps) {
+    const resultsById = new Map((step.toolResults ?? []).map((r) => [r.toolCallId, r]));
+    for (const tc of step.toolCalls ?? []) {
+      const tr = resultsById.get(tc.toolCallId);
+      result.push({
+        id: tc.toolCallId,
+        name: tc.toolName,
+        arguments: (tc.input as Record<string, unknown>) ?? {},
+        result: tr?.output,
+        elapsed_ms: elapsedMs,
+      });
+    }
+    elapsedMs += 100; // Approximate step duration
+  }
+  return result;
 }
 
 function isReasoningModel(modelId: string): boolean {
@@ -189,6 +216,12 @@ export const generateText = async (
   // Get the measured latency
   const latency = gateway.getLatency();
 
+  // Extract tool calls from all steps (multi-step can have tool calls in each step)
+  const toolCalls =
+    result.steps?.length && result.steps.some((s) => s.toolCalls?.length)
+      ? extractToolCallsFromSteps(result.steps)
+      : [];
+
   // Map the result properties: generateTextAi returns output and totalUsage,
   // but we need to map them to text and usage for consistency
   return {
@@ -196,6 +229,7 @@ export const generateText = async (
     text: result.output ?? result.text, // Use output if available, fallback to text
     usage: result.totalUsage ?? result.usage, // Use totalUsage if available, fallback to usage
     latency: latency ?? undefined,
+    toolCalls,
   };
 }
 

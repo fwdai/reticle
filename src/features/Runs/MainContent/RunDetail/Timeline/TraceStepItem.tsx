@@ -43,10 +43,18 @@ function renderStepContent(step: TraceStep): string {
     return (c.chunks as string[]).join("") + `\n\n// finish_reason: "${c.finish_reason}"`;
   }
   if (step.type === "tool_call") {
-    return JSON.stringify({ function: c.name, arguments: c.arguments }, null, 2);
+    return JSON.stringify(
+      { tool: c.name, arguments: c.arguments ?? {} },
+      null,
+      2
+    );
   }
   if (step.type === "tool_response") {
-    return JSON.stringify(c.result, null, 2);
+    const result = c.result;
+    if (result === undefined || result === null) {
+      return "— no result —";
+    }
+    return JSON.stringify(result, null, 2);
   }
   return JSON.stringify(step.content, null, 2);
 }

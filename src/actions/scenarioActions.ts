@@ -205,6 +205,10 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       snapshot_json,
       input_json,
       result_json: JSON.stringify({ text: result.text, usage: result.usage }),
+      tool_calls_json:
+        result.toolCalls?.length ?
+          JSON.stringify(result.toolCalls) :
+          undefined,
       status: 'succeeded',
       started_at,
       ended_at,

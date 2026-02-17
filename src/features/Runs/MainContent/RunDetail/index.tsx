@@ -5,7 +5,7 @@ import { Timeline, type TraceStep } from "./Timeline";
 import { Visualizer } from "./Visualizer";
 import type { RunDetailRun } from "./types";
 import { getExecutionById } from "@/lib/storage";
-import { executionToTraceSteps } from "./executionToTraceSteps";
+import { executionToTraceSteps, type PersistedToolCall } from "./executionToTraceSteps";
 
 export type { RunDetailRun } from "./types";
 
@@ -29,10 +29,24 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         const execution = await getExecutionById(run.id);
         if (cancelled) return;
         if (execution) {
-          // Future: fetch tool_calls from execution_tool_calls table when persisted
-          const steps = executionToTraceSteps(execution);
+          let toolCalls: PersistedToolCall[] | undefined;
+          if (execution.tool_calls_json) {
+            try {
+              toolCalls = JSON.parse(execution.tool_calls_json) as PersistedToolCall[];
+            } catch {
+              toolCalls = undefined;
+            }
+          }
+          const steps = executionToTraceSteps(execution, toolCalls);
           setTraceSteps(steps);
-          setExpandedSteps(new Set([steps[0]?.id].filter(Boolean)));
+          // Expand first step + first tool_call and tool_response when present
+          const initialExpanded = new Set<string>();
+          if (steps[0]) initialExpanded.add(steps[0].id);
+          const firstToolCall = steps.find((s) => s.type === "tool_call");
+          const firstToolResp = steps.find((s) => s.type === "tool_response");
+          if (firstToolCall) initialExpanded.add(firstToolCall.id);
+          if (firstToolResp) initialExpanded.add(firstToolResp.id);
+          setExpandedSteps(initialExpanded);
         } else {
           setTraceSteps([]);
         }
