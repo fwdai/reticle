@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface TemplateLoadProps {
+interface SelectTemplateProps {
   templates: PromptTemplate[];
   type: "system" | "user";
   onLoadTemplate: (template: PromptTemplate) => void;
@@ -18,7 +18,7 @@ export function SelectTemplate({
   templates,
   type,
   onLoadTemplate,
-}: TemplateLoadProps) {
+}: SelectTemplateProps) {
   const [selectedTemplateName, setSelectedTemplateName] = useState("");
 
   useEffect(() => {
