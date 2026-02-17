@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { Layers, CheckCircle2, Timer, Hash, Coins, XCircle } from "lucide-react";
-import { MetricPill } from "./MetricPill";
+import { CheckCircle2, Timer, Hash, Coins, XCircle } from "lucide-react";
+import { MetricPill } from "@/components/ui/MetricPill";
 import { MiniTag } from "./MiniTag";
 import { StudioContext } from "@/contexts/StudioContext";
 import { calculateRequestCost } from "@/lib/modelPricing";
@@ -39,19 +39,15 @@ export function MetricsBar() {
   const statusIcon = response?.error ? XCircle : CheckCircle2;
 
   return (
-    <div className="flex items-center gap-3 border-b border-border px-6 py-3 bg-slate-50">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-foreground">
-        <Layers className="h-3.5 w-3.5" />
-        Pipeline Overview
-      </div>
-      <div className="mx-3 h-4 w-px bg-border" />
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-4 border-b border-border-light px-6 h-12 bg-slate-50">
+      <div className="flex items-center gap-2 min-w-0">
         <MetricPill icon={statusIcon} label="Status" value={statusValue} variant={statusVariant} />
+
+        <div className="h-4 w-px bg-border shrink-0" />
         <MetricPill
           icon={Timer}
           label="Latency"
           value={response?.latency != null ? formatLatency(response.latency) : "—"}
-          variant={response?.latency != null ? "accent" : "default"}
         />
         <MetricPill
           icon={Hash}
@@ -60,7 +56,7 @@ export function MetricsBar() {
         />
         <MetricPill icon={Coins} label="Cost" value={formatCost()} />
       </div>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 shrink-0">
         {response && (
           <MiniTag variant={response.error ? "muted" : "accent"}>
             {response.error ? "FAILED" : "COMPLETED"}

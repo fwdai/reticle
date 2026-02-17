@@ -1,5 +1,5 @@
-import { Clock, Zap, Coins, Hash, MessageSquare } from "lucide-react";
-import { MetricPill } from "./MetricPill";
+import { Clock, Zap, Coins, Hash, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
+import { MetricPill } from "@/components/ui/MetricPill";
 import type { RunDetailRun } from "./types";
 import type { RunViewMode } from "./Header";
 
@@ -18,27 +18,37 @@ export function MetricsBar({
   onExpandAll,
   onCollapseAll,
 }: MetricsBarProps) {
-  return (
-    <div className="flex items-center gap-8 border-b border-border-light px-6 h-12 bg-slate-50">
-      <MetricPill icon={Clock} label="Latency" value={run.latency} />
-      <MetricPill icon={Hash} label="Tokens" value={run.tokens.toLocaleString()} />
-      <MetricPill icon={Coins} label="Cost" value={run.cost} />
-      <MetricPill icon={Zap} label="Model" value={run.model} mono />
-      <MetricPill icon={MessageSquare} label="Steps" value={String(stepCount)} />
+  const success = run.status === "success";
+  const statusIcon = success ? CheckCircle2 : XCircle;
+  const statusValue = success ? "200 OK" : "Error";
+  const statusVariant = success ? "success" : "warning"
 
-      <div className="ml-auto flex items-center">
+  return (
+    <div className="flex items-center gap-4 border-b border-border-light px-6 h-12 bg-slate-50">
+      <div className="flex items-center gap-2 min-w-0">
+        <MetricPill icon={statusIcon} label="Status" value={statusValue} variant={statusVariant} />
+
+        <div className="h-4 w-px bg-border shrink-0" />
+        <MetricPill icon={Clock} label="Latency" value={run.latency} />
+        <MetricPill icon={Hash} label="Tokens" value={run.tokens.toLocaleString()} />
+        <MetricPill icon={Coins} label="Cost" value={run.cost} />
+        <MetricPill icon={Zap} label="Model" value={run.model} mono />
+        <MetricPill icon={MessageSquare} label="Steps" value={String(stepCount)} />
+      </div>
+
+      <div className="ml-auto flex items-center shrink-0">
         {viewMode === "timeline" && (
-          <div className="flex items-center justify-end gap-3 px-4 shrink-0 leading-none">
+          <div className="flex items-center justify-end gap-3 px-4 leading-none">
             <button
               onClick={onExpandAll}
-              className="text-xs text-text-muted hover:text-text-main transition-colors leading-none"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors leading-none"
             >
               Expand all
             </button>
-            <span className="text-text-muted/30">|</span>
+            <span className="text-muted-foreground/30">|</span>
             <button
               onClick={onCollapseAll}
-              className="text-xs text-text-muted hover:text-text-main transition-colors leading-none"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors leading-none"
             >
               Collapse all
             </button>
