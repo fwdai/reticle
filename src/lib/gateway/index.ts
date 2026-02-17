@@ -4,6 +4,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   generateText as generateTextAi,
   jsonSchema,
+  stepCountIs,
   tool,
   type ModelMessage,
   type ToolSet,
@@ -16,6 +17,7 @@ import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types
 
 const GATEWAY_URL = 'http://localhost:11513/v1';
 const API_KEY = '1';
+const STEPS_COUNT = 5;
 
 /** OpenAI reasoning models require max_completion_tokens instead of max_tokens. */
 const REASONING_MODEL_PREFIXES = [
@@ -179,6 +181,9 @@ export const generateText = async (
     topP: config.topP,
     maxOutputTokens: config.maxTokens,
     ...(aiTools ? { tools: aiTools } : {}),
+    // Allow multi-step tool execution: model calls tool → receives result → generates text response.
+    // Default stopWhen is stepCountIs(1), which stops after the first step (tool call only).
+    ...(aiTools ? { stopWhen: stepCountIs(STEPS_COUNT) } : {}),
   });
 
   // Get the measured latency
