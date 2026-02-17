@@ -1,6 +1,7 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core';
+import { listToolsByScenarioId } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
@@ -245,6 +246,12 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         const dbScenario = result[0];
         const configParams = JSON.parse(dbScenario.params_json || '{}');
 
+        const toolsFromTable = await listToolsByScenarioId(dbScenario.id!);
+        const tools =
+          toolsFromTable.length > 0
+            ? toolsFromTable
+            : JSON.parse(dbScenario.tools_json || '[]');
+
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
           name: dbScenario.title,
@@ -258,7 +265,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           },
           systemPrompt: dbScenario.system_prompt,
           userPrompt: dbScenario.user_prompt,
-          tools: JSON.parse(dbScenario.tools_json || '[]'),
+          tools,
           history: JSON.parse(dbScenario.history_json || '[]'),
           attachments: parseAttachmentsJson(dbScenario.attachments_json || '[]'),
           createdAt: dbScenario.created_at?.toString(),

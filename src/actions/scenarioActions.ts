@@ -4,6 +4,7 @@ import {
   insertScenario,
   updateExecution,
   updateScenario,
+  upsertToolsForScenario,
 } from '@/lib/storage';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
@@ -103,12 +104,14 @@ export async function saveScenarioAction(
         scenarioData.createdAt != null ? new Date(scenarioData.createdAt).getTime() : now;
       updated_at = now;
       await updateScenario(studioState.scenarioId, scenarioPayload);
+      await upsertToolsForScenario(scenarioData.tools ?? [], studioState.scenarioId);
       console.log(`Scenario '${scenarioData.name}' updated.`);
     } else {
       console.log("Inserting new scenario.");
       savedId = await insertScenario(scenarioPayload);
       created_at = now;
       updated_at = now;
+      await upsertToolsForScenario(scenarioData.tools ?? [], savedId);
       console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
     }
 
