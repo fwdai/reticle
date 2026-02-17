@@ -18,6 +18,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0007_create_prompt_templates_table.sql")),
         M::up(include_str!("../migrations/0008_add_attachments_to_scenarios.sql")),
         M::up(include_str!("../migrations/0009_create_accounts_table.sql")),
+        M::up(include_str!("../migrations/0010_create_tools_table.sql")),
     ])
 }
 
