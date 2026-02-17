@@ -51,3 +51,31 @@ pub async fn store_attachment_blob(
         .map(String::from)
         .ok_or_else(|| "Invalid path".to_string())
 }
+
+/// Deletes a blob file from the app data workspace folder.
+/// Validates that the path is within workspaces/<account_id>/blobs/ to prevent path traversal.
+#[tauri::command]
+pub async fn delete_attachment_blob(
+    app: tauri::AppHandle,
+    blob_path: String,
+) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    let path = std::path::PathBuf::from(&blob_path);
+
+    if !path.exists() {
+        return Ok(()); // Already gone, idempotent
+    }
+
+    let path = path
+        .canonicalize()
+        .map_err(|e| format!("Invalid path: {}", e))?;
+
+    let workspaces = root.join("workspaces");
+    if !path.starts_with(&workspaces) {
+        return Err("Path is outside workspace blobs directory".to_string());
+    }
+
+    std::fs::remove_file(&path).map_err(|e| format!("Failed to delete blob: {}", e))?;
+
+    Ok(())
+}
