@@ -106,27 +106,6 @@ interface StudioProviderProps {
 
 const LAST_USED_SCENARIO_ID_KEY = 'lastUsedScenarioId';
 
-function parseAttachmentsJson(jsonStr: string): AttachedFile[] {
-  try {
-    const parsed = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is AttachedFile =>
-        item &&
-        typeof item === 'object' &&
-        typeof item.id === 'string' &&
-        typeof item.name === 'string' &&
-        typeof item.size === 'number' &&
-        typeof item.type === 'string'
-    ).map((item) => ({
-      ...item,
-      path: typeof item.path === 'string' ? item.path : undefined,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 // --- Initial State ---
 
 const initialScenario: CurrentScenario = {
@@ -257,11 +236,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             ? toolsFromTable
             : JSON.parse(dbScenario.tools_json || '[]');
 
-        const attachmentsFromTable = await listAttachmentsByScenarioId(dbScenario.id!);
-        const attachments =
-          attachmentsFromTable.length > 0
-            ? attachmentsFromTable.map((a) => ({ ...a, id: a.id || crypto.randomUUID() }))
-            : parseAttachmentsJson(dbScenario.attachments_json || '[]');
+        const attachments = await listAttachmentsByScenarioId(dbScenario.id!);
 
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
@@ -325,7 +300,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         params_json: JSON.stringify(initialScenario.configuration),
         tools_json: JSON.stringify(initialScenario.tools),
         history_json: JSON.stringify(initialScenario.history),
-        attachments_json: JSON.stringify(initialScenario.attachments),
       };
 
       const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });

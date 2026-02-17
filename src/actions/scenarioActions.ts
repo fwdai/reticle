@@ -91,7 +91,6 @@ export async function saveScenarioAction(
       }),
       response_format_json: null,
       tools_json: JSON.stringify(scenarioData.tools),
-      attachments_json: JSON.stringify(scenarioData.attachments ?? []),
       provider_meta_json: null,
     };
 
