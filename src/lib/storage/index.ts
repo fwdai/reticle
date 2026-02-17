@@ -61,6 +61,14 @@ export async function getLastExecutionForScenario(scenarioId: string): Promise<E
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
+export async function getExecutionById(id: string): Promise<Execution | null> {
+  const rows = await invoke<Execution[]>('db_select_cmd', {
+    table: 'executions',
+    query: { where: { id }, limit: 1 },
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
 export async function listScenarios(): Promise<Scenario[]> {
   const rows = await invoke<Scenario[]>('db_select_cmd', {
     table: 'scenarios',
