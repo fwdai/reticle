@@ -87,6 +87,7 @@ export type Execution = {
   input_json?: string | null;
   request_json?: string | null;
   result_json?: string | null;
+  tool_calls_json?: string | null;
   status: ExecutionStatus;
   started_at?: number | null;
   ended_at?: number | null;

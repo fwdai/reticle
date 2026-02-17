@@ -20,6 +20,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0009_create_accounts_table.sql")),
         M::up(include_str!("../migrations/0010_create_tools_table.sql")),
         M::up(include_str!("../migrations/0011_create_attachments_table.sql")),
+        M::up(include_str!("../migrations/0012_add_tool_calls_to_executions.sql")),
     ])
 }
 
