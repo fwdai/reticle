@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface FileDropZoneProps {
-  onFilesAdded: (fileList: FileList) => void;
+  onFilesAdded: (fileList: FileList) => void | Promise<void>;
+  disabled?: boolean;
 }
 
-export function FileDropZone({ onFilesAdded }: FileDropZoneProps) {
+export function FileDropZone({ onFilesAdded, disabled }: FileDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
@@ -73,6 +74,7 @@ export function FileDropZone({ onFilesAdded }: FileDropZoneProps) {
           size="sm"
           className="h-9 gap-2 font-medium border-border-light hover:bg-sidebar-light"
           onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
         >
           <Paperclip className="h-3.5 w-3.5" />
           Add File

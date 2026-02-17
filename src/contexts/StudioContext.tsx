@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 import { invoke } from '@tauri-apps/api/core';
-import { listToolsByScenarioId } from '@/lib/storage';
+import { listToolsByScenarioId, listAttachmentsByScenarioId } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
 import { fetchAndNormalizeModels } from '@/lib/modelManager';
@@ -27,6 +27,8 @@ export interface AttachedFile {
   name: string;
   size: number;
   type: string;
+  /** Path to blob file on disk (workspaces/<account_id>/blobs/<sha256>) */
+  path?: string;
 }
 
 // This represents the scenario being actively edited in the UI
@@ -116,7 +118,10 @@ function parseAttachmentsJson(jsonStr: string): AttachedFile[] {
         typeof item.name === 'string' &&
         typeof item.size === 'number' &&
         typeof item.type === 'string'
-    );
+    ).map((item) => ({
+      ...item,
+      path: typeof item.path === 'string' ? item.path : undefined,
+    }));
   } catch {
     return [];
   }
@@ -252,6 +257,12 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             ? toolsFromTable
             : JSON.parse(dbScenario.tools_json || '[]');
 
+        const attachmentsFromTable = await listAttachmentsByScenarioId(dbScenario.id!);
+        const attachments =
+          attachmentsFromTable.length > 0
+            ? attachmentsFromTable.map((a) => ({ ...a, id: a.id || crypto.randomUUID() }))
+            : parseAttachmentsJson(dbScenario.attachments_json || '[]');
+
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
           name: dbScenario.title,
@@ -267,7 +278,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           userPrompt: dbScenario.user_prompt,
           tools,
           history: JSON.parse(dbScenario.history_json || '[]'),
-          attachments: parseAttachmentsJson(dbScenario.attachments_json || '[]'),
+          attachments,
           createdAt: dbScenario.created_at?.toString(),
           updatedAt: dbScenario.updated_at?.toString(),
         };

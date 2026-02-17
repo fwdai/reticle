@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Account, Collection, Execution, PromptTemplate, Scenario } from '@/types';
+import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool, ToolParameter } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
@@ -288,6 +289,64 @@ export async function deleteToolsByScenarioId(scenarioId: string): Promise<void>
     table: 'tools',
     query: { where: { scenario_id: scenarioId } },
   });
+}
+
+// --- Attachments ---
+
+export async function insertAttachment(
+  attachment: AttachedFile,
+  scenarioId: string,
+  sortOrder: number
+): Promise<string> {
+  const data = {
+    id: attachment.id,
+    scenario_id: scenarioId,
+    name: attachment.name,
+    size: attachment.size,
+    type: attachment.type,
+    path: attachment.path ?? null,
+    sort_order: sortOrder,
+  };
+  return invoke<string>('db_insert_cmd', { table: 'attachments', data });
+}
+
+export async function listAttachmentsByScenarioId(scenarioId: string): Promise<AttachedFile[]> {
+  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
+    table: 'attachments',
+    query: {
+      where: { scenario_id: scenarioId },
+      orderBy: 'sort_order',
+      orderDirection: 'asc',
+    },
+  });
+  if (!Array.isArray(rows)) return [];
+  return rows.map((row) => ({
+    id: String(row.id ?? ''),
+    name: String(row.name ?? ''),
+    size: Number(row.size ?? 0),
+    type: String(row.type ?? 'application/octet-stream'),
+    path: typeof row.path === 'string' && row.path ? row.path : undefined,
+  }));
+}
+
+export async function deleteAttachmentsByScenarioId(scenarioId: string): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'attachments',
+    query: { where: { scenario_id: scenarioId } },
+  });
+}
+
+/**
+ * Replace all attachments for a scenario with the given list.
+ */
+export async function upsertAttachmentsForScenario(
+  attachments: AttachedFile[],
+  scenarioId: string
+): Promise<void> {
+  await deleteAttachmentsByScenarioId(scenarioId);
+  for (let i = 0; i < attachments.length; i++) {
+    await insertAttachment(attachments[i], scenarioId, i);
+  }
 }
 
 /**

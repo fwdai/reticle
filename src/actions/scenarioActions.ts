@@ -2,9 +2,10 @@ import { generateText } from '@/lib/gateway';
 import {
   insertExecution,
   insertScenario,
-  updateExecution,
   updateScenario,
+  updateExecution,
   upsertToolsForScenario,
+  upsertAttachmentsForScenario,
 } from '@/lib/storage';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
@@ -105,6 +106,10 @@ export async function saveScenarioAction(
       updated_at = now;
       await updateScenario(studioState.scenarioId, scenarioPayload);
       await upsertToolsForScenario(scenarioData.tools ?? [], studioState.scenarioId);
+      await upsertAttachmentsForScenario(
+        scenarioData.attachments ?? [],
+        studioState.scenarioId
+      );
       console.log(`Scenario '${scenarioData.name}' updated.`);
     } else {
       console.log("Inserting new scenario.");
@@ -112,6 +117,7 @@ export async function saveScenarioAction(
       created_at = now;
       updated_at = now;
       await upsertToolsForScenario(scenarioData.tools ?? [], savedId);
+      await upsertAttachmentsForScenario(scenarioData.attachments ?? [], savedId);
       console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
     }
 
