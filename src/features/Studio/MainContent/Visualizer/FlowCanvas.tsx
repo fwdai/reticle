@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { ConfigurationState, HistoryItem, AttachedFile, ResponseState } from "@/contexts/StudioContext";
 import type { Tool } from "@/features/Studio/MainContent/Editor/Main/Tools/types";
 import type { EditorTabIndex } from "@/contexts/StudioContext";
+import type { PersistedToolCall } from "@/features/Runs/MainContent/RunDetail/executionToTraceSteps";
 
 /** Rough estimate: ~4 chars per token for English text */
 function estimateTokens(text: string): number {
@@ -46,6 +47,8 @@ export interface FlowCanvasProps {
   response: ResponseState | null;
   providerModels: Record<string, unknown[]>;
   isLoading?: boolean;
+  /** Tool calls from execution (Runs view). When present, tools node shows as active with output. */
+  executionToolCalls?: PersistedToolCall[];
   /** When provided, enables Run scenario button and navigation. Omit for read-only (e.g. Runs view). */
   runScenario?: () => Promise<void>;
   /** When provided, nodes are clickable and navigate to editor. Omit for read-only. */
@@ -62,6 +65,7 @@ export function FlowCanvas({
   response,
   providerModels,
   isLoading = false,
+  executionToolCalls,
   runScenario,
   navigateToEditor,
 }: FlowCanvasProps) {
@@ -76,11 +80,12 @@ export function FlowCanvas({
   const providerName = getProviderDisplayName(configuration.provider);
   const modelDisplayName = getModelDisplayName(providerModels, configuration.provider, configuration.model);
 
+  const hasExecutionToolCalls = (executionToolCalls?.length ?? 0) > 0;
   const systemPromptStatus = hasSystemPrompt ? "success" : "idle";
   const userPromptStatus = hasUserPrompt ? "success" : "error";
   const historyStatus = hasHistory ? "success" : "idle";
   const filesStatus = hasAttachments ? "success" : "idle";
-  const toolsStatus = hasTools ? "success" : "idle";
+  const toolsStatus = hasTools || hasExecutionToolCalls ? "success" : "idle";
   const responseStatus = response ? (response.error ? "error" : "success") : "idle";
 
   const inputMergeStatus = hasSystemPrompt || hasUserPrompt || hasHistory || hasAttachments ? "success" : "idle";
@@ -239,8 +244,27 @@ export function FlowCanvas({
               className="w-64 shrink-0"
               onClick={navigateToEditor ? () => onNodeClick(4) : undefined}
             >
-              <div className="text-[11px] text-muted-foreground">
-                {hasTools ? (
+              <div className="text-[11px] text-muted-foreground space-y-2">
+                {hasExecutionToolCalls ? (
+                  <div className="space-y-2">
+                    {executionToolCalls!.map((tc) => (
+                      <div key={tc.id} className="rounded border border-border-light bg-muted/30 p-2">
+                        <div className="font-medium text-foreground">{tc.name}</div>
+                        {tc.result !== undefined && tc.result !== null && (
+                          <pre className="mt-1 text-[10px] text-muted-foreground overflow-x-auto whitespace-pre-wrap break-words max-h-20 overflow-y-auto">
+                            {(() => {
+                              const r = tc.result;
+                              const data = typeof r === "object" && r !== null && "data" in r ? (r as { data: unknown }).data : r;
+                              return typeof data === "object" && data !== null
+                                ? JSON.stringify(data, null, 2)
+                                : String(data);
+                            })()}
+                          </pre>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : hasTools ? (
                   <span>{tools.length} tool{tools.length !== 1 ? "s" : ""} configured</span>
                 ) : (
                   <span className="italic text-muted-foreground/50">No tools configured</span>
@@ -252,7 +276,7 @@ export function FlowCanvas({
               direction="horizontal"
               status={toolsStatus}
               length="medium"
-              animated={hasTools}
+              animated={hasTools || hasExecutionToolCalls}
             />
 
             {/* Central Model Node - larger and emphasized */}

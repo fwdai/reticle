@@ -2,6 +2,7 @@ import { getProviderForModel } from "@/lib/modelManager";
 import type { FlowCanvasProps } from "@/features/Studio/MainContent/Visualizer/FlowCanvas";
 import type { Execution } from "@/types";
 import type { RunDetailRun } from "./types";
+import type { PersistedToolCall } from "./executionToTraceSteps";
 
 /**
  * Build FlowCanvasProps from execution record.
@@ -67,6 +68,15 @@ export async function executionToFlowCanvasProps(execution: Execution, run: RunD
         }
       : null;
 
+  let executionToolCalls: PersistedToolCall[] | undefined;
+  try {
+    if (execution.tool_calls_json) {
+      executionToolCalls = JSON.parse(execution.tool_calls_json) as PersistedToolCall[];
+    }
+  } catch {
+    /* ignore */
+  }
+
   return {
     systemPrompt,
     userPrompt,
@@ -76,5 +86,6 @@ export async function executionToFlowCanvasProps(execution: Execution, run: RunD
     history,
     response,
     providerModels: {},
+    executionToolCalls,
   };
 }
