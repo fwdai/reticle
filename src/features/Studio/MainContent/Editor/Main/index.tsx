@@ -9,6 +9,9 @@ import Prompt from "./Prompt";
 import SystemMessage from "./System";
 import Tools from "./Tools";
 
+const panelContentClass =
+  "h-full min-h-0 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]";
+
 function StudioMain() {
   const context = useContext(StudioContext);
   const fileCount = context?.studioState.currentScenario.attachments?.length ?? 0;
@@ -20,19 +23,29 @@ function StudioMain() {
       onActiveIndexChange={(index) => context?.setActiveEditorTab(index as EditorTabIndex)}
     >
       <TabPanel title="System">
-        <SystemMessage />
+        <div className={panelContentClass}>
+          <SystemMessage />
+        </div>
       </TabPanel>
       <TabPanel title="Input">
-        <Prompt />
+        <div className={panelContentClass}>
+          <Prompt />
+        </div>
       </TabPanel>
       <TabPanel title="History">
-        <History />
+        <div className={panelContentClass}>
+          <History />
+        </div>
       </TabPanel>
       <TabPanel title={<TabTitle label="Files" count={fileCount} />}>
-        <Files />
+        <div className={panelContentClass}>
+          <Files />
+        </div>
       </TabPanel>
       <TabPanel title={<TabTitle label="Tools" count={toolsCount} />}>
-        <Tools />
+        <div className={panelContentClass}>
+          <Tools />
+        </div>
       </TabPanel>
     </Tabs>
   );

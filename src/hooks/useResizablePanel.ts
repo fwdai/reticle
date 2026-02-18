@@ -78,7 +78,7 @@ const useResizablePanel = ({
     };
   }, [isResizing, minSize, maxSize, direction, containerRef]);
 
-  return { size, isResizing, handleMouseDown };
+  return { size, setSize, isResizing, handleMouseDown };
 };
 
 export default useResizablePanel;

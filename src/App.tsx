@@ -2,6 +2,7 @@ import { ComponentType } from "react";
 import Navigation from "./components/Layout/Nav";
 import Home from "./features/Home";
 import Studio from "./features/Studio";
+import Agents from "./features/Agents";
 import Environments from "./features/Environments";
 import Runs from "./features/Runs";
 import Settings from "./features/Settings";
@@ -13,6 +14,7 @@ import "./App.css";
 const pages: Partial<Record<Page, ComponentType>> = {
   home: Home,
   studio: Studio,
+  agents: Agents,
   environments: Environments,
   runs: Runs,
   settings: Settings,

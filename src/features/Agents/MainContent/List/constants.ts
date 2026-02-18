@@ -1,0 +1,48 @@
+import type { Agent } from "./types";
+
+export const mockAgents: Agent[] = [
+  {
+    id: "1",
+    name: "Customer Support Agent",
+    description: "Routes and resolves customer inquiries across channels with context-aware responses",
+    status: "ready",
+    model: "gpt-4.1",
+    toolsCount: 5,
+    memoryEnabled: true,
+    starred: true,
+    lastRun: { timestamp: "2h ago", duration: "4.2s", tokens: "2.3k", cost: "$0.014" },
+  },
+  {
+    id: "2",
+    name: "Code Review Agent",
+    description: "Automated PR review with security analysis, performance checks, and style enforcement",
+    status: "running",
+    model: "claude-3.5",
+    toolsCount: 3,
+    memoryEnabled: true,
+    starred: false,
+    lastRun: { timestamp: "now", duration: "12.1s", tokens: "5.8k", cost: "$0.042" },
+  },
+  {
+    id: "3",
+    name: "Data Pipeline Analyst",
+    description: "Monitors data quality, detects anomalies, and generates insight reports from structured data",
+    status: "needs-config",
+    model: "gpt-4o",
+    toolsCount: 7,
+    memoryEnabled: false,
+    starred: false,
+    lastRun: { timestamp: "1d ago", duration: "8.7s", tokens: "4.1k", cost: "$0.028" },
+  },
+  {
+    id: "4",
+    name: "Incident Response Bot",
+    description: "Triages production alerts, correlates logs, and executes runbooks automatically",
+    status: "error",
+    model: "gpt-4.1",
+    toolsCount: 4,
+    memoryEnabled: true,
+    starred: true,
+    lastRun: { timestamp: "6h ago", duration: "2.1s", tokens: "1.2k", cost: "$0.008" },
+  },
+];
