@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Home, Activity, Layers, Settings, PlayCircle, User } from "lucide-react";
+import { Home, Activity, Layers, Settings, PlayCircle, User, Bot } from "lucide-react";
 import reticleLogo from "@/assets/reticle-logo.svg";
 import { Page, type SettingsSectionId } from "@/types";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipArrow } from "@/components/ui/tooltip";
@@ -38,7 +38,8 @@ function Navigation() {
   const currentPage = appState.currentPage;
   const navItems = [
     { id: "home" as Page, icon: Home, label: "Home" },
-    { id: "studio" as Page, icon: PlayCircle, label: "Scenarios " },
+    { id: "studio" as Page, icon: PlayCircle, label: "Scenarios" },
+    { id: "agents" as Page, icon: Bot, label: "Agents" },
     { id: "templates" as Page, icon: Layers, label: "Templates" },
     // { id: "environments" as Page, icon: Layers, label: "Environments" },
     { id: "runs" as Page, icon: Activity, label: "Runs" },

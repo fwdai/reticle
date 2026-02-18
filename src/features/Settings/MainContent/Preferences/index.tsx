@@ -2,11 +2,9 @@ import { Sun, Moon, Monitor } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { PROVIDERS_LIST } from "@/constants/providers";
+import { NativeSelect } from "@/components/ui/native-select";
 import { fetchAndNormalizeModels } from "@/lib/modelManager";
 import { getSetting, setSetting } from "@/lib/storage";
-
-const SELECT_STYLES =
-  "w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat";
 
 function Preferences() {
   const [telemetryEnabled, setTelemetryEnabled] = useState(true);
@@ -111,8 +109,7 @@ function Preferences() {
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Default Provider
             </label>
-            <select
-              className={SELECT_STYLES}
+            <NativeSelect
               value={defaultProvider}
               onChange={(e) => handleProviderChange(e.target.value)}
             >
@@ -121,14 +118,13 @@ function Preferences() {
                   {p.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Default Model
             </label>
-            <select
-              className={SELECT_STYLES}
+            <NativeSelect
               value={defaultModel}
               onChange={(e) => handleModelChange(e.target.value)}
               disabled={modelsForProvider.length === 0}
@@ -138,7 +134,7 @@ function Preferences() {
                   {m.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
       </section>

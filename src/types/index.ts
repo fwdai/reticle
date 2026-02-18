@@ -1,4 +1,4 @@
-export type Page = "home" | "studio" | "environments" | "runs" | "settings" | "templates";
+export type Page = "home" | "studio" | "agents" | "environments" | "runs" | "settings" | "templates";
 
 export type SettingsSectionId =
   | "preferences"
