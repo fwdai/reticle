@@ -1,5 +1,7 @@
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor, Download } from "lucide-react";
 import { useState, useEffect } from "react";
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 import { PROVIDERS_LIST } from "@/constants/providers";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -18,8 +20,32 @@ function Preferences() {
     PROVIDERS_LIST[0]?.id ?? ""
   );
   const [defaultModel, setDefaultModel] = useState<string>("");
+  const [updateStatus, setUpdateStatus] = useState<
+    "idle" | "checking" | "downloading" | "ready" | "up-to-date" | "error"
+  >("idle");
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const themeOptions = ["light", "dark", "system"] as const;
+
+  const handleCheckForUpdates = async () => {
+    setUpdateStatus("checking");
+    setUpdateError(null);
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateStatus("downloading");
+        await update.downloadAndInstall((event) => {
+          if (event.event === "Finished") setUpdateStatus("ready");
+        });
+        await relaunch();
+      } else {
+        setUpdateStatus("up-to-date");
+      }
+    } catch (err) {
+      setUpdateStatus("error");
+      setUpdateError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -217,6 +243,40 @@ function Preferences() {
               System
             </p>
           </div>
+        </div>
+      </section>
+      <hr className="border-slate-100" />
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Updates</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Check for and install the latest version of Reticle.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={handleCheckForUpdates}
+            disabled={
+              updateStatus === "checking" || updateStatus === "downloading"
+            }
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="size-4" />
+            {updateStatus === "checking" && "Checking..."}
+            {updateStatus === "downloading" && "Downloading..."}
+            {(updateStatus === "idle" || updateStatus === "error") &&
+              "Check for updates"}
+            {updateStatus === "up-to-date" && "Up to date"}
+          </button>
+          {updateStatus === "up-to-date" && (
+            <span className="text-sm text-slate-500">
+              You have the latest version.
+            </span>
+          )}
+          {updateStatus === "error" && updateError && (
+            <span className="text-sm text-red-600">{updateError}</span>
+          )}
         </div>
       </section>
     </>

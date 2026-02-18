@@ -3,6 +3,14 @@
   "productName": "Reticle",
   "version": "0.1.0",
   "identifier": "dev.reticle.app",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY4Nzc0Njc5OUVDMTA3QzcKUldUSEI4R2VlVVozYUpuSUFPWklVVGt6R1QvWGNjd0h6QkRUbWNyUUE5SGZiNmYwcGpVRnp2UDUK",
+      "endpoints": [
+        "https://github.com/fwdai/reticle/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -28,6 +36,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
