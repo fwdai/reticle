@@ -84,7 +84,7 @@ function Navigation() {
             );
           })}
         </nav>
-        <div className="flex flex-col gap-6 w-full">
+        <div className="flex flex-col gap-4 w-full">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
