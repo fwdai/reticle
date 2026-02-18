@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
@@ -38,6 +38,12 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState("editor");
+  const [execution, setExecution] = useState<{
+    status: "idle" | "running" | "success" | "error";
+    elapsedSeconds?: number;
+    tokens?: number;
+    cost?: number;
+  }>({ status: "idle" });
 
   const toggleTool = (id: string) => {
     setSelectedTools((prev) =>
@@ -49,9 +55,28 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
     // TODO: implement
   };
 
+  const runStartRef = useRef<number | null>(null);
+
   const handleRun = () => {
-    // TODO: implement
+    runStartRef.current = Date.now();
+    setExecution({ status: "running", elapsedSeconds: 0 });
+    // TODO: implement actual agent execution, update execution with tokens/cost on completion
   };
+
+  useEffect(() => {
+    if (execution.status !== "running") return;
+    const interval = setInterval(() => {
+      if (runStartRef.current) {
+        const elapsed = (Date.now() - runStartRef.current) / 1000;
+        setExecution((prev) =>
+          prev.status === "running"
+            ? { ...prev, elapsedSeconds: elapsed }
+            : prev
+        );
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [execution.status]);
 
   return (
     <MainContent>
@@ -99,6 +124,7 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
               onMaxTokensChange={setMaxTokens}
               onSeedChange={setSeed}
               onShowAdvancedToggle={() => setShowAdvanced((v) => !v)}
+              execution={execution}
             />
           </TabPanel>
           <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>

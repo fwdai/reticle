@@ -3,7 +3,14 @@ import useResizablePanel from "@/hooks/useResizablePanel";
 
 import { Tab } from "./Tab";
 import { ModelParamsSidebar } from "./ModelParamsSidebar";
-import { RuntimePanel } from "./RuntimePanel";
+import { RuntimePanel, type ExecutionStatus } from "./RuntimePanel";
+
+interface ExecutionState {
+  status?: ExecutionStatus;
+  elapsedSeconds?: number;
+  tokens?: number;
+  cost?: number;
+}
 
 interface LayoutProps {
   agentGoal: string;
@@ -36,6 +43,7 @@ interface LayoutProps {
   onMaxTokensChange: (value: number[]) => void;
   onSeedChange: (value: string) => void;
   onShowAdvancedToggle: () => void;
+  execution?: ExecutionState;
 }
 
 export function SpecLayout({
@@ -69,6 +77,7 @@ export function SpecLayout({
   onMaxTokensChange,
   onSeedChange,
   onShowAdvancedToggle,
+  execution,
 }: LayoutProps) {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const topPanelRef = useRef<HTMLDivElement>(null);
@@ -117,10 +126,10 @@ export function SpecLayout({
   return (
     <div
       ref={mainContentRef}
-      className="flex-1 flex flex-col overflow-hidden min-h-0"
+      className="flex-1 flex flex-col overflow-hidden min-h-0 h-full"
     >
-      <div ref={topPanelRef} className="flex-1 flex overflow-hidden -mb-[5px]">
-        <div className="flex-1 overflow-auto -mr-[5px] bg-[#FCFDFF]">
+      <div ref={topPanelRef} className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
+        <div className="flex-1 min-h-0 min-w-0 overflow-auto custom-scrollbar -mr-[5px] bg-[#FCFDFF]">
           <Tab
             agentGoal={agentGoal}
             systemInstructions={systemInstructions}
@@ -152,7 +161,7 @@ export function SpecLayout({
 
         <div
           style={{ width: configPanelWidth }}
-          className="overflow-auto flex-shrink-0 bg-slate-50"
+          className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
         >
           <ModelParamsSidebar
             temperature={temperature}
@@ -175,10 +184,10 @@ export function SpecLayout({
       />
 
       <div
-        className="overflow-auto flex-shrink-0 bg-slate-50"
+        className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
         style={{ height: responsePanelHeight }}
       >
-        <RuntimePanel />
+        <RuntimePanel {...execution} />
       </div>
     </div>
   );

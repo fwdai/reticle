@@ -52,7 +52,7 @@ function Tabs({ children, activeIndex: controlledIndex, onActiveIndexChange }: T
       <div className="flex border-b border-border-light px-5 gap-4 bg-slate-50 h-[45px] items-center flex-shrink-0">
         {tabs}
       </div>
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FCFDFF]">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {activeContent}
       </div>
     </div>
