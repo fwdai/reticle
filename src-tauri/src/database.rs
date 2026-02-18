@@ -1,7 +1,7 @@
 use rusqlite::{Connection, params_from_iter};
 use rusqlite_migration::{Migrations, M};
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use serde_json::{Value, Map, json};
 use anyhow::{anyhow, Result as AnyhowResult};
 use ulid::Ulid; // Added Ulid
@@ -28,10 +28,8 @@ fn get_migrations() -> Migrations<'static> {
 
 // Initialize the database connection and run migrations
 pub fn init_database(app_handle: &AppHandle) -> AnyhowResult<Arc<Mutex<Connection>>> {
-    let app_data_dir = app_handle.path().app_data_dir().expect("Failed to get app data directory");
-    let parent_dir = app_data_dir.parent().expect("Failed to get parent of app data directory");
-    let app_dir = parent_dir.join("Reticle"); // Custom folder name
-    
+    let app_dir = crate::paths::app_data_root(app_handle).map_err(|e| anyhow!("{}", e))?;
+
     std::fs::create_dir_all(&app_dir).expect("Failed to create app data directory");
     let db_path = app_dir.join("reticle.db");
     

@@ -23,7 +23,7 @@ function SystemMessage() {
     }));
   };
 
-  const handleVariablesChange = (variables: Variable[]) => {
+  const handleVariablesChange = (_variables: Variable[]) => {
     // TODO: Implement variable handling in the context
   };
 

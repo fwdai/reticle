@@ -1,19 +1,6 @@
 use base64::prelude::*;
 use sha2::{Digest, Sha256};
-use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
 
-/// Returns the app data root (Reticle folder), matching database.rs logic.
-fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-    let parent_dir = app_data_dir
-        .parent()
-        .ok_or("Failed to get parent of app data directory")?;
-    Ok(parent_dir.join("Reticle"))
-}
 
 /// Stores file content in app data at workspaces/<account_id>/blobs/<sha256>.
 /// Returns the full path to the stored file.
@@ -33,7 +20,7 @@ pub async fn store_attachment_blob(
     let hash = hasher.finalize();
     let sha256_hex = format!("{:x}", hash);
 
-    let root = app_data_root(&app)?;
+    let root = crate::paths::app_data_root(&app)?;
     let blob_dir = root
         .join("workspaces")
         .join(&account_id)
@@ -56,7 +43,7 @@ pub async fn store_attachment_blob(
 /// Validates that the path is within workspaces/<account_id>/blobs/ to prevent path traversal.
 #[tauri::command]
 pub async fn read_attachment_blob(app: tauri::AppHandle, blob_path: String) -> Result<String, String> {
-    let root = app_data_root(&app)?;
+    let root = crate::paths::app_data_root(&app)?;
     let path = std::path::PathBuf::from(&blob_path);
 
     if !path.exists() {
@@ -83,7 +70,7 @@ pub async fn delete_attachment_blob(
     app: tauri::AppHandle,
     blob_path: String,
 ) -> Result<(), String> {
-    let root = app_data_root(&app)?;
+    let root = crate::paths::app_data_root(&app)?;
     let path = std::path::PathBuf::from(&blob_path);
 
     if !path.exists() {

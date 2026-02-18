@@ -62,6 +62,7 @@ async fn db_count_cmd(
 
 mod blobs;
 mod database;
+mod paths;
 mod server;
 
 use std::sync::{Arc, Mutex}; // Needed for State in commands
