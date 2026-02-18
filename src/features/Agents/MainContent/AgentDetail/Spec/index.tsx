@@ -80,20 +80,14 @@ export function SpecLayout({
   execution,
 }: LayoutProps) {
   const mainContentRef = useRef<HTMLDivElement>(null);
-  const topPanelRef = useRef<HTMLDivElement>(null);
 
   const [maxResponseHeight, setMaxResponseHeight] = useState(Infinity);
-  const [maxConfigWidth, setMaxConfigWidth] = useState(Infinity);
 
   useEffect(() => {
     const calculateMaxSizes = () => {
       if (mainContentRef.current) {
         const totalAvailableHeight = mainContentRef.current.offsetHeight;
         setMaxResponseHeight(totalAvailableHeight * 0.7);
-      }
-      if (topPanelRef.current) {
-        const totalAvailableWidth = topPanelRef.current.offsetWidth;
-        setMaxConfigWidth(totalAvailableWidth * 0.35);
       }
     };
 
@@ -105,31 +99,38 @@ export function SpecLayout({
     };
   }, []);
 
-  const { size: responsePanelHeight, handleMouseDown: handleResponseMouseDown } =
-    useResizablePanel({
-      initialSize: 300,
-      minSize: 200,
-      maxSize: maxResponseHeight,
-      direction: "vertical",
-      containerRef: mainContentRef as React.RefObject<HTMLElement>,
-    });
+  const COLLAPSED_HEIGHT = 44; // Status bar height (h-11)
+  const EXPANDED_HEIGHT = 300;
 
-  const { size: configPanelWidth, handleMouseDown: handleConfigMouseDown } =
-    useResizablePanel({
-      initialSize: 300,
-      minSize: 200,
-      maxSize: maxConfigWidth,
-      direction: "horizontal",
-      containerRef: topPanelRef as React.RefObject<HTMLElement>,
-    });
+  const {
+    size: responsePanelHeight,
+    setSize: setResponsePanelHeight,
+    handleMouseDown: handleResponseMouseDown,
+  } = useResizablePanel({
+    initialSize: COLLAPSED_HEIGHT,
+    minSize: COLLAPSED_HEIGHT,
+    maxSize: maxResponseHeight,
+    direction: "vertical",
+    containerRef: mainContentRef as React.RefObject<HTMLElement>,
+  });
+
+  useEffect(() => {
+    if (
+      execution?.status &&
+      execution.status !== "idle" &&
+      responsePanelHeight <= COLLAPSED_HEIGHT
+    ) {
+      setResponsePanelHeight(Math.min(EXPANDED_HEIGHT, maxResponseHeight));
+    }
+  }, [execution?.status, responsePanelHeight, maxResponseHeight]);
 
   return (
     <div
       ref={mainContentRef}
       className="flex-1 flex flex-col overflow-hidden min-h-0 h-full"
     >
-      <div ref={topPanelRef} className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
-        <div className="flex-1 min-h-0 min-w-0 overflow-auto custom-scrollbar -mr-[5px] bg-[#FCFDFF]">
+      <div className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
+        <div className="flex-1 min-h-0 min-w-0 overflow-auto custom-scrollbar bg-[#FCFDFF]">
           <Tab
             agentGoal={agentGoal}
             systemInstructions={systemInstructions}
@@ -154,15 +155,7 @@ export function SpecLayout({
           />
         </div>
 
-        <div
-          className="w-3 h-full resize-handle resize-handle-vertical cursor-ew-resize -mr-[5px] flex-shrink-0"
-          onMouseDown={handleConfigMouseDown}
-        />
-
-        <div
-          style={{ width: configPanelWidth }}
-          className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
-        >
+        <div className="w-[300px] min-h-0 overflow-auto custom-scrollbar flex-shrink-0 border-l border-border-light bg-slate-50">
           <ModelParamsSidebar
             temperature={temperature}
             topP={topP}

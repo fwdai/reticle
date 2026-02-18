@@ -61,8 +61,8 @@ export function RuntimePanel({
   const config = statusConfig[status];
 
   return (
-    <section className="h-full flex flex-col rounded-b-xl">
-      <div className="h-11 border-b border-border-light flex items-center justify-between px-6 bg-sidebar-light/40">
+    <section className="h-full flex flex-col overflow-hidden rounded-b-xl">
+      <div className="h-11 flex-shrink-0 border-b border-border-light flex items-center justify-between px-6 bg-sidebar-light/40">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
             <span
@@ -121,7 +121,7 @@ export function RuntimePanel({
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white text-sm text-text-main rounded-b-xl">
+      <div className="flex-1 min-h-0 overflow-y-auto p-8 custom-scrollbar bg-white text-sm text-text-main rounded-b-xl">
         <div className="space-y-5">
           <div>
             <h4 className="text-[10px] font-semibold tracking-widest text-text-muted uppercase mb-3">
