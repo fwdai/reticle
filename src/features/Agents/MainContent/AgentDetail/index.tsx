@@ -4,10 +4,10 @@ import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
 import MainContent from "@/components/Layout/MainContent";
 
-import { AgentDetailHeader } from "./AgentDetailHeader";
-import { AgentSpecTab } from "./AgentSpecTab";
-import { RunsTabPanel } from "./RunsTabPanel";
-import { mockRuns } from "./constants";
+import { Header } from "./Header";
+import { SpecLayout as Spec } from "./Spec";
+import { Panel as Runs } from "./Runs";
+import { mockRuns } from "./Runs/constants";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 
 export type { AgentDetailAgent };
@@ -55,7 +55,7 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
 
   return (
     <MainContent>
-      <AgentDetailHeader
+      <Header
         agentName={agentName}
         isNew={isNew}
         viewMode={viewMode}
@@ -68,7 +68,7 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
           <TabPanel title="Agent Spec">
-            <AgentSpecTab
+            <Spec
               agentGoal={agentGoal}
               systemInstructions={systemInstructions}
               selectedTools={selectedTools}
@@ -102,7 +102,7 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
             />
           </TabPanel>
           <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>
-            <RunsTabPanel runs={mockRuns} />
+            <Runs runs={mockRuns} />
           </TabPanel>
         </Tabs>
       </div>

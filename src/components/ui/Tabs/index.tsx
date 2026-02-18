@@ -49,10 +49,10 @@ function Tabs({ children, activeIndex: controlledIndex, onActiveIndexChange }: T
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full">
-      <div className="flex border-b border-border-light px-5 gap-4 bg-slate-50 h-[45px] items-center">
+      <div className="flex border-b border-border-light px-5 gap-4 bg-slate-50 h-[45px] items-center flex-shrink-0">
         {tabs}
       </div>
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FCFDFF]">
         {activeContent}
       </div>
     </div>

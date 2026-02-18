@@ -1,12 +1,12 @@
 import { Sparkles } from "lucide-react";
 import { panelBase, panelHeader, panelTitle } from "./constants";
 
-interface AgentGoalPanelProps {
+interface GoalPanelProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function AgentGoalPanel({ value, onChange }: AgentGoalPanelProps) {
+export function GoalPanel({ value, onChange }: GoalPanelProps) {
   return (
     <div className={panelBase}>
       <div className={panelHeader}>

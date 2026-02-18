@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { RunRecord } from "./types";
 
-interface RunsTabPanelProps {
+interface PanelProps {
   runs: RunRecord[];
 }
 
-export function RunsTabPanel({ runs }: RunsTabPanelProps) {
+export function Panel({ runs }: PanelProps) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
       <div className="space-y-2">

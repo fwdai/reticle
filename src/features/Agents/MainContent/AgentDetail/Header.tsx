@@ -1,9 +1,9 @@
 import { ArrowLeft, Share, Play, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
-import Header from "@/components/Layout/Header";
+import LayoutHeader from "@/components/Layout/Header";
 
-interface AgentDetailHeaderProps {
+interface HeaderProps {
   agentName: string;
   isNew: boolean;
   viewMode: string;
@@ -14,7 +14,7 @@ interface AgentDetailHeaderProps {
   onSave: () => void;
 }
 
-export function AgentDetailHeader({
+export function Header({
   agentName,
   isNew,
   viewMode,
@@ -23,9 +23,9 @@ export function AgentDetailHeader({
   onViewModeChange,
   onRun,
   onSave,
-}: AgentDetailHeaderProps) {
+}: HeaderProps) {
   return (
-    <Header>
+    <LayoutHeader>
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
@@ -72,6 +72,6 @@ export function AgentDetailHeader({
           <Share size={18} />
         </button>
       </div>
-    </Header>
+    </LayoutHeader>
   );
 }

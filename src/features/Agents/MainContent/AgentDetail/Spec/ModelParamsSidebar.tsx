@@ -31,7 +31,7 @@ export function ModelParamsSidebar({
   onShowAdvancedToggle,
 }: ModelParamsSidebarProps) {
   return (
-    <div className="w-[260px] flex-shrink-0 border-l border-border-light overflow-y-auto custom-scrollbar bg-slate-50 p-5">
+    <div className="h-full min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 p-5">
       <h3 className="text-[11px] font-bold uppercase tracking-widest text-text-muted mb-6">
         Model & Params
       </h3>
@@ -113,27 +113,6 @@ export function ModelParamsSidebar({
             </div>
           </div>
         )}
-        <div className="h-px bg-border-light" />
-        <div>
-          <h4 className="text-[10px] font-semibold tracking-widest text-text-muted uppercase mb-3">
-            Scratchpad
-          </h4>
-          <div className="rounded-lg border border-border-light bg-white p-3 min-h-[80px]">
-            <p className="text-[11px] text-text-muted/60 italic">
-              Internal reasoning will appear here during runs...
-            </p>
-          </div>
-        </div>
-        <div>
-          <h4 className="text-[10px] font-semibold tracking-widest text-text-muted uppercase mb-3">
-            Conversation State
-          </h4>
-          <div className="rounded-lg border border-border-light bg-white p-3 min-h-[60px]">
-            <p className="text-[11px] text-text-muted/60 italic">
-              No messages yet. Run the agent to see conversation state.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
