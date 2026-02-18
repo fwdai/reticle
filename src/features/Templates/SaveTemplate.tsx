@@ -1,4 +1,4 @@
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Save } from "lucide-react";
 // shadcn components and types
 import { Button } from "@/components/ui/button";
@@ -17,97 +17,128 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // types
-import { Template, Variable } from "@/components/ui/PromptBox/types";
+import { PromptTemplate, Variable } from "@/components/ui/PromptBox/types";
 
 // components
 import { SaveTemplateAlert } from "./Alert";
 
 // server actions
-import { invoke } from "@tauri-apps/api/core";
+import {
+  insertPromptTemplate,
+  updatePromptTemplate,
+} from "@/lib/storage/index";
 
 interface SaveTemplateProps {
-  templates: Template[];
-  prompt: string;
-  promptType: "system" | "user";
+  templates: PromptTemplate[];
+  content: string;
+  type: "system" | "user";
   variables: Variable[];
-  setTemplates: (templates: Template[]) => void;
-  setSelectedTemplateName: (name: string) => void;
+  onTemplateSaved: (template: PromptTemplate) => void;
 }
 
 export function SaveTemplate({
-  prompt,
-  promptType,
+  content,
+  type,
   variables,
   templates,
-  setTemplates,
-  setSelectedTemplateName,
+  onTemplateSaved,
 }: SaveTemplateProps) {
   // local state management
   const [templateName, setTemplateName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<PromptTemplate | null>(
+    null
+  );
 
-  // builds a Template object from the current prompt, variables, and template name.
-  const buildTemplate = (variables: Variable[]): Template | null => {
-    const trimmedName = templateName.trim();
-    if (!trimmedName) {
-      return null;
-    }
+  // builds a PromptTemplate object from the current prompt, variables, and template name.
+  const buildTemplate = useCallback(
+    (variables: Variable[]): PromptTemplate | null => {
+      const trimmedName = templateName.trim();
+      if (!trimmedName) {
+        return null;
+      }
 
-    // ensure all keys are not empty
-    const validVariables = variables.filter((v) => v.key.trim() !== "");
+      // ensure all keys are not empty
+      const validVariables = variables.filter((v) => v.key.trim() !== "");
 
-    return {
-      name: trimmedName,
-      prompt: prompt,
-      variables: validVariables,
-    };
-  };
+      return {
+        name: trimmedName,
+        type,
+        content,
+        variables_json: JSON.stringify(validVariables),
+      };
+    },
+    [content, templateName, type]
+  );
 
-  const persistTemplate = async (newTemplate: Template) => {
-    try {
-      const finalUpdatedTemplates = [
-        ...templates.filter((t) => t.name !== newTemplate.name),
-        newTemplate,
-      ];
-      setTemplates(finalUpdatedTemplates);
-      await invoke("db_insert_cmd", {
-        table: "prompt_templates",
-        data: {
+  const insertTemplate = useCallback(
+    async (newTemplate: PromptTemplate) => {
+      try {
+        const data = {
           name: newTemplate.name,
-          type: promptType,
-          content: newTemplate.prompt,
-          variables_json: JSON.stringify(newTemplate.variables),
-        },
-      });
-      setSelectedTemplateName(newTemplate.name);
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to save template:", error);
-    }
-  };
+          type: newTemplate.type,
+          content: newTemplate.content,
+          variables_json: newTemplate.variables_json,
+        };
+        const insertedId = await insertPromptTemplate(data);
+
+        const templateWithId: PromptTemplate = {
+          ...newTemplate,
+          // assume the insert action returns an object with the generated `id`
+          id: insertedId,
+        };
+        onTemplateSaved(templateWithId);
+        setIsOpen(false);
+      } catch (error) {
+        console.error("Failed to save template:", error);
+      }
+    },
+    [onTemplateSaved]
+  );
+
+  const updateTemplate = useCallback(
+    async (template: PromptTemplate) => {
+      try {
+        const data = {
+          content: template.content || "",
+          variables_json: template.variables_json || "[]",
+        };
+        await updatePromptTemplate(template.id || "", data);
+        onTemplateSaved(template);
+        setIsOpen(false);
+      } catch (error) {
+        console.error("Failed to update template:", error);
+      }
+    },
+    [onTemplateSaved]
+  );
 
   const [_, startTransition] = useTransition();
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = useCallback(() => {
     const newTemplate = buildTemplate(variables);
     if (!newTemplate) {
       return;
     }
 
-    if (templates.some((t) => t.name === newTemplate.name)) {
-      setPendingTemplate(newTemplate);
+    const existingTemplate = templates.find((t) => t.name === newTemplate.name);
+    if (existingTemplate) {
+      setPendingTemplate({
+        ...existingTemplate,
+        content: newTemplate.content,
+        variables_json: newTemplate.variables_json,
+      });
       setIsAlertOpen(true);
       return;
     }
 
     startTransition(async () => {
-      await persistTemplate(newTemplate);
+      await insertTemplate(newTemplate);
     });
-  };
+  }, [buildTemplate, insertTemplate, startTransition, templates, variables]);
 
-  const handleAlertConfirm = async () => {
+  const handleAlertConfirm = useCallback(async () => {
     if (!pendingTemplate) {
       return;
     }
@@ -115,14 +146,14 @@ export function SaveTemplate({
     setIsAlertOpen(false);
     setPendingTemplate(null);
     startTransition(async () => {
-      await persistTemplate(pendingTemplate);
+      await updateTemplate(pendingTemplate);
     });
-  };
+  }, [pendingTemplate, startTransition, updateTemplate]);
 
-  const handleAlertCancel = () => {
+  const handleAlertCancel = useCallback(() => {
     setIsAlertOpen(false);
     setPendingTemplate(null);
-  };
+  }, []);
 
   return (
     <>
@@ -139,7 +170,7 @@ export function SaveTemplate({
       >
         <DialogTrigger asChild>
           <button
-            onClick={handleSaveTemplate}
+            onClick={() => setIsOpen(true)}
             className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-primary transition-colors"
           >
             <Save size={14} />

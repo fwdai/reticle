@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { SaveTemplate } from "@/features/Tempaltes/SaveTemplate";
+import { SaveTemplate } from "@/features/Templates/SaveTemplate";
+import { SelectTemplate } from "@/features/Templates/SelectTemplate";
+import { usePromptTemplates } from "@/hooks/usePromptTemplates";
 // types
-import { Template, PromptBoxProps, Variable } from "./types";
+import { PromptBoxProps, PromptTemplate, Variable } from "./types";
 
 function PromptBox({
   type,
@@ -10,24 +12,17 @@ function PromptBox({
   initialVariables = [{ id: Date.now(), key: "", value: "" }],
   onPromptChange,
   onVariablesChange,
-  showTemplateManager = false,
 }: PromptBoxProps) {
+  // local state for prompt and variables
   const [prompt, setPrompt] = useState(initialPromptValue);
   const [variables, setVariables] = useState<Variable[]>(initialVariables);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplateName, setSelectedTemplateName] = useState("");
+
+  // loads all templates and provides upsert function to add/update templates in the list
+  const { templates, upsertTemplate, parseVariables } = usePromptTemplates();
 
   useEffect(() => {
     setPrompt(initialPromptValue);
   }, [initialPromptValue]);
-
-  // Load templates from localStorage
-  useEffect(() => {
-    const savedTemplates = localStorage.getItem("promptTemplates");
-    if (savedTemplates) {
-      setTemplates(JSON.parse(savedTemplates));
-    }
-  }, []); // Empty dependency array means this runs once on mount
 
   const handlePromptChangeInternal = (
     event: React.ChangeEvent<HTMLTextAreaElement>
@@ -49,6 +44,7 @@ function PromptBox({
     onVariablesChange(updatedVariables);
   };
 
+  // variables handlers
   const addVariable = () => {
     const newVar: Variable = { id: Date.now(), key: "", value: "" };
     const updatedVariables = [...variables, newVar];
@@ -62,21 +58,23 @@ function PromptBox({
     onVariablesChange(updatedVariables);
   };
 
-  const handleLoadTemplate = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const templateName = event.target.value;
-    setSelectedTemplateName(templateName);
-    const templateToLoad = templates.find((t) => t.name === templateName);
-    if (templateToLoad) {
-      setPrompt(templateToLoad.prompt);
-      onPromptChange(templateToLoad.prompt); // Inform parent about prompt change
-      const loadedVariables = templateToLoad.variables.map((v, index) => ({
-        id: Date.now() + index,
-        key: v.key,
-        value: "", // Reset values when loading template
-      }));
-      setVariables(loadedVariables);
-      onVariablesChange(loadedVariables); // Inform parent about variables change
-    }
+  const handleLoadTemplate = (template: PromptTemplate) => {
+    const loadedVariables = parseVariables(template.variables_json);
+    // Assign new IDs to the variables
+    const variablesWithIds = loadedVariables.map((v, index) => ({
+      id: Date.now() + index,
+      key: v.key,
+      value: "", // Reset values when loading template
+    }));
+
+    setPrompt(template.content);
+    onPromptChange(template.content); // Inform parent about prompt change
+    setVariables(variablesWithIds);
+    onVariablesChange(variablesWithIds); // Inform parent about variables change
+  };
+
+  const handleTemplateSaved = (newTemplate: PromptTemplate) => {
+    upsertTemplate(newTemplate);
   };
 
   const characterCount = prompt.length;
@@ -96,30 +94,20 @@ function PromptBox({
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
             {label}
           </span>
-          {showTemplateManager && ( // Conditionally render template manager UI
-            <div className="flex items-center gap-4">
-              <select
-                value={selectedTemplateName}
-                onChange={handleLoadTemplate} // Pass the event directly
-                className="text-[10px] font-bold text-text-muted hover:text-primary transition-colors bg-transparent border-none focus:ring-0 p-0 cursor-pointer"
-              >
-                <option value="">Load Template...</option>
-                {templates.map((template) => (
-                  <option key={template.name} value={template.name}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-              <SaveTemplate
-                prompt={prompt}
-                promptType={type}
-                variables={variables}
-                templates={templates}
-                setTemplates={setTemplates}
-                setSelectedTemplateName={setSelectedTemplateName}
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <SelectTemplate
+              templates={templates}
+              type={type}
+              onLoadTemplate={handleLoadTemplate}
+            />
+            <SaveTemplate
+              type={type}
+              content={prompt}
+              variables={variables}
+              templates={templates}
+              onTemplateSaved={handleTemplateSaved}
+            />
+          </div>
         </div>
         <textarea
           className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm resize-none text-text-main placeholder:text-gray-400"
@@ -128,15 +116,10 @@ function PromptBox({
           onChange={handlePromptChangeInternal}
         />
         <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center h-10">
-          <div className="flex items-center gap-2">
-            {/* <span className="size-1.5 bg-primary rounded-full"></span>
-            <span className="text-[10px] text-text-muted font-medium">
-              Auto-saving
-            </span> */}
-          </div>
+          <div className="flex items-center gap-2"></div>
           <span className="text-[9px] text-text-muted uppercase">
             <span className="font-medium">{characterCount}</span> CHARACTERS • ~
-            <span className="font-me">{estimatedTokenCount}</span> TOKENS
+            <span className="font-medium">{estimatedTokenCount}</span> TOKENS
             (approx.)
           </span>
         </div>

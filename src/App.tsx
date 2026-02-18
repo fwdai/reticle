@@ -5,7 +5,7 @@ import Studio from "./features/Studio";
 import Environments from "./features/Environments";
 import Runs from "./features/Runs";
 import Settings from "./features/Settings";
-import Templates from "./features/Tempaltes";
+import Templates from "./features/Templates";
 import { Page } from "./types";
 import { useAppContext } from "./contexts/AppContext";
 import "./App.css";

@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { Clock, Variable } from "lucide-react";
 
 import MainContent from "@/components/Layout/MainContent";
-import Header from "@/features/Tempaltes/Header";
+import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
 import type { PromptTemplate } from "@/types";
 import { TemplateDetail } from "./TemplateDetail";
@@ -11,7 +11,9 @@ function parseVariableKeys(variablesJson: string | null | undefined): string[] {
   if (!variablesJson) return [];
   try {
     const parsed = JSON.parse(variablesJson);
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is string => typeof v === "string")
+      : [];
   } catch {
     return [];
   }
@@ -78,7 +80,9 @@ function TemplatesPage() {
       result = result.filter(
         (t) =>
           t.name.toLowerCase().includes(q) ||
-          parseVariableKeys(t.variables_json).some((tag) => tag.toLowerCase().includes(q))
+          parseVariableKeys(t.variables_json).some((tag) =>
+            tag.toLowerCase().includes(q)
+          )
       );
     }
 
@@ -131,7 +135,8 @@ function TemplatesPage() {
             {filtered.map((template) => {
               const variableKeys = parseVariableKeys(template.variables_json);
               const varCount =
-                variableKeys.filter(Boolean).length || getVarCount(template.content);
+                variableKeys.filter(Boolean).length ||
+                getVarCount(template.content);
               const preview = template.content
                 .split("\n")
                 .slice(0, 2)
@@ -147,11 +152,16 @@ function TemplatesPage() {
                 >
                   {/* Type badge */}
                   <span
-                    className={`mt-0.5 inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] shrink-0 ${template.type === "system"
-                      ? "bg-primary/10 text-primary border-primary/20"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
-                    title={template.type === "system" ? "System template" : "User template"}
+                    className={`mt-0.5 inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] shrink-0 ${
+                      template.type === "system"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                    title={
+                      template.type === "system"
+                        ? "System template"
+                        : "User template"
+                    }
                   >
                     {template.type === "system" ? "SYS" : "USR"}
                   </span>
