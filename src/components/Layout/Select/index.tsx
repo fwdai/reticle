@@ -14,6 +14,7 @@ interface GenericSelectProps<T> {
   onSelect: (item: T) => void;
   placeholder?: string;
   filter?: (item: T) => boolean;
+  value?: string;
 }
 
 export default function GenericSelect<T>({
@@ -23,8 +24,14 @@ export default function GenericSelect<T>({
   onSelect,
   placeholder = "Select an option...",
   filter,
+  value = "",
 }: GenericSelectProps<T>) {
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(value);
+
+  // Update selectedId when value prop changes
+  useEffect(() => {
+    setSelectedId(value);
+  }, [value]);
 
   // Validate that selected item still exists
   useEffect(() => {

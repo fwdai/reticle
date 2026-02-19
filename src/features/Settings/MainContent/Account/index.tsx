@@ -271,6 +271,7 @@ function Account() {
               items={USE_CASE_OPTIONS}
               getItemId={(item) => item}
               getItemLabel={(item) => item}
+              value={useCase}
               onSelect={(item) => {
                 setUseCase(item);
                 saveField({ use_case: item || null });
@@ -328,6 +329,7 @@ function Account() {
             items={TIMEZONE_OPTIONS}
             getItemId={(item) => item}
             getItemLabel={(item) => item.replace(/_/g, " ")}
+            value={timezone}
             onSelect={(item) => {
               setTimezone(item);
               saveField({ timezone: item || null });
