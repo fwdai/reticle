@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react';
-import { Play, Save, Share, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Save, Share, Loader2 } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import Header from "@/components/Layout/Header";
@@ -10,11 +10,10 @@ function StudioHeader() {
 
   if (!context) {
     console.error('StudioContext not found in StudioHeader');
-    // Fallback or throw an error depending on desired behavior
     return null;
   }
 
-  const { studioState, viewMode, setViewMode, saveScenario, runScenario } = context;
+  const { studioState, viewMode, setViewMode, saveScenario, runScenario, backToList } = context;
   const { currentScenario, isLoading, isSaved } = studioState;
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -62,10 +61,17 @@ function StudioHeader() {
 
   return (
     <Header>
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-text-muted">{context.studioState.collections.find(collection => collection.id === currentScenario.collection_id)?.name}</span>
-        <span className="text-gray-300">/</span>
-        {isEditingName ? (
+      <div className="flex items-center gap-4">
+        <button
+          onClick={backToList}
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-main transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Scenarios
+        </button>
+        <div className="h-5 w-px bg-border-light" />
+        <div className="flex items-center gap-2 text-sm">
+          {isEditingName ? (
           <input
             type="text"
             value={editingName}
@@ -81,6 +87,7 @@ function StudioHeader() {
           </span>
         )}
         {statusBadge}
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <SegmentedSwitch

@@ -97,6 +97,11 @@ interface StudioContextType {
   saveScenario: (scenarioName: string | null) => Promise<void>;
   createNewScenario: (overrides?: { provider?: string; model?: string }) => void;
   loadScenario: (id: string, defaults?: { provider: string; model: string }) => Promise<void>;
+  /** Return to list view without loading a scenario */
+  backToList: () => void;
+  /** Currently selected collection filter (null = all) */
+  selectedCollectionId: string | null;
+  setSelectedCollectionId: (id: string | null) => void;
   fetchCollections: () => Promise<void>;
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>;
@@ -141,6 +146,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const { appState, setAppState } = useAppContext();
   const [viewMode, setViewMode] = useState<StudioViewMode>('editor');
   const [activeEditorTab, setActiveEditorTab] = useState<EditorTabIndex>(0);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
 
   const navigateToEditor = useCallback((tab?: EditorTabIndex) => {
     setViewMode('editor');
@@ -215,13 +221,12 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           : modelsForProvider[0]?.id ?? initialScenario.configuration.model;
       setAppState(prev => ({ ...prev, defaultProvider: provider, defaultModel: model }));
 
-      const lastUsedScenarioId = localStorage.getItem(LAST_USED_SCENARIO_ID_KEY);
-      if (lastUsedScenarioId) {
-        await loadScenario(lastUsedScenarioId, { provider, model });
-      } else {
-        createNewScenario({ provider, model });
-      }
-      setStudioState(prev => ({ ...prev, isLoading: false }));
+      // Don't auto-load last used - show list view first for consistency with other features
+      setStudioState(prev => ({
+        ...prev,
+        scenarioId: null,
+        isLoading: false,
+      }));
     };
 
     initializeStudio();
@@ -361,6 +366,10 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, [setStudioState, setPrevScenarioJson, createNewScenario]);
 
+  const backToList = useCallback(() => {
+    setStudioState(prev => ({ ...prev, scenarioId: null }));
+  }, []);
+
   const createScenario = useCallback(
     async (collectionId: string) => {
       try {
@@ -456,7 +465,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
 
       {children}
 

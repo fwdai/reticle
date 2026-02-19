@@ -286,6 +286,14 @@ export async function updateTool(id: string, updates: Partial<Tool>): Promise<vo
   });
 }
 
+export async function countToolsByScenarioId(scenarioId: string): Promise<number> {
+  const count = await invoke<number>('db_count_cmd', {
+    table: 'tools',
+    query: { where: { scenario_id: scenarioId } },
+  });
+  return typeof count === 'number' ? count : 0;
+}
+
 export async function listToolsByScenarioId(scenarioId: string): Promise<Tool[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'tools',
@@ -329,6 +337,14 @@ export async function insertAttachment(
     sort_order: sortOrder,
   };
   return invoke<string>('db_insert_cmd', { table: 'attachments', data });
+}
+
+export async function countAttachmentsByScenarioId(scenarioId: string): Promise<number> {
+  const count = await invoke<number>('db_count_cmd', {
+    table: 'attachments',
+    query: { where: { scenario_id: scenarioId } },
+  });
+  return typeof count === 'number' ? count : 0;
 }
 
 export async function listAttachmentsByScenarioId(scenarioId: string): Promise<AttachedFile[]> {
