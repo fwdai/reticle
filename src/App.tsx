@@ -1,7 +1,7 @@
 import { ComponentType } from "react";
 import Navigation from "./components/Layout/Nav";
 import Home from "./features/Home";
-import Studio from "./features/Studio";
+import Studio from "./features/Scenarios";
 import Agents from "./features/Agents";
 import Environments from "./features/Environments";
 import Runs from "./features/Runs";

@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Account, Collection, Execution, PromptTemplate, Scenario } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
-import type { Tool, ToolParameter } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
+import type { Tool, ToolParameter } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 

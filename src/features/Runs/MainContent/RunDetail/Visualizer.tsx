@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlowCanvas, type FlowCanvasProps } from "@/features/Studio/MainContent/Visualizer/FlowCanvas";
+import { FlowCanvas, type FlowCanvasProps } from "@/features/Scenarios/MainContent/Visualizer/FlowCanvas";
 import { getExecutionById } from "@/lib/storage";
 import type { Execution } from "@/types";
 import type { RunDetailRun } from "./types";

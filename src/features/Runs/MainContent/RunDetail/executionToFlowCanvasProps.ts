@@ -1,5 +1,5 @@
 import { getProviderForModel } from "@/lib/modelManager";
-import type { FlowCanvasProps } from "@/features/Studio/MainContent/Visualizer/FlowCanvas";
+import type { FlowCanvasProps } from "@/features/Scenarios/MainContent/Visualizer/FlowCanvas";
 import type { Execution } from "@/types";
 import type { RunDetailRun } from "./types";
 import type { PersistedToolCall } from "./executionToTraceSteps";

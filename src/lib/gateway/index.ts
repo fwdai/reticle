@@ -13,7 +13,7 @@ import {
 import { GatewayFetch } from './GatewayFetch';
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
-import type { Tool } from '@/features/Studio/MainContent/Editor/Main/Tools/types';
+import type { Tool } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
 import type {
   PersistedToolCall,
   PersistedModelStep,
