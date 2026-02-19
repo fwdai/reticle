@@ -51,23 +51,21 @@ export default function GenericSelect<T>({
   const filteredItems = filter ? items.filter(filter) : items;
 
   return (
-    <div className="w-full max-w-3xs space-y-2">
-      <Select value={selectedId} onValueChange={handleSelect}>
-        <SelectTrigger className="w-full focus-visible:border-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/20">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent className="rounded-lg border font-normal border-border-light bg-white text-sm">
-          {filteredItems.map((item) => (
-            <SelectItem
-              key={getItemId(item)}
-              value={getItemId(item)}
-              className="py-3 px-7 bg-white h-8 font-normal focus:bg-sidebar-light/60 focus:text-text-main cursor-pointer text-sm"
-            >
-              {getItemLabel(item)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={selectedId} onValueChange={handleSelect}>
+      <SelectTrigger className="w-full focus-visible:border-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/20">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="rounded-lg border font-normal border-border-light bg-white text-sm">
+        {filteredItems.map((item) => (
+          <SelectItem
+            key={getItemId(item)}
+            value={getItemId(item)}
+            className="py-3 px-7 bg-white h-8 font-normal focus:bg-sidebar-light/60 focus:text-text-main cursor-pointer text-sm"
+          >
+            {getItemLabel(item)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

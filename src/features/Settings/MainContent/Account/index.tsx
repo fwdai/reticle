@@ -1,30 +1,32 @@
-import { Briefcase, Camera, GraduationCap, Home, Sparkles, User } from "lucide-react";
+import {
+  Briefcase,
+  Camera,
+  GraduationCap,
+  Home,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
-import {
-  getOrCreateAccount,
-  upsertAccount,
-} from "@/lib/storage";
+import GenericSelect from "@/components/Layout/Select";
+import { getOrCreateAccount, upsertAccount } from "@/lib/storage";
 import type { Account } from "@/types";
-
-const SELECT_STYLES =
-  "w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat";
 
 const USAGE_CONTEXT_OPTIONS: {
   value: Account["usage_context"];
   label: string;
   icon: React.ReactNode;
 }[] = [
-    { value: "work", label: "Work", icon: <Briefcase className="size-4" /> },
-    { value: "personal", label: "Personal", icon: <Home className="size-4" /> },
-    {
-      value: "education",
-      label: "Education",
-      icon: <GraduationCap className="size-4" />,
-    },
-    { value: "other", label: "Other", icon: <Sparkles className="size-4" /> },
-  ];
+  { value: "work", label: "Work", icon: <Briefcase className="size-4" /> },
+  { value: "personal", label: "Personal", icon: <Home className="size-4" /> },
+  {
+    value: "education",
+    label: "Education",
+    icon: <GraduationCap className="size-4" />,
+  },
+  { value: "other", label: "Other", icon: <Sparkles className="size-4" /> },
+];
 
 const USE_CASE_OPTIONS = [
   "Prompt engineering",
@@ -64,7 +66,8 @@ function Account() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [useCase, setUseCase] = useState("");
   const [timezone, setTimezone] = useState("");
-  const [usageContext, setUsageContext] = useState<Account["usage_context"]>(null);
+  const [usageContext, setUsageContext] =
+    useState<Account["usage_context"]>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -87,7 +90,18 @@ function Account() {
   }, []);
 
   const saveField = async (
-    updates: Partial<Pick<Account, "first_name" | "last_name" | "avatar" | "role" | "use_case" | "timezone" | "usage_context">>
+    updates: Partial<
+      Pick<
+        Account,
+        | "first_name"
+        | "last_name"
+        | "avatar"
+        | "role"
+        | "use_case"
+        | "timezone"
+        | "usage_context"
+      >
+    >
   ) => {
     try {
       const merged = {
@@ -253,26 +267,19 @@ function Account() {
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Primary use case
             </label>
-            <select
-              className={SELECT_STYLES}
-              value={useCase}
-              onChange={(e) => {
-                const val = e.target.value;
-                setUseCase(val);
-                saveField({ use_case: val || null });
+            <GenericSelect
+              items={USE_CASE_OPTIONS}
+              getItemId={(item) => item}
+              getItemLabel={(item) => item}
+              onSelect={(item) => {
+                setUseCase(item);
+                saveField({ use_case: item || null });
               }}
-            >
-              <option value="">Select...</option>
-              {USE_CASE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+              placeholder="Select..."
+            />
           </div>
         </div>
       </section>
-
 
       <section className="space-y-6">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -287,10 +294,11 @@ function Account() {
                 setUsageContext(opt.value);
                 saveField({ usage_context: opt.value });
               }}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${usageContext === opt.value
-                ? "border-primary bg-primary/5"
-                : "border-slate-200 hover:border-slate-300 bg-white"
-                }`}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${
+                usageContext === opt.value
+                  ? "border-primary bg-primary/5"
+                  : "border-slate-200 hover:border-slate-300 bg-white"
+              }`}
             >
               <span
                 className={
@@ -300,8 +308,9 @@ function Account() {
                 {opt.icon}
               </span>
               <span
-                className={`text-xs font-bold uppercase tracking-wider ${usageContext === opt.value ? "text-primary" : "text-slate-600"
-                  }`}
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  usageContext === opt.value ? "text-primary" : "text-slate-600"
+                }`}
               >
                 {opt.label}
               </span>
@@ -315,22 +324,16 @@ function Account() {
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             Your timezone
           </label>
-          <select
-            className={SELECT_STYLES}
-            value={timezone}
-            onChange={(e) => {
-              const val = e.target.value;
-              setTimezone(val);
-              saveField({ timezone: val || null });
+          <GenericSelect
+            items={TIMEZONE_OPTIONS}
+            getItemId={(item) => item}
+            getItemLabel={(item) => item.replace(/_/g, " ")}
+            onSelect={(item) => {
+              setTimezone(item);
+              saveField({ timezone: item || null });
             }}
-          >
-            <option value="">Select timezone...</option>
-            {TIMEZONE_OPTIONS.map((tz) => (
-              <option key={tz} value={tz}>
-                {tz.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
+            placeholder="Select timezone..."
+          />
         </div>
       </section>
     </div>
