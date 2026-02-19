@@ -13,6 +13,8 @@ interface ExecutionState {
 }
 
 interface LayoutProps {
+  provider: string;
+  model: string;
   agentGoal: string;
   systemInstructions: string;
   selectedTools: string[];
@@ -28,6 +30,8 @@ interface LayoutProps {
   maxTokens: number[];
   seed: string;
   showAdvanced: boolean;
+  onProviderChange: (value: string) => void;
+  onModelChange: (value: string) => void;
   onAgentGoalChange: (value: string) => void;
   onSystemInstructionsChange: (value: string) => void;
   onToolToggle: (id: string) => void;
@@ -47,6 +51,8 @@ interface LayoutProps {
 }
 
 export function SpecLayout({
+  provider,
+  model,
   agentGoal,
   systemInstructions,
   selectedTools,
@@ -62,6 +68,8 @@ export function SpecLayout({
   maxTokens,
   seed,
   showAdvanced,
+  onProviderChange,
+  onModelChange,
   onAgentGoalChange,
   onSystemInstructionsChange,
   onToolToggle,
@@ -157,11 +165,15 @@ export function SpecLayout({
 
         <div className="w-[300px] min-h-0 overflow-auto custom-scrollbar flex-shrink-0 border-l border-border-light bg-slate-50">
           <ModelParamsSidebar
+            provider={provider}
+            model={model}
             temperature={temperature}
             topP={topP}
             maxTokens={maxTokens}
             seed={seed}
             showAdvanced={showAdvanced}
+            onProviderChange={onProviderChange}
+            onModelChange={onModelChange}
             onTemperatureChange={onTemperatureChange}
             onTopPChange={onTopPChange}
             onMaxTokensChange={onMaxTokensChange}

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Account, Collection, Execution, PromptTemplate, Scenario } from '@/types';
+import { Account, AgentRecord, Collection, Execution, PromptTemplate, Scenario } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool, ToolParameter } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
 
@@ -148,6 +148,78 @@ export async function deletePromptTemplate(id: string): Promise<void> {
     table: 'prompt_templates',
     query: { where: { id } },
   });
+}
+
+// --- Agents ---
+
+export async function listAgents(): Promise<AgentRecord[]> {
+  const rows = await invoke<AgentRecord[]>('db_select_cmd', {
+    table: 'agents',
+    query: {
+      orderBy: 'updated_at',
+      orderDirection: 'desc',
+    },
+  });
+  const arr = Array.isArray(rows) ? rows : [];
+  return arr.filter((r) => r.archived_at == null);
+}
+
+export async function getAgentById(id: string): Promise<AgentRecord | null> {
+  const rows = await invoke<AgentRecord[]>('db_select_cmd', {
+    table: 'agents',
+    query: { where: { id }, limit: 1 },
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+export async function insertAgent(
+  data: Omit<AgentRecord, 'id' | 'created_at' | 'updated_at' | 'archived_at'>
+): Promise<string> {
+  return invoke<string>('db_insert_cmd', { table: 'agents', data });
+}
+
+export async function updateAgent(id: string, data: Partial<AgentRecord>): Promise<void> {
+  await invoke('db_update_cmd', {
+    table: 'agents',
+    query: { where: { id } },
+    data,
+  });
+}
+
+/** Map AgentRecord to list-card shape (status, toolsCount, etc.). */
+export function agentRecordToListAgent(record: AgentRecord): {
+  id: string;
+  name: string;
+  description: string;
+  status: 'ready' | 'needs-config' | 'error' | 'running';
+  model: string;
+  toolsCount: number;
+  memoryEnabled: boolean;
+  starred: boolean;
+} {
+  const tools = parseJsonArray(record.tools_json);
+  const hasGoal = !!(record.agent_goal?.trim());
+  const hasInstructions = !!(record.system_instructions?.trim());
+  const status: 'ready' | 'needs-config' = hasGoal && hasInstructions ? 'ready' : 'needs-config';
+  return {
+    id: record.id,
+    name: record.name,
+    description: record.description ?? '',
+    status,
+    model: record.model,
+    toolsCount: tools.length,
+    memoryEnabled: record.memory_enabled === 1,
+    starred: false,
+  };
+}
+
+function parseJsonArray(json: string): unknown[] {
+  try {
+    const v = JSON.parse(json ?? '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
 }
 
 // --- Accounts ---

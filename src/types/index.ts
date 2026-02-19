@@ -78,6 +78,29 @@ export type Account = {
   updated_at?: number;
 };
 
+/** Agent record as stored in the agents table (snake_case) */
+export type AgentRecord = {
+  id: string;
+  name: string;
+  description?: string | null;
+  provider: string;
+  model: string;
+  params_json: string;
+  agent_goal?: string | null;
+  system_instructions?: string | null;
+  tools_json: string;
+  max_iterations: number;
+  timeout_seconds: number;
+  retry_policy: string;
+  tool_call_strategy: string;
+  memory_enabled: number;
+  memory_source: string;
+  version?: number;
+  created_at?: number;
+  updated_at?: number;
+  archived_at?: number | null;
+};
+
 export type Execution = {
   id?: string;
   type: ExecutionType;

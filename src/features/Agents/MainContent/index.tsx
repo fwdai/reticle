@@ -1,17 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AgentDetail, type AgentDetailAgent } from "./AgentDetail";
-import { AgentList, mockAgents, type Agent } from "./List";
+import { AgentList, type Agent } from "./List";
 import MainContent from "@/components/Layout/MainContent";
 import Header, { type SortKey } from "../Header";
+import { listAgents, agentRecordToListAgent } from "@/lib/storage";
 
 function AgentsMainContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("updated");
-  const [starredAgents, setStarredAgents] = useState<Set<string>>(
-    new Set(mockAgents.filter((a) => a.starred).map((a) => a.id))
-  );
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [starredAgents, setStarredAgents] = useState<Set<string>>(new Set());
 
-  const filteredAgents = mockAgents.filter(
+  const refreshAgents = useCallback(async () => {
+    const records = await listAgents();
+    setAgents(records.map(agentRecordToListAgent));
+  }, []);
+
+  useEffect(() => {
+    refreshAgents();
+  }, [refreshAgents]);
+
+  const filteredAgents = agents.filter(
     (a) =>
       a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -44,12 +53,13 @@ function AgentsMainContent() {
   };
 
   const handleSelectAgent = (agentId: string) => {
-    const agent = mockAgents.find((a) => a.id === agentId);
+    const agent = agents.find((a) => a.id === agentId);
     if (agent) setSelectedAgent(agent);
   };
 
   const handleBackFromDetail = () => {
     setSelectedAgent(null);
+    refreshAgents();
   };
 
   if (selectedAgent) {
@@ -62,7 +72,11 @@ function AgentsMainContent() {
       memoryEnabled: selectedAgent.memoryEnabled,
     };
     return (
-      <AgentDetail agent={detailAgent} onBack={handleBackFromDetail} />
+      <AgentDetail
+        agent={detailAgent}
+        onBack={handleBackFromDetail}
+        onSaved={refreshAgents}
+      />
     );
   }
 

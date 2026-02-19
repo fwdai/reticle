@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
@@ -9,21 +9,31 @@ import { SpecLayout as Spec } from "./Spec";
 import { Panel as Runs } from "./Runs";
 import { mockRuns } from "./Runs/constants";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
+import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 
 export type { AgentDetailAgent };
 
-export function AgentDetail({ agent, onBack }: AgentDetailProps) {
+const DEBOUNCE_MS = 800;
+
+function parseParamsJson(json: string): { temperature?: number; top_p?: number; max_tokens?: number; seed?: string } {
+  try {
+    const v = JSON.parse(json ?? "{}");
+    return typeof v === "object" && v ? v : {};
+  } catch {
+    return {};
+  }
+}
+
+export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const isNew = agent.id === "new";
+  const [effectiveId, setEffectiveId] = useState(agent.id);
   const [agentName, setAgentName] = useState(agent.name);
-  const [agentGoal, setAgentGoal] = useState(
-    isNew ? "" : "Route and resolve customer inquiries across channels with context-aware responses. Escalate to human agents when confidence is below threshold."
-  );
-  const [systemInstructions, setSystemInstructions] = useState(
-    isNew ? "" : "You are a customer support agent. Always greet the customer, identify the issue category, and attempt resolution before escalating."
-  );
-  const [selectedTools, setSelectedTools] = useState<string[]>(
-    isNew ? [] : ["web-search", "api-call", "db-query", "email-send", "slack-msg"]
-  );
+  const [description, setDescription] = useState(agent.description ?? "");
+  const [provider, setProvider] = useState("openai");
+  const [model, setModel] = useState(agent.model || "gpt-4.1");
+  const [agentGoal, setAgentGoal] = useState("");
+  const [systemInstructions, setSystemInstructions] = useState("");
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [toolSearch, setToolSearch] = useState("");
   const [temperature, setTemperature] = useState([0.4]);
   const [topP, setTopP] = useState([0.95]);
@@ -38,6 +48,9 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState("editor");
+  const [isLoading, setIsLoading] = useState(!isNew);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
+  const skipNextAutoSaveRef = useRef(!isNew);
   const [execution, setExecution] = useState<{
     status: "idle" | "running" | "success" | "error";
     elapsedSeconds?: number;
@@ -45,15 +58,124 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
     cost?: number;
   }>({ status: "idle" });
 
+  const loadAgent = useCallback(async () => {
+    if (effectiveId === "new") return;
+    setIsLoading(true);
+    try {
+      const record = await getAgentById(effectiveId);
+      if (record) {
+        setAgentName(record.name);
+        setDescription(record.description ?? "");
+        setProvider(record.provider);
+        setModel(record.model);
+        setAgentGoal(record.agent_goal ?? "");
+        setSystemInstructions(record.system_instructions ?? "");
+        const tools = (() => {
+          try {
+            const v = JSON.parse(record.tools_json ?? "[]");
+            return Array.isArray(v) ? v.map(String) : [];
+          } catch {
+            return [];
+          }
+        })();
+        setSelectedTools(tools);
+        const params = parseParamsJson(record.params_json);
+        setTemperature([params.temperature ?? 0.4]);
+        setTopP([params.top_p ?? 0.95]);
+        setMaxTokens([params.max_tokens ?? 4096]);
+        setSeed(params.seed ?? "");
+        setMaxIterations([record.max_iterations ?? 10]);
+        setTimeoutValue([record.timeout_seconds ?? 60]);
+        setRetryPolicy(record.retry_policy ?? "exponential");
+        setToolCallStrategy(record.tool_call_strategy ?? "auto");
+        setMemoryEnabled(record.memory_enabled === 1);
+        setMemorySource(record.memory_source ?? "local");
+      }
+      setSaveStatus("saved");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [effectiveId]);
+
+  useEffect(() => {
+    loadAgent();
+  }, [loadAgent]);
+
   const toggleTool = (id: string) => {
     setSelectedTools((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
   };
 
-  const handleSave = () => {
-    // TODO: implement
-  };
+  const buildPayload = useCallback(() => ({
+    name: agentName.trim() || "Untitled Agent",
+    description: description.trim() || null,
+    provider,
+    model,
+    params_json: JSON.stringify({
+      temperature: temperature[0],
+      top_p: topP[0],
+      max_tokens: maxTokens[0],
+      ...(seed.trim() ? { seed: seed.trim() } : {}),
+    }),
+    agent_goal: agentGoal.trim() || null,
+    system_instructions: systemInstructions.trim() || null,
+    tools_json: JSON.stringify(selectedTools),
+    max_iterations: maxIterations[0],
+    timeout_seconds: timeoutValue[0],
+    retry_policy: retryPolicy,
+    tool_call_strategy: toolCallStrategy,
+    memory_enabled: memoryEnabled ? 1 : 0,
+    memory_source: memorySource,
+  }), [
+    agentName,
+    description,
+    provider,
+    model,
+    temperature,
+    topP,
+    maxTokens,
+    seed,
+    agentGoal,
+    systemInstructions,
+    selectedTools,
+    maxIterations,
+    timeoutValue,
+    retryPolicy,
+    toolCallStrategy,
+    memoryEnabled,
+    memorySource,
+  ]);
+
+  const performSave = useCallback(async () => {
+    setSaveStatus("saving");
+    try {
+      const payload = buildPayload();
+      if (effectiveId === "new") {
+        const id = await insertAgent(payload);
+        setEffectiveId(id);
+        onSaved?.();
+      } else {
+        await updateAgent(effectiveId, payload);
+        onSaved?.();
+      }
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("unsaved");
+    }
+  }, [effectiveId, buildPayload, onSaved]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (effectiveId === "new" && !agentName.trim()) return;
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
+    setSaveStatus("unsaved");
+    const timer = setTimeout(performSave, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [isLoading, buildPayload, effectiveId, agentName, performSave]);
 
   const runStartRef = useRef<number | null>(null);
 
@@ -84,16 +206,18 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
         agentName={agentName}
         isNew={isNew}
         viewMode={viewMode}
+        saveStatus={saveStatus}
         onBack={onBack}
         onAgentNameChange={setAgentName}
         onViewModeChange={setViewMode}
         onRun={handleRun}
-        onSave={handleSave}
       />
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
           <TabPanel title="Agent Spec">
             <Spec
+              provider={provider}
+              model={model}
               agentGoal={agentGoal}
               systemInstructions={systemInstructions}
               selectedTools={selectedTools}
@@ -109,6 +233,8 @@ export function AgentDetail({ agent, onBack }: AgentDetailProps) {
               maxTokens={maxTokens}
               seed={seed}
               showAdvanced={showAdvanced}
+              onProviderChange={setProvider}
+              onModelChange={setModel}
               onAgentGoalChange={setAgentGoal}
               onSystemInstructionsChange={setSystemInstructions}
               onToolToggle={toggleTool}

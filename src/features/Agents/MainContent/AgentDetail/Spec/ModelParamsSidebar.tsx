@@ -5,12 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+const PROVIDERS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "anthropic", label: "Anthropic" },
+  { value: "google", label: "Google" },
+] as const;
+
+const MODELS = [
+  { value: "gpt-4.1", label: "gpt-4.1" },
+  { value: "gpt-4o", label: "gpt-4o" },
+  { value: "gpt-4-turbo", label: "gpt-4-turbo" },
+  { value: "claude-3.5-sonnet", label: "claude-3.5-sonnet" },
+  { value: "claude-3-opus", label: "claude-3-opus" },
+  { value: "gemini-1.5-pro", label: "gemini-1.5-pro" },
+] as const;
+
 interface ModelParamsSidebarProps {
+  provider: string;
+  model: string;
   temperature: number[];
   topP: number[];
   maxTokens: number[];
   seed: string;
   showAdvanced: boolean;
+  onProviderChange: (value: string) => void;
+  onModelChange: (value: string) => void;
   onTemperatureChange: (value: number[]) => void;
   onTopPChange: (value: number[]) => void;
   onMaxTokensChange: (value: number[]) => void;
@@ -19,11 +38,15 @@ interface ModelParamsSidebarProps {
 }
 
 export function ModelParamsSidebar({
+  provider,
+  model,
   temperature,
   topP,
   maxTokens,
   seed,
   showAdvanced,
+  onProviderChange,
+  onModelChange,
   onTemperatureChange,
   onTopPChange,
   onMaxTokensChange,
@@ -38,30 +61,31 @@ export function ModelParamsSidebar({
       <div className="space-y-6">
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-text-main">Provider</Label>
-          <Select defaultValue="openai">
+          <Select value={provider} onValueChange={onProviderChange}>
             <SelectTrigger className="h-9 text-xs border-border-light">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="google">Google</SelectItem>
+              {PROVIDERS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-text-main">Model</Label>
-          <Select defaultValue="gpt-4.1">
+          <Select value={model} onValueChange={onModelChange}>
             <SelectTrigger className="h-9 text-xs border-border-light">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="gpt-4.1">gpt-4.1</SelectItem>
-              <SelectItem value="gpt-4o">gpt-4o</SelectItem>
-              <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
-              <SelectItem value="claude-3.5">claude-3.5-sonnet</SelectItem>
-              <SelectItem value="claude-3-opus">claude-3-opus</SelectItem>
-              <SelectItem value="gemini-pro">gemini-1.5-pro</SelectItem>
+              {MODELS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
