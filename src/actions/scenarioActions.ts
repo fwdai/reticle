@@ -59,7 +59,7 @@ export async function saveScenarioAction(
 ) {
   console.log("Attempting to save scenario:", studioState.currentScenario);
   try {
-    setStudioState(prev => ({ ...prev, isLoading: true }));
+    setStudioState(prev => ({ ...prev, isSaving: true }));
 
     const scenarioData = { ...studioState.currentScenario };
     if (scenarioName) {
@@ -94,11 +94,12 @@ export async function saveScenarioAction(
       provider_meta_json: null,
     };
 
+    const existsInDb = studioState.savedScenarios.some((s) => s.id === studioState.currentScenario.id);
     let savedId = studioState.scenarioId;
     let created_at: number;
     let updated_at: number;
 
-    if (studioState.scenarioId) {
+    if (existsInDb && studioState.scenarioId) {
       console.log("Updating existing scenario with ID:", studioState.scenarioId);
       created_at =
         scenarioData.createdAt != null ? new Date(scenarioData.createdAt).getTime() : now;
@@ -123,7 +124,7 @@ export async function saveScenarioAction(
     setStudioState(prev => {
       const newState = {
         ...prev,
-        isLoading: false,
+        isSaving: false,
         isSaved: true,
         scenarioId: savedId,
         currentScenario: {
@@ -140,7 +141,7 @@ export async function saveScenarioAction(
     });
   } catch (error) {
     console.error('Failed to save scenario:', error);
-    setStudioState(prev => ({ ...prev, isLoading: false }));
+    setStudioState(prev => ({ ...prev, isSaving: false }));
     // Optionally show an error message in the UI
   }
 }

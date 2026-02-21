@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ArrowLeft, Play, Save, Share, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Share, Loader2 } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import Header from "@/components/Layout/Header";
@@ -14,15 +14,13 @@ function StudioHeader() {
     return null;
   }
 
-  const { studioState, viewMode, setViewMode, saveScenario, runScenario, backToList, setStudioState } = context;
-  const { currentScenario, savedScenarios, isLoading, isSaved } = studioState;
-
-  const handleSaveClick = async () => {
-    await saveScenario(null);
-  };
+  const { studioState, viewMode, setViewMode, runScenario, backToList, setStudioState } = context;
+  const { currentScenario, savedScenarios, isLoading, isSaved, isSaving } = studioState;
 
   const savedScenario = savedScenarios.find((s) => s.id === currentScenario.id);
   const revertValue = savedScenario?.title;
+
+  const saveStatus = isSaving ? "saving" : isSaved ? "saved" : "unsaved";
 
   return (
     <Header>
@@ -43,10 +41,9 @@ function StudioHeader() {
               currentScenario: { ...prev.currentScenario, name },
             }))
           }
-          onBlur={(name) => saveScenario(name)}
           revertValue={revertValue}
           placeholder="Name your scenario..."
-          saveStatus={isSaved ? "saved" : "unsaved"}
+          saveStatus={saveStatus}
         />
       </div>
       <div className="flex items-center gap-4">
@@ -71,13 +68,6 @@ function StudioHeader() {
               <Play size={18} className="font-bold" />
             )}
             Run
-          </button>
-          <button
-            onClick={handleSaveClick}
-            disabled={isLoading || isSaved}
-            className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white"
-          >
-            <Save size={18} />
           </button>
           <button className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">
             <Share size={18} />

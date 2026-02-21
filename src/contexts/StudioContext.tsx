@@ -69,6 +69,7 @@ export interface StudioContainerState {
   savedScenarios: Scenario[]; // These are the raw DB-format scenarios
   collections: Collection[];
   isLoading: boolean;
+  isSaving: boolean;
   response: ResponseState | null;
   scenarioId: string | null; // DB ULID of the loaded scenario
   isSaved: boolean;
@@ -159,6 +160,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     savedScenarios: [],
     collections: [],
     isLoading: true, // Set to true initially to indicate loading of last used scenario
+    isSaving: false,
     response: null,
     scenarioId: null, // This will be set after loading last used or creating new
     isSaved: true,
@@ -171,12 +173,20 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const initialScenarioJson = JSON.stringify({ ...initialScenario, id: null });
   const [prevScenarioJson, setPrevScenarioJson] = useState(initialScenarioJson);
 
+  const DEBOUNCE_MS = 800;
+
   useEffect(() => {
     const currentScenarioCompare = JSON.stringify({ ...studioState.currentScenario, id: null });
     if (currentScenarioCompare !== prevScenarioJson) {
       setStudioState(prev => ({ ...prev, isSaved: false }));
     }
   }, [studioState.currentScenario, prevScenarioJson]);
+
+  useEffect(() => {
+    if (studioState.historyViewMode === 'json') {
+      setStudioState(prev => ({ ...prev, isSaved: false }));
+    }
+  }, [studioState.historyViewMode, studioState.historyJsonDraft]);
 
   const fetchCollections = useCallback(async () => {
     try {
@@ -237,6 +247,25 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     await fetchCollections();
     await fetchScenarios();
   }, [studioState, setStudioState, setPrevScenarioJson]);
+
+  useEffect(() => {
+    if (studioState.isLoading) return;
+    if (studioState.isSaved) return;
+    if (!studioState.scenarioId && !studioState.currentScenario.name.trim()) return;
+
+    const timer = setTimeout(() => {
+      saveScenario(null);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [
+    studioState.currentScenario,
+    studioState.historyViewMode,
+    studioState.historyJsonDraft,
+    studioState.isLoading,
+    studioState.isSaved,
+    studioState.scenarioId,
+    saveScenario,
+  ]);
 
   const createNewScenario = useCallback(
     (overrides?: { provider?: string; model?: string }) => {
