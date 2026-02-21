@@ -123,7 +123,7 @@ function Response() {
         )}
       </div>
       <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white text-sm text-text-main rounded-b-xl">
-        {isLoading ? (
+        {isLoading && !response?.text ? (
           <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-4">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -141,7 +141,12 @@ function Response() {
               </div>
             </div>
           ) : response.text ? (
-            <MarkdownPreview content={response.text} />
+            <div className="max-w-4xl mx-auto">
+              <MarkdownPreview content={response.text} />
+              {isLoading && (
+                <span className="inline-block w-2 h-4 ml-0.5 -mb-1 bg-primary animate-pulse" />
+              )}
+            </div>
           ) : (
             <div className="max-w-4xl mx-auto flex items-center justify-center h-full">
               <p className="text-text-muted text-sm">No response text.</p>

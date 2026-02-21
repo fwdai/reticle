@@ -1,4 +1,4 @@
-import { generateText } from '@/lib/gateway';
+import { streamText, extractStepsAndToolCalls } from '@/lib/gateway';
 import {
   insertExecution,
   insertScenario,
@@ -184,14 +184,14 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
   try {
     setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
 
-    const result = await generateText(
+    const result = await streamText(
       userPrompt,
       systemPrompt,
       history,
       {
         provider: configuration.provider,
         model: configuration.model,
-        systemPrompt: systemPrompt, // Redundant here, but part of LLMCallConfig
+        systemPrompt: systemPrompt,
         temperature: configuration.temperature,
         topP: configuration.topP,
         maxTokens: configuration.maxTokens,
@@ -199,27 +199,60 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       currentScenario.tools,
       currentScenario.attachments
     );
+
+    // Stream text chunks to the frontend as they arrive
+    let accumulatedText = '';
+    for await (const chunk of result.textStream) {
+      accumulatedText += chunk;
+      setStudioState((prev) => ({
+        ...prev,
+        response: {
+          text: accumulatedText,
+          error: undefined,
+        },
+      }));
+    }
+
+    const [finalText, usage, steps] = await Promise.all([
+      result.text,
+      result.totalUsage,
+      result.steps,
+    ]);
     const ended_at = Date.now();
 
+    const { modelSteps, toolCalls } =
+      steps?.length
+        ? extractStepsAndToolCalls(
+            steps.map((s) => ({
+              text: s.text ?? '',
+              finishReason: s.finishReason ?? 'unknown',
+              usage: s.usage,
+              toolCalls: s.toolCalls ?? [],
+              toolResults: s.toolResults ?? [],
+            }))
+          )
+        : { modelSteps: [], toolCalls: [] };
+
+    const finalUsage = usage ?? {};
+    const usageForResponse = {
+      promptTokens: finalUsage.inputTokens,
+      completionTokens: finalUsage.outputTokens,
+      totalTokens: finalUsage.totalTokens,
+    };
     const finalExecution: Execution = {
       type: 'scenario',
       runnable_id: scenarioId,
       snapshot_json,
       input_json,
-      result_json: JSON.stringify({ text: result.text, usage: result.usage }),
+      result_json: JSON.stringify({ text: finalText, usage: finalUsage }),
       tool_calls_json:
-        result.toolCalls?.length ?
-          JSON.stringify(result.toolCalls) :
-          undefined,
-      steps_json:
-        result.modelSteps?.length ?
-          JSON.stringify(result.modelSteps) :
-          undefined,
+        toolCalls?.length ? JSON.stringify(toolCalls) : undefined,
+      steps_json: modelSteps?.length ? JSON.stringify(modelSteps) : undefined,
       status: 'succeeded',
       started_at,
       ended_at,
       usage_json: JSON.stringify({
-        ...result.usage,
+        ...finalUsage,
         latency_ms: result.latency,
         cost_usd: 0,
       }),
@@ -229,8 +262,8 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       ...prev,
       isLoading: false,
       response: {
-        text: result.text,
-        usage: result.usage,
+        text: finalText ?? accumulatedText,
+        usage: usageForResponse,
         latency: result.latency,
         error: undefined,
       },
