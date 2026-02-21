@@ -27,10 +27,12 @@ interface Run {
 function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): Run {
   let model = "—";
   let provider = "";
+  let snapshotName = "";
   try {
     const snapshot = exec.snapshot_json ? JSON.parse(exec.snapshot_json) : {};
     model = snapshot.configuration?.model ?? "—";
     provider = snapshot.configuration?.provider ?? "";
+    snapshotName = snapshot.name ?? "";
   } catch {
     /* ignore */
   }
@@ -65,7 +67,7 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): R
   }
 
   const scenarioName = exec.type === "scenario"
-    ? (scenarioById.get(exec.runnable_id)?.title ?? "Unknown scenario")
+    ? (scenarioById.get(exec.runnable_id)?.title ?? (snapshotName || "Unknown scenario"))
     : exec.type;
 
   const status: "success" | "error" = exec.status === "succeeded" ? "success" : "error";
@@ -84,6 +86,22 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): R
   };
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const PAGE_SIZE = 20;
 
 function Runs() {
@@ -95,22 +113,53 @@ function Runs() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const loadPage = useCallback(async (pageNum: number) => {
+  const loadPage = useCallback(async (pageNum: number, query: string) => {
     try {
       setIsLoading(true);
       const offset = (pageNum - 1) * PAGE_SIZE;
-      const [executions, scenarios, total] = await Promise.all([
-        listExecutions({ offset, limit: PAGE_SIZE }),
-        listScenarios(),
-        countExecutions(),
-      ]);
-      const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
-      const mapped = executions
-        .filter((e): e is Execution & { id: string } => !!e.id)
-        .map((e) => executionToRun(e, scenarioById));
-      setRuns(mapped);
-      setTotalRuns(total);
+      
+      let executions: Execution[];
+      let scenarios: Scenario[];
+      let total: number;
+
+      if (query) {
+        // When searching, we fetch more to filter in memory for now
+        // A better way would be backend search, but this is the simplest "least changes"
+        [executions, scenarios] = await Promise.all([
+          listExecutions({ limit: 1000 }), // Fetch a large batch for searching
+          listScenarios(),
+        ]);
+        
+        const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
+        const mapped = executions
+          .filter((e): e is Execution & { id: string } => !!e.id)
+          .map((e) => executionToRun(e, scenarioById));
+
+        const filtered = mapped.filter(run => 
+          run.scenarioName.toLowerCase().includes(query.toLowerCase()) ||
+          run.id.toLowerCase().includes(query.toLowerCase()) ||
+          run.model.toLowerCase().includes(query.toLowerCase())
+        );
+
+        total = filtered.length;
+        setRuns(filtered.slice(offset, offset + PAGE_SIZE));
+        setTotalRuns(total);
+      } else {
+        [executions, scenarios, total] = await Promise.all([
+          listExecutions({ offset, limit: PAGE_SIZE }),
+          listScenarios(),
+          countExecutions(),
+        ]);
+        const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
+        const mapped = executions
+          .filter((e): e is Execution & { id: string } => !!e.id)
+          .map((e) => executionToRun(e, scenarioById));
+        setRuns(mapped);
+        setTotalRuns(total);
+      }
     } catch (err) {
       console.error("Failed to load executions:", err);
       setRuns([]);
@@ -121,8 +170,12 @@ function Runs() {
   }, []);
 
   useEffect(() => {
-    loadPage(page);
-  }, [page, loadPage]);
+    loadPage(page, debouncedSearchQuery);
+  }, [page, debouncedSearchQuery, loadPage]);
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
 
   if (selectedRun) {
     return (
@@ -135,7 +188,7 @@ function Runs() {
   return (
     <MainContent>
       <TooltipProvider delayDuration={200}>
-        <Header />
+        <Header searchQuery={searchQuery} onSearchQueryChange={handleSearchChange} />
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* <div className="flex-shrink-0 px-4 sm:px-8 py-4 border-b border-border-light bg-slate-50/50 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 overflow-x-auto">
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -209,11 +262,11 @@ function Runs() {
                 <tr className="sticky top-0 bg-white border-b border-border-light z-10">
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-16">Status</th>
                   <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Scenario Name</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Model</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Latency</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Tokens</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Cost</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right">Timestamp</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-56">Model</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Latency</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Tokens</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Cost</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right w-32">Timestamp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -254,7 +307,7 @@ function Runs() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono font-bold text-slate-700">
+                        <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono font-bold text-slate-700 max-w-full inline-block truncate">
                           {run.model}
                         </span>
                       </td>

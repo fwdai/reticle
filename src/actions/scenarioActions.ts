@@ -159,6 +159,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
 
   const scenarioId = currentScenario.id!;
   const snapshot = {
+    name: currentScenario.name,
     systemPrompt,
     userPrompt,
     configuration,
