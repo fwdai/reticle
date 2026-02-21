@@ -1,23 +1,10 @@
 import { Plus, Search } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
-import { NativeSelect } from "@/components/ui/native-select";
-
-export type SortKey = "updated" | "cost" | "latency" | "loops" | "success";
-
-const sortOptions: { key: SortKey; label: string }[] = [
-  { key: "updated", label: "Last updated" },
-  { key: "cost", label: "Avg cost" },
-  { key: "latency", label: "Avg latency" },
-  { key: "loops", label: "Loops" },
-  { key: "success", label: "Success rate" },
-];
 
 interface AgentsHeaderProps {
   search: string;
   onSearchChange: (value: string) => void;
-  sortBy: SortKey;
-  onSortChange: (key: SortKey) => void;
   onCreateAgent: () => void;
   agentCount: number;
 }
@@ -25,8 +12,6 @@ interface AgentsHeaderProps {
 function AgentsHeader({
   search,
   onSearchChange,
-  sortBy,
-  onSortChange,
   onCreateAgent,
   agentCount,
 }: AgentsHeaderProps) {
@@ -49,17 +34,6 @@ function AgentsHeader({
             className="h-10 w-full sm:w-72 rounded-xl border border-border-light bg-white pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
         </div>
-        <NativeSelect
-          value={sortBy}
-          onChange={(e) => onSortChange(e.target.value as SortKey)}
-          className="h-10 w-auto min-w-[11rem]"
-        >
-          {sortOptions.map((opt) => (
-            <option key={opt.key} value={opt.key}>
-              {opt.label}
-            </option>
-          ))}
-        </NativeSelect>
         <button
           className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
           onClick={onCreateAgent}

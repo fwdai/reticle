@@ -2,12 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { AgentDetail, type AgentDetailAgent } from "./AgentDetail";
 import { AgentList, type Agent } from "./List";
 import MainContent from "@/components/Layout/MainContent";
-import Header, { type SortKey } from "../Header";
+import Header from "../Header";
 import { listAgents, agentRecordToListAgent } from "@/lib/storage";
 
 function AgentsMainContent() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortKey>("updated");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [starredAgents, setStarredAgents] = useState<Set<string>>(new Set());
 
@@ -85,8 +84,6 @@ function AgentsMainContent() {
       <Header
         search={searchQuery}
         onSearchChange={setSearchQuery}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
         onCreateAgent={handleCreateAgent}
         agentCount={filteredAgents.length}
       />

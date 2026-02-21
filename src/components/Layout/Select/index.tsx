@@ -15,6 +15,7 @@ interface GenericSelectProps<T> {
   placeholder?: string;
   filter?: (item: T) => boolean;
   value?: string;
+  disabled?: boolean;
 }
 
 export default function GenericSelect<T>({
@@ -25,6 +26,7 @@ export default function GenericSelect<T>({
   placeholder = "Select an option...",
   filter,
   value = "",
+  disabled = false,
 }: GenericSelectProps<T>) {
   const [selectedId, setSelectedId] = useState(value);
 
@@ -59,7 +61,10 @@ export default function GenericSelect<T>({
 
   return (
     <Select value={selectedId} onValueChange={handleSelect}>
-      <SelectTrigger className="w-full focus-visible:border-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/20">
+      <SelectTrigger
+        className="w-full focus-visible:border-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/20"
+        disabled={disabled}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className="rounded-lg border font-normal border-border-light bg-white text-sm">

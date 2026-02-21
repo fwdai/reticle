@@ -4,7 +4,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
 import { PROVIDERS_LIST } from "@/constants/providers";
-import { NativeSelect } from "@/components/ui/native-select";
+import GenericSelect from "@/components/Layout/Select";
 import { fetchAndNormalizeModels } from "@/lib/modelManager";
 import { getSetting, setSetting } from "@/lib/storage";
 
@@ -135,32 +135,28 @@ function Preferences() {
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Default Provider
             </label>
-            <NativeSelect
+            <GenericSelect
+              items={PROVIDERS_LIST}
+              getItemId={(p) => p.id}
+              getItemLabel={(p) => p.name}
               value={defaultProvider}
-              onChange={(e) => handleProviderChange(e.target.value)}
-            >
-              {PROVIDERS_LIST.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </NativeSelect>
+              onSelect={(p) => handleProviderChange(p.id)}
+              placeholder="Select a provider"
+            />
           </div>
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Default Model
             </label>
-            <NativeSelect
+            <GenericSelect
+              items={modelsForProvider}
+              getItemId={(m) => m.id}
+              getItemLabel={(m) => m.name}
               value={defaultModel}
-              onChange={(e) => handleModelChange(e.target.value)}
+              onSelect={(m) => handleModelChange(m.id)}
+              placeholder="Select a model"
               disabled={modelsForProvider.length === 0}
-            >
-              {modelsForProvider.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </NativeSelect>
+            />
           </div>
         </div>
       </section>
