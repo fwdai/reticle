@@ -50,12 +50,12 @@ function Configuration() {
               value={configuration.provider}
               onValueChange={(value) => handleValueChange('provider', value)}
             >
-              <SelectTrigger className="w-full text-sm rounded-lg border border-border-light bg-white py-2.5 px-3 shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all cursor-pointer text-text-main [&>svg]:text-text-muted">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a provider" />
               </SelectTrigger>
-              <SelectContent className="rounded-lg border border-border-light bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] py-1">
+              <SelectContent>
                 {PROVIDERS_LIST.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id} className="py-2.5 pl-8 pr-3 text-text-main focus:bg-slate-50">
+                  <SelectItem key={provider.id} value={provider.id}>
                     {provider.name}
                   </SelectItem>
                 ))}
@@ -69,12 +69,12 @@ function Configuration() {
               value={configuration.model}
               onValueChange={(value) => handleValueChange('model', value)}
             >
-              <SelectTrigger className="w-full text-sm rounded-lg border border-border-light bg-white py-2.5 px-3 shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all cursor-pointer text-text-main [&>svg]:text-text-muted">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
-              <SelectContent className="rounded-lg border border-border-light bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] py-1">
+              <SelectContent>
                 {studioState.providerModels[configuration.provider]?.map((model: any) => (
-                  <SelectItem key={model.id} value={model.id} className="py-2.5 pl-8 pr-3 text-text-main focus:bg-slate-50">
+                  <SelectItem key={model.id} value={model.id}>
                     {model.name}
                   </SelectItem>
                 ))}

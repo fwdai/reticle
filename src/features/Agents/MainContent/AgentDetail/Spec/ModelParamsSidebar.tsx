@@ -62,7 +62,7 @@ export function ModelParamsSidebar({
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-text-main">Provider</Label>
           <Select value={provider} onValueChange={onProviderChange}>
-            <SelectTrigger className="h-9 text-xs border-border-light">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -77,7 +77,7 @@ export function ModelParamsSidebar({
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-text-main">Model</Label>
           <Select value={model} onValueChange={onModelChange}>
-            <SelectTrigger className="h-9 text-xs border-border-light">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

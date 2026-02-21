@@ -291,7 +291,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
                 <textarea
                   value={content}
                   onChange={(e) => handleContentChange(e.target.value)}
-                  className="absolute inset-0 w-full min-h-[320px] resize-none overflow-y-auto p-5 text-sm leading-relaxed text-text-main placeholder:text-text-muted focus:outline-none bg-transparent"
+                  className="absolute font-mono inset-0 w-full min-h-[320px] resize-none overflow-y-auto p-5 text-sm leading-relaxed text-text-main placeholder:text-text-muted focus:outline-none bg-transparent"
                   spellCheck={false}
                   placeholder="Enter your prompt template. Use {{variable}} for placeholders."
                 />
