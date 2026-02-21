@@ -110,6 +110,7 @@ function Runs() {
   // const [environment, setEnvironment] = useState("Staging");
   const [runs, setRuns] = useState<Run[]>([]);
   const [totalRuns, setTotalRuns] = useState(0);
+  const [totalExecutions, setTotalExecutions] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
@@ -128,9 +129,10 @@ function Runs() {
       if (query) {
         // When searching, we fetch more to filter in memory for now
         // A better way would be backend search, but this is the simplest "least changes"
-        [executions, scenarios] = await Promise.all([
+        [executions, scenarios, total] = await Promise.all([
           listExecutions({ limit: 1000 }), // Fetch a large batch for searching
           listScenarios(),
+          countExecutions(),
         ]);
         
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
@@ -144,9 +146,9 @@ function Runs() {
           run.model.toLowerCase().includes(query.toLowerCase())
         );
 
-        total = filtered.length;
+        setTotalExecutions(total);
         setRuns(filtered.slice(offset, offset + PAGE_SIZE));
-        setTotalRuns(total);
+        setTotalRuns(filtered.length);
       } else {
         [executions, scenarios, total] = await Promise.all([
           listExecutions({ offset, limit: PAGE_SIZE }),
@@ -157,6 +159,7 @@ function Runs() {
         const mapped = executions
           .filter((e): e is Execution & { id: string } => !!e.id)
           .map((e) => executionToRun(e, scenarioById));
+        setTotalExecutions(total);
         setRuns(mapped);
         setTotalRuns(total);
       }
@@ -164,6 +167,7 @@ function Runs() {
       console.error("Failed to load executions:", err);
       setRuns([]);
       setTotalRuns(0);
+      setTotalExecutions(0);
     } finally {
       setIsLoading(false);
     }
@@ -188,7 +192,7 @@ function Runs() {
   return (
     <MainContent>
       <TooltipProvider delayDuration={200}>
-        <Header searchQuery={searchQuery} onSearchQueryChange={handleSearchChange} />
+        <Header searchQuery={searchQuery} onSearchQueryChange={handleSearchChange} totalExecutions={totalExecutions} />
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* <div className="flex-shrink-0 px-4 sm:px-8 py-4 border-b border-border-light bg-slate-50/50 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 overflow-x-auto">
             <div className="flex items-center gap-3 flex-shrink-0">
