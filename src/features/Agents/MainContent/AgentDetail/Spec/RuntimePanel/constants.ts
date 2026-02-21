@@ -11,7 +11,7 @@ import {
   Target,
   AlertTriangle,
 } from "lucide-react";
-import type { ExecutionStep, StepType } from "./types";
+import type { ExecutionStep, StepType } from "@/types";
 
 export const stepConfig: Record<StepType, { icon: React.ElementType; badge: string }> = {
   task_input: { icon: Target, badge: "INPUT" },

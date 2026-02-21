@@ -2,11 +2,11 @@ import { forwardRef } from "react";
 import { Zap } from "lucide-react";
 import { filterOptions, mockExecution } from "./constants";
 import { ExecutionStep } from "./ExecutionStep";
-import type { ExecutionStatus, StepPhase, StepType } from "./types";
+import type { AgentExecutionStatus, StepPhase, StepType } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface ExecutionTimelineProps {
-  status: ExecutionStatus;
+  status: AgentExecutionStatus;
   filter: StepType | "all";
   onFilterChange: (filter: StepType | "all") => void;
   expandedSteps: Set<string>;

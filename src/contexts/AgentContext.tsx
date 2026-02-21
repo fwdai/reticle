@@ -1,9 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
-
-export type ExecutionStatus = "idle" | "running" | "success" | "error";
+import type { AgentExecutionStatus } from "@/types";
 
 export interface ExecutionState {
-  status: ExecutionStatus;
+  status: AgentExecutionStatus;
   elapsedSeconds?: number;
   tokens?: number;
   cost?: number;

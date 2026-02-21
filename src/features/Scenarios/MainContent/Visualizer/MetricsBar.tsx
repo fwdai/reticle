@@ -4,6 +4,7 @@ import { MetricPill } from "@/components/ui/MetricPill";
 import { MiniTag } from "./MiniTag";
 import { StudioContext } from "@/contexts/StudioContext";
 import { calculateRequestCost } from "@/lib/modelPricing";
+import { formatTokens, formatCost } from "@/lib/helpers/format";
 
 export function MetricsBar() {
   const context = useContext(StudioContext);
@@ -20,19 +21,18 @@ export function MetricsBar() {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const formatCost = () => {
+  const cost = (() => {
     const usage = response?.usage;
-    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return "—";
+    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return null;
     const provider = currentScenario?.configuration?.provider;
     const model = currentScenario?.configuration?.model;
-    if (!provider || !model) return "—";
+    if (!provider || !model) return null;
     const inputTokens =
       usage.promptTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.8) : 0);
     const outputTokens =
       usage.completionTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.2) : 0);
-    const cost = calculateRequestCost(provider, model, { inputTokens, outputTokens });
-    return cost != null ? `$${cost.toFixed(4)}` : "—";
-  };
+    return calculateRequestCost(provider, model, { inputTokens, outputTokens });
+  })();
 
   const statusValue = response?.error ? "Error" : response ? "200 OK" : isLoading ? "Running..." : "—";
   const statusVariant = response?.error ? "warning" : response ? "success" : "default";
@@ -52,9 +52,9 @@ export function MetricsBar() {
         <MetricPill
           icon={Hash}
           label="Tokens"
-          value={response?.usage?.totalTokens?.toString() ?? "—"}
+          value={formatTokens(response?.usage?.totalTokens)}
         />
-        <MetricPill icon={Coins} label="Cost" value={formatCost()} />
+        <MetricPill icon={Coins} label="Cost" value={formatCost(cost)} />
       </div>
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {response && (

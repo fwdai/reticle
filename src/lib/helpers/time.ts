@@ -1,4 +1,9 @@
-export function formatDuration(ms: number): string {
+export function wait(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+export function formatDuration(ms?: number | null): string {
+  if (ms == null || ms === 0) return "-";
   if (ms < 1000) return `${Math.round(ms)}ms`;
   if (ms < 60_000) return `${(ms / 1000).toFixed(1).replace(/\.0$/, "")}s`;
   const minutes = Math.floor(ms / 60_000);

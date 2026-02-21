@@ -1,6 +1,7 @@
 import { useContext, useState } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
 import { calculateRequestCost } from "@/lib/modelPricing";
+import { formatTokens, formatCost } from "@/lib/helpers/format";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { CopyButton } from "@/components/ui/CopyButton";
 import MarkdownPreview from "./MarkdownPreview";
@@ -31,22 +32,16 @@ function Response() {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const formatTokens = () => {
-    if (!response?.usage?.totalTokens) return '-';
-    return `${response.usage.totalTokens} tokens`;
-  };
-
-  const formatCost = () => {
+  const cost = (() => {
     const usage = response?.usage;
-    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return '-';
+    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return null;
     const provider = currentScenario?.configuration?.provider;
     const model = currentScenario?.configuration?.model;
-    if (!provider || !model) return '-';
+    if (!provider || !model) return null;
     const inputTokens = usage.promptTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.8) : 0);
     const outputTokens = usage.completionTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.2) : 0);
-    const cost = calculateRequestCost(provider, model, { inputTokens, outputTokens });
-    return cost != null ? `$${cost.toFixed(4)}` : '-';
-  };
+    return calculateRequestCost(provider, model, { inputTokens, outputTokens });
+  })();
 
   const isStandby = !response && !isLoading;
   const isIdle = isStandby || isLoading;
@@ -95,7 +90,7 @@ function Response() {
                     Usage
                   </span>
                   <span className="text-[11px] font-bold text-text-main leading-none">
-                    {formatTokens()}
+                    {formatTokens(response?.usage?.totalTokens)}
                   </span>
                 </div>
                 <div className="h-6 w-px bg-gray-200"></div>
@@ -104,7 +99,7 @@ function Response() {
                     Cost
                   </span>
                   <span className="text-[11px] font-bold text-text-main leading-none">
-                    {formatCost()}
+                    {formatCost(cost)}
                   </span>
                 </div>
               </>

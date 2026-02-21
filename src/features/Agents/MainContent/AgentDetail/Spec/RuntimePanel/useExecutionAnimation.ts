@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { wait, easeOutCubic } from "./utils";
+import { wait } from "@/lib/helpers/time";
+import { easeOutCubic } from "@/lib/helpers/animation";
 import { mockExecution } from "./constants";
-import type { ExecutionStatus, StepPhase, StepType } from "./types";
+import type { AgentExecutionStatus, StepPhase, StepType } from "@/types";
 
 export function useExecutionAnimation(
-  status: ExecutionStatus,
+  status: AgentExecutionStatus,
   filter: StepType | "all",
   scrollRef: React.RefObject<HTMLDivElement | null>
 ) {

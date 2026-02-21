@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
-import type { ExecutionStatus } from "./types";
-import { formatDuration, formatTokens, formatCost } from "./utils";
+import { formatDuration } from "@/lib/helpers/time";
+import { formatTokens, formatCost } from "@/lib/helpers/format";
+import type { AgentExecutionStatus } from "@/types";
 
 interface HeaderProps {
-  status: ExecutionStatus;
+  status: AgentExecutionStatus;
   elapsedSeconds?: number;
   tokens?: number;
   cost?: number;
@@ -34,7 +35,7 @@ const statusConfig = {
     label: "Error",
     pulse: false,
   },
-} satisfies Record<ExecutionStatus, { color: string; label: string; pulse: boolean }>;
+} satisfies Record<AgentExecutionStatus, { color: string; label: string; pulse: boolean }>;
 
 export function Header({
   status,
@@ -91,7 +92,7 @@ export function Header({
               Duration
             </span>
             <span className="text-[11px] font-bold text-text-main leading-none">
-              {formatDuration(elapsedSeconds)}
+              {formatDuration(elapsedSeconds != null ? elapsedSeconds * 1000 : undefined)}
             </span>
           </div>
           <div className="h-6 w-px bg-gray-200" />

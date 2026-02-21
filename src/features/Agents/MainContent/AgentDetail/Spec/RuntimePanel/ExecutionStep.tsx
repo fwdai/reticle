@@ -1,7 +1,7 @@
 import { ChevronRight, ChevronDown, Copy, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stepConfig } from "./constants";
-import type { ExecutionStep as ExecutionStepType, StepPhase } from "./types";
+import type { ExecutionStep as ExecutionStepType, StepPhase } from "@/types";
 
 interface ExecutionStepProps {
   step: ExecutionStepType;

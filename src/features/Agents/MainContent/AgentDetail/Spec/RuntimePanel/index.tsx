@@ -5,9 +5,9 @@ import { ExecutionTimeline } from "./ExecutionTimeline";
 import { mockExecution } from "./constants";
 import { useExecutionAnimation } from "./useExecutionAnimation";
 import { useAgentContext } from "@/contexts/AgentContext";
-import type { StepType } from "./types";
+import type { StepType } from "@/types";
 
-export type { ExecutionStatus } from "./types";
+export type { AgentExecutionStatus } from "@/types";
 
 export function RuntimePanel() {
   const { execution } = useAgentContext();
