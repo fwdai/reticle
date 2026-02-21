@@ -1,6 +1,5 @@
-import { Search, X } from "lucide-react";
-
 import Header from "@/components/Layout/Header";
+import { SearchField } from "@/components/ui/SearchField";
 
 interface RunsHeaderProps {
   searchQuery: string;
@@ -28,26 +27,11 @@ function RunsHeader({ searchQuery, onSearchQueryChange, totalExecutions }: RunsH
         </div>
       </div>
       <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
-        <div className="relative flex-1 sm:flex-none min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted size-4" />
-          <input
-            className="pl-10 pr-10 py-2 bg-slate-50 border border-border-light rounded-xl text-sm w-full sm:w-80 focus:ring-primary-500 focus:border-primary-500 transition-all"
-            placeholder="Search scenario, ID, or model..."
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchQueryChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main cursor-pointer"
-              aria-label="Clear search"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+        <SearchField
+          value={searchQuery}
+          onChange={onSearchQueryChange}
+          placeholder="Search scenario, ID, or model..."
+        />
       </div>
     </Header>
   );
