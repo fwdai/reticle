@@ -38,7 +38,7 @@ function Studio() {
         headerAction={
           <button
             onClick={handleCreateCollection}
-            className="text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-0.5 rounded-md"
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-text-main hover:bg-gray-200 cursor-pointer p-0.5 rounded-md"
             type="button"
           >
             <Plus size={16} />
@@ -68,6 +68,12 @@ function Studio() {
             count={scenariosByCollection[collection.id!] ?? 0}
           />
         ))}
+        <SidebarItem
+          icon={Plus}
+          label="Add collection"
+          muted
+          onClick={handleCreateCollection}
+        />
       </SidebarSection>
       <NewCollectionModal
         isOpen={isModalOpen}

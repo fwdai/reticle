@@ -8,9 +8,9 @@ function SidebarSection({ title, headerAction, children }: SidebarSectionProps) 
   return (
     <div>
       <div
-        className={`mb-1 pl-4 pr-3 ${headerAction ? "flex items-center justify-between" : ""}`}
+        className={`mb-1 pl-4 pr-3 ${headerAction ? "flex items-center justify-between group" : ""}`}
       >
-        <h3 className="h-5 text-[10px] font-bold text-text-muted uppercase tracking-widest">
+        <h3 className="h-5 flex items-center text-[10px] font-bold text-text-muted uppercase tracking-widest">
           {title}
         </h3>
         {headerAction}

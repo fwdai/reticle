@@ -7,6 +7,8 @@ interface SidebarItemProps {
   onClick?: () => void;
   count?: number;
   indent?: boolean;
+  /** Muted styling (lighter grey) for add/action items at bottom of lists */
+  muted?: boolean;
   /** Trailing content (e.g. dropdown menu) - use stopPropagation on interactive elements to prevent row click */
   actions?: React.ReactNode;
 }
@@ -18,10 +20,12 @@ function SidebarItem({
   onClick,
   count,
   indent = false,
+  muted = false,
   actions,
 }: SidebarItemProps) {
+  const textClass = muted ? "text-gray-500" : "text-sidebar-text";
   const baseClass =
-    "flex items-center gap-3 px-4 py-1.5 text-sm text-sidebar-text transition-colors w-full text-left";
+    `flex items-center gap-3 px-4 py-1.5 text-sm ${textClass} transition-colors w-full text-left`;
   const interactiveClass = onClick ? "hover:bg-gray-200 cursor-pointer" : "";
   const activeClass = active ? "bg-gray-200" : "";
   const indentClass = indent ? "pl-6" : "";
@@ -30,7 +34,7 @@ function SidebarItem({
   const content = (
     <>
       {Icon && (
-        <Icon className="h-4 w-4 flex-shrink-0 text-sidebar-text" strokeWidth={1.5} />
+        <Icon className={`h-4 w-4 flex-shrink-0 ${muted ? "text-text-muted" : "text-sidebar-text"}`} strokeWidth={1.5} />
       )}
       <span className="flex-1 min-w-0 truncate">{label}</span>
       {count != null && (
