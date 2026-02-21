@@ -156,11 +156,11 @@ async fn proxy_handler(
             response_builder = response_builder.header(name, value);
         }
     }
-    
-    let response_body_text = response.text().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let response_body_bytes = response_body_text.into_bytes();
-    Ok(response_builder.body(axum::body::Body::from(response_body_bytes)).unwrap())
+    // Stream the response body instead of buffering. This enables real-time streaming
+    // for LLM responses (e.g. OpenAI/Anthropic streaming APIs).
+    let body = axum::body::Body::from_stream(response.bytes_stream());
+    Ok(response_builder.body(body).unwrap())
 }
 
 async fn hello_world() -> &'static str {
