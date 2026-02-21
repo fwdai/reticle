@@ -4,6 +4,7 @@ import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
 import MainContent from "@/components/Layout/MainContent";
 
+import { AgentProvider } from "@/contexts/AgentContext";
 import { Header } from "./Header";
 import { SpecLayout as Spec } from "./Spec";
 import { Panel as Runs } from "./Runs";
@@ -179,11 +180,11 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
 
   const runStartRef = useRef<number | null>(null);
 
-  const handleRun = () => {
+  const handleRun = useCallback((_taskInput?: string) => {
     runStartRef.current = Date.now();
     setExecution({ status: "running", elapsedSeconds: 0 });
-    // TODO: implement actual agent execution, update execution with tokens/cost on completion
-  };
+    // TODO: implement actual agent execution with taskInput, update execution with tokens/cost on completion
+  }, []);
 
   useEffect(() => {
     if (execution.status !== "running") return;
@@ -200,64 +201,71 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     return () => clearInterval(interval);
   }, [execution.status]);
 
+  const agentContextValue = {
+    runAgent: handleRun,
+    execution,
+    isRunning: execution.status === "running",
+  };
+
   return (
     <MainContent>
-      <Header
-        agentName={agentName}
-        isNew={isNew}
-        viewMode={viewMode}
-        saveStatus={saveStatus}
-        onBack={onBack}
-        onAgentNameChange={setAgentName}
-        onViewModeChange={setViewMode}
-        onRun={handleRun}
-      />
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-        <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
-          <TabPanel title="Agent Spec">
-            <Spec
-              provider={provider}
-              model={model}
-              agentGoal={agentGoal}
-              systemInstructions={systemInstructions}
-              selectedTools={selectedTools}
-              toolSearch={toolSearch}
-              maxIterations={maxIterations}
-              timeout={timeoutValue}
-              retryPolicy={retryPolicy}
-              toolCallStrategy={toolCallStrategy}
-              memoryEnabled={memoryEnabled}
-              memorySource={memorySource}
-              temperature={temperature}
-              topP={topP}
-              maxTokens={maxTokens}
-              seed={seed}
-              showAdvanced={showAdvanced}
-              onProviderChange={setProvider}
-              onModelChange={setModel}
-              onAgentGoalChange={setAgentGoal}
-              onSystemInstructionsChange={setSystemInstructions}
-              onToolToggle={toggleTool}
-              onToolSearchChange={setToolSearch}
-              onMaxIterationsChange={setMaxIterations}
-              onTimeoutChange={setTimeoutValue}
-              onRetryPolicyChange={setRetryPolicy}
-              onToolCallStrategyChange={setToolCallStrategy}
-              onMemoryEnabledChange={setMemoryEnabled}
-              onMemorySourceChange={setMemorySource}
-              onTemperatureChange={setTemperature}
-              onTopPChange={setTopP}
-              onMaxTokensChange={setMaxTokens}
-              onSeedChange={setSeed}
-              onShowAdvancedToggle={() => setShowAdvanced((v) => !v)}
-              execution={execution}
-            />
-          </TabPanel>
-          <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>
-            <Runs runs={mockRuns} />
-          </TabPanel>
-        </Tabs>
-      </div>
+      <AgentProvider value={agentContextValue}>
+        <Header
+          agentName={agentName}
+          isNew={isNew}
+          viewMode={viewMode}
+          saveStatus={saveStatus}
+          onBack={onBack}
+          onAgentNameChange={setAgentName}
+          onViewModeChange={setViewMode}
+          onRun={() => handleRun()}
+        />
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+          <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
+            <TabPanel title="Agent Spec">
+              <Spec
+                provider={provider}
+                model={model}
+                agentGoal={agentGoal}
+                systemInstructions={systemInstructions}
+                selectedTools={selectedTools}
+                toolSearch={toolSearch}
+                maxIterations={maxIterations}
+                timeout={timeoutValue}
+                retryPolicy={retryPolicy}
+                toolCallStrategy={toolCallStrategy}
+                memoryEnabled={memoryEnabled}
+                memorySource={memorySource}
+                temperature={temperature}
+                topP={topP}
+                maxTokens={maxTokens}
+                seed={seed}
+                showAdvanced={showAdvanced}
+                onProviderChange={setProvider}
+                onModelChange={setModel}
+                onAgentGoalChange={setAgentGoal}
+                onSystemInstructionsChange={setSystemInstructions}
+                onToolToggle={toggleTool}
+                onToolSearchChange={setToolSearch}
+                onMaxIterationsChange={setMaxIterations}
+                onTimeoutChange={setTimeoutValue}
+                onRetryPolicyChange={setRetryPolicy}
+                onToolCallStrategyChange={setToolCallStrategy}
+                onMemoryEnabledChange={setMemoryEnabled}
+                onMemorySourceChange={setMemorySource}
+                onTemperatureChange={setTemperature}
+                onTopPChange={setTopP}
+                onMaxTokensChange={setMaxTokens}
+                onSeedChange={setSeed}
+                onShowAdvancedToggle={() => setShowAdvanced((v) => !v)}
+              />
+            </TabPanel>
+            <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>
+              <Runs runs={mockRuns} />
+            </TabPanel>
+          </Tabs>
+        </div>
+      </AgentProvider>
     </MainContent>
   );
 }

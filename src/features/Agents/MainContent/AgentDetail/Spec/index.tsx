@@ -1,16 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import useResizablePanel from "@/hooks/useResizablePanel";
+import { useAgentContext } from "@/contexts/AgentContext";
 
 import { Tab } from "./Tab";
 import { ModelParamsSidebar } from "./ModelParamsSidebar";
-import { RuntimePanel, type ExecutionStatus } from "./RuntimePanel";
-
-interface ExecutionState {
-  status?: ExecutionStatus;
-  elapsedSeconds?: number;
-  tokens?: number;
-  cost?: number;
-}
+import { RuntimePanel } from "./RuntimePanel";
 
 interface LayoutProps {
   provider: string;
@@ -47,7 +41,6 @@ interface LayoutProps {
   onMaxTokensChange: (value: number[]) => void;
   onSeedChange: (value: string) => void;
   onShowAdvancedToggle: () => void;
-  execution?: ExecutionState;
 }
 
 export function SpecLayout({
@@ -85,9 +78,9 @@ export function SpecLayout({
   onMaxTokensChange,
   onSeedChange,
   onShowAdvancedToggle,
-  execution,
 }: LayoutProps) {
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const { execution } = useAgentContext();
 
   const [maxResponseHeight, setMaxResponseHeight] = useState(Infinity);
 
@@ -107,7 +100,7 @@ export function SpecLayout({
     };
   }, []);
 
-  const COLLAPSED_HEIGHT = 44; // Status bar height (h-11)
+  const COLLAPSED_HEIGHT = 114;
   const EXPANDED_HEIGHT = 300;
 
   const {
@@ -124,13 +117,13 @@ export function SpecLayout({
 
   useEffect(() => {
     if (
-      execution?.status &&
+      execution.status &&
       execution.status !== "idle" &&
       responsePanelHeight <= COLLAPSED_HEIGHT
     ) {
       setResponsePanelHeight(Math.min(EXPANDED_HEIGHT, maxResponseHeight));
     }
-  }, [execution?.status, responsePanelHeight, maxResponseHeight]);
+  }, [execution.status, responsePanelHeight, maxResponseHeight, setResponsePanelHeight]);
 
   return (
     <div
@@ -192,7 +185,7 @@ export function SpecLayout({
         className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
         style={{ height: responsePanelHeight }}
       >
-        <RuntimePanel {...execution} />
+        <RuntimePanel />
       </div>
     </div>
   );
