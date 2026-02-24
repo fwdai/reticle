@@ -40,6 +40,15 @@ export async function listExecutions(options?: ListExecutionsOptions): Promise<E
   return Array.isArray(rows) ? rows : [];
 }
 
+/** Check if user has configured at least one API key */
+export async function hasApiKeys(): Promise<boolean> {
+  const rows = await invoke<{ provider: string }[]>('db_select_cmd', {
+    table: 'api_keys',
+    query: {},
+  });
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 export async function countExecutions(): Promise<number> {
   const count = await invoke<number>('db_count_cmd', {
     table: 'executions',

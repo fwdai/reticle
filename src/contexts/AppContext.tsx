@@ -43,7 +43,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [appState, setAppState] = useState<AppState>({
     isSidebarOpen: true,
     theme: 'light',
-    currentPage: 'studio',
+    currentPage: 'home',
     settingsSection: 'api-keys',
     defaultProvider: null,
     defaultModel: null,
