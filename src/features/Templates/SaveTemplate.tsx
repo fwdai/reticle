@@ -4,7 +4,6 @@ import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -177,32 +176,49 @@ export function SaveTemplate({
             SAVE AS TEMPLATE
           </button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Save Template</DialogTitle>
-            <DialogDescription>
-              Enter a name for your template and click save when you&apos;re
-              done.
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[400px] overflow-hidden border-border-light shadow-glow-sm">
+          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary/80 via-primary to-primary/80" />
+          <DialogHeader className="space-y-2 pb-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Save className="h-5 w-5 text-primary" strokeWidth={1.5} />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold tracking-tight">
+                  Save Template
+                </DialogTitle>
+                <DialogDescription className="text-sm text-text-muted">
+                  Enter a name for your template and click save when you&apos;re
+                  done.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <FieldGroup>
+          <FieldGroup className="py-2">
             <Field>
               <Label htmlFor="name-1">Name</Label>
               <Input
                 id="name-1"
                 name="name"
-                placeholder="Cool template"
+                placeholder="e.g. Marketing prompt, Sales intro"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
+                className="mt-1.5"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTemplate();
+                }}
               />
             </Field>
           </FieldGroup>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
+          <DialogFooter className="gap-2 pt-4 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button type="button" onClick={handleSaveTemplate}>
-              Save
+              Save template
             </Button>
           </DialogFooter>
         </DialogContent>
