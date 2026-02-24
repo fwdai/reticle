@@ -1,14 +1,26 @@
-export type Page = "home" | "studio" | "agents" | "environments" | "runs" | "settings" | "templates";
+export type Page =
+  | 'home'
+  | 'studio'
+  | 'agents'
+  | 'environments'
+  | 'runs'
+  | 'settings'
+  | 'templates';
 
 export type SettingsSectionId =
-  | "preferences"
-  | "account"
-  | "api-keys"
-  | "integrations";
+  | 'preferences'
+  | 'account'
+  | 'api-keys'
+  | 'integrations';
 
-export type SidebarItem = Exclude<Page, "home">;
+export type SidebarItem = Exclude<Page, 'home'>;
 
-export type ExecutionStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+export type ExecutionStatus =
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled';
 export type ExecutionType = 'scenario' | 'agent' | 'mcp';
 
 export type LLMCallConfig = {
@@ -18,7 +30,7 @@ export type LLMCallConfig = {
   temperature?: number;
   topP?: number;
   maxTokens?: number;
-}
+};
 
 export type Collection = {
   id?: string;
@@ -27,7 +39,7 @@ export type Collection = {
   created_at?: number;
   updated_at?: number;
   archived_at?: number | null;
-}
+};
 
 export type Scenario = {
   id?: string;
@@ -49,11 +61,11 @@ export type Scenario = {
   created_at?: number;
   updated_at?: number;
   archived_at?: number | null;
-}
+};
 
 export type PromptTemplate = {
   id?: string;
-  type: "system" | "user";
+  type: 'system' | 'user';
   name: string;
   description?: string | null;
   content: string;
@@ -73,7 +85,7 @@ export type Account = {
   role?: string | null;
   use_case?: string | null;
   timezone?: string | null;
-  usage_context?: "work" | "personal" | "education" | "other" | null;
+  usage_context?: 'work' | 'personal' | 'education' | 'other' | null;
   created_at?: number;
   updated_at?: number;
 };
@@ -121,23 +133,34 @@ export type Execution = {
   updated_at?: number;
 };
 
-/** Agent runtime UI state (distinct from Execution DB status) */
-export type AgentExecutionStatus = "idle" | "running" | "success" | "error";
+export type TelemetryEvent = {
+  id?: string;
+  name: string;
+  attributes_json: string;
+  trace_id?: string | null;
+  span_id?: string | null;
+  occurred_at: number;
+  created_at?: number;
+  updated_at?: number;
+};
 
-export type StepStatus = "success" | "error" | "running" | "pending";
+/** Agent runtime UI state (distinct from Execution DB status) */
+export type AgentExecutionStatus = 'idle' | 'running' | 'success' | 'error';
+
+export type StepStatus = 'success' | 'error' | 'running' | 'pending';
 
 export type StepType =
-  | "task_input"
-  | "reasoning"
-  | "model_call"
-  | "model_response"
-  | "tool_call"
-  | "tool_response"
-  | "memory_read"
-  | "memory_write"
-  | "decision"
-  | "output"
-  | "error";
+  | 'task_input'
+  | 'reasoning'
+  | 'model_call'
+  | 'model_response'
+  | 'tool_call'
+  | 'tool_response'
+  | 'memory_read'
+  | 'memory_write'
+  | 'decision'
+  | 'output'
+  | 'error';
 
 export interface ExecutionStep {
   id: string;
@@ -154,4 +177,4 @@ export interface ExecutionStep {
   processingMs?: number;
 }
 
-export type StepPhase = "hidden" | "appearing" | "processing" | "done";
+export type StepPhase = 'hidden' | 'appearing' | 'processing' | 'done';

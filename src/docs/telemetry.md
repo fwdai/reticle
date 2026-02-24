@@ -6,6 +6,7 @@ This document describes the telemetry that is currently implemented in the Retic
 
 - Use OpenTelemetry instrumentation in the Vite app.
 - Emit telemetry to browser console (development only).
+- Persist telemetry events to local SQLite (`telemetry_events`) in app runtime.
 - Track selected product/domain events explicitly (navigation + scenario save/run lifecycle).
 
 ## Important mental model
@@ -35,7 +36,9 @@ Folder: `src/lib/telemetry`
   - Central registry of supported event names (`TELEMETRY_EVENTS`).
 - `client.ts`
   - Initializes OpenTelemetry provider.
-  - Uses `WebTracerProvider` + `SimpleSpanProcessor` + `ConsoleSpanExporter`.
+  - Uses `WebTracerProvider`.
+  - In development, uses `SimpleSpanProcessor` + `ConsoleSpanExporter`.
+  - Persists tracked events via storage (`insertTelemetryEvent`).
   - Exposes:
     - `initTelemetry()`
     - `trackEvent(eventName, attributes?)`
@@ -54,10 +57,34 @@ Folder: `src/lib/telemetry`
 
 ## Environment behavior
 
-Telemetry is enabled only in development:
+Console export is enabled only in development:
 
-- Guard: `const TELEMETRY_ENABLED = import.meta.env.DEV` in `client.ts`.
-- In production builds, current telemetry emits nothing.
+- Guard: `const TELEMETRY_CONSOLE_ENABLED = false` console flag.
+
+Telemetry persistence is enabled for app runtime builds:
+
+- Guard: `const TELEMETRY_PERSIST_ENABLED = true` in `client.ts`.
+- Persistence failures are swallowed to avoid impacting product flows.
+
+## SQLite persistence
+
+Table: `telemetry_events`
+
+Stored fields per event:
+
+- `name`
+- `attributes_json` (stringified normalized attributes)
+- `trace_id`
+- `span_id`
+- `occurred_at`
+
+Lifecycle timestamps (`created_at`, `updated_at`) and `id` are set by backend generic insert logic.
+
+Persistence path:
+
+- `trackEvent(...)` in `src/lib/telemetry/client.ts`
+- `insertTelemetryEvent(...)` in `src/lib/storage/index.ts`
+- generic `db_insert_cmd` invoke bridge to SQLite
 
 ## Event catalog (current)
 
@@ -141,7 +168,8 @@ When `trackEvent(...)` is called:
 1. Tracer is retrieved via `trace.getTracer(...)`.
 2. A span is created with the event name and attributes.
 3. Span is ended immediately.
-4. Console exporter prints span data in the browser dev console.
+4. In development, console exporter prints span data in the browser dev console.
+5. Event snapshot is persisted in SQLite via generic storage command.
 
 So the telemetry system does **not** infer domain events by itself; it exports events you explicitly emit.
 

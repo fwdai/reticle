@@ -8,11 +8,13 @@ import {
   TELEMETRY_EVENTS,
   type TelemetryEventName,
 } from '@/lib/telemetry/events';
+import { insertTelemetryEvent } from '@/lib/storage';
 
 type TelemetryAttributeValue = string | number | boolean | null | undefined;
 type TelemetryAttributes = Record<string, TelemetryAttributeValue>;
 
-const TELEMETRY_ENABLED = import.meta.env.DEV;
+const TELEMETRY_CONSOLE_ENABLED = false; // console logging flag
+const TELEMETRY_PERSIST_ENABLED = true; // database persistence flag
 const TRACER_NAME = 'reticle.frontend';
 const TRACER_VERSION = '0.1.0';
 
@@ -34,13 +36,17 @@ function normalizeAttributes(attributes: TelemetryAttributes): Attributes {
 }
 
 export function initTelemetry(): void {
-  if (!TELEMETRY_ENABLED || isInitialized) {
+  if (isInitialized) {
     return;
   }
 
-  const provider = new WebTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
-  });
+  const provider = new WebTracerProvider(
+    TELEMETRY_CONSOLE_ENABLED
+      ? {
+          spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+        }
+      : undefined
+  );
 
   provider.register();
   isInitialized = true;
@@ -54,20 +60,47 @@ export function initTelemetry(): void {
   );
 }
 
+function persistEvent(
+  eventName: TelemetryEventName,
+  attributes: Attributes,
+  traceId: string,
+  spanId: string
+): void {
+  if (!TELEMETRY_PERSIST_ENABLED) {
+    return;
+  }
+
+  void insertTelemetryEvent({
+    name: eventName,
+    attributes_json: JSON.stringify(attributes),
+    trace_id: traceId,
+    span_id: spanId,
+    occurred_at: Date.now(),
+  }).catch(() => {
+    // Avoid breaking product flows due to telemetry persistence errors.
+  });
+}
+
 export function trackEvent(
   eventName: TelemetryEventName,
   attributes: TelemetryAttributes = {}
 ): void {
-  if (!TELEMETRY_ENABLED) {
-    return;
-  }
+  const normalizedAttributes = normalizeAttributes(attributes);
 
   const tracer = trace.getTracer(TRACER_NAME, TRACER_VERSION);
   const span = tracer.startSpan(eventName, {
-    attributes: normalizeAttributes(attributes),
+    attributes: normalizedAttributes,
   });
 
+  const spanContext = span.spanContext();
+
   span.end();
+  persistEvent(
+    eventName,
+    normalizedAttributes,
+    spanContext.traceId,
+    spanContext.spanId
+  );
 }
 
 export function trackEventOnce(
@@ -75,7 +108,7 @@ export function trackEventOnce(
   eventName: TelemetryEventName,
   attributes: TelemetryAttributes = {}
 ): void {
-  if (!TELEMETRY_ENABLED || emittedOnceKeys.has(key)) {
+  if (emittedOnceKeys.has(key)) {
     return;
   }
 

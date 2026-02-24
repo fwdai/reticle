@@ -1,7 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Account, AgentRecord, Collection, Execution, PromptTemplate, Scenario } from '@/types';
+import {
+  Account,
+  AgentRecord,
+  Collection,
+  Execution,
+  PromptTemplate,
+  Scenario,
+  TelemetryEvent,
+} from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
-import type { Tool, ToolParameter } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
+import type {
+  Tool,
+  ToolParameter,
+} from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 
@@ -10,7 +21,10 @@ export async function insertExecution(data: Execution): Promise<string> {
   return invoke<string>('db_insert_cmd', { table: 'executions', data: data });
 }
 
-export async function updateExecution(id: string, data: Execution): Promise<void> {
+export async function updateExecution(
+  id: string,
+  data: Execution
+): Promise<void> {
   // updated_at is now handled by the backend
   await invoke('db_update_cmd', {
     table: 'executions',
@@ -24,7 +38,9 @@ export interface ListExecutionsOptions {
   limit?: number;
 }
 
-export async function listExecutions(options?: ListExecutionsOptions): Promise<Execution[]> {
+export async function listExecutions(
+  options?: ListExecutionsOptions
+): Promise<Execution[]> {
   const { offset = 0, limit } = options ?? {};
   const query: Record<string, unknown> = {
     orderBy: 'started_at',
@@ -48,7 +64,9 @@ export async function countExecutions(): Promise<number> {
   return typeof count === 'number' ? count : 0;
 }
 
-export async function getLastExecutionForScenario(scenarioId: string): Promise<Execution | null> {
+export async function getLastExecutionForScenario(
+  scenarioId: string
+): Promise<Execution | null> {
   const rows = await invoke<Execution[]>('db_select_cmd', {
     table: 'executions',
     query: {
@@ -69,6 +87,90 @@ export async function getExecutionById(id: string): Promise<Execution | null> {
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
+// --- Telemetry Events ---
+
+export type InsertTelemetryEventInput = Omit<
+  TelemetryEvent,
+  'id' | 'created_at' | 'updated_at'
+>;
+
+export interface ListTelemetryEventsOptions {
+  name?: string;
+  trace_id?: string;
+  offset?: number;
+  limit?: number;
+  orderDirection?: 'asc' | 'desc';
+}
+
+export async function insertTelemetryEvent(
+  data: InsertTelemetryEventInput
+): Promise<string> {
+  return invoke<string>('db_insert_cmd', {
+    table: 'telemetry_events',
+    data,
+  });
+}
+
+export async function listTelemetryEvents(
+  options?: ListTelemetryEventsOptions
+): Promise<TelemetryEvent[]> {
+  const {
+    name,
+    trace_id,
+    offset = 0,
+    limit,
+    orderDirection = 'desc',
+  } = options ?? {};
+
+  const where: Record<string, string> = {};
+  if (name) where.name = name;
+  if (trace_id) where.trace_id = trace_id;
+
+  const query: Record<string, unknown> = {
+    orderBy: 'occurred_at',
+    orderDirection,
+  };
+
+  if (Object.keys(where).length > 0) {
+    query.where = where;
+  }
+  if (offset > 0) {
+    query.offset = offset;
+  }
+  if (limit != null && limit > 0) {
+    query.limit = limit;
+  }
+
+  const rows = await invoke<TelemetryEvent[]>('db_select_cmd', {
+    table: 'telemetry_events',
+    query,
+  });
+
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function countTelemetryEvents(
+  where?: Pick<TelemetryEvent, 'name' | 'trace_id'>
+): Promise<number> {
+  const query = where != null ? { where } : {};
+  const count = await invoke<number>('db_count_cmd', {
+    table: 'telemetry_events',
+    query,
+  });
+  return typeof count === 'number' ? count : 0;
+}
+
+export async function deleteTelemetryEvents(
+  where?: Partial<Pick<TelemetryEvent, 'id' | 'name' | 'trace_id'>>
+): Promise<number> {
+  const query = where != null ? { where } : {};
+  const deleted = await invoke<number>('db_delete_cmd', {
+    table: 'telemetry_events',
+    query,
+  });
+  return typeof deleted === 'number' ? deleted : 0;
+}
+
 export async function listScenarios(): Promise<Scenario[]> {
   const rows = await invoke<Scenario[]>('db_select_cmd', {
     table: 'scenarios',
@@ -78,7 +180,9 @@ export async function listScenarios(): Promise<Scenario[]> {
 }
 
 // --- Collections ---
-export async function findCollectionByName(name: string): Promise<{ id: string; name: string } | null> {
+export async function findCollectionByName(
+  name: string
+): Promise<{ id: string; name: string } | null> {
   const rows: { id: string; name: string }[] = await invoke('db_select_cmd', {
     table: 'collections',
     query: { where: { name } },
@@ -113,7 +217,10 @@ export async function insertScenario(data: Scenario): Promise<string> {
   return invoke<string>('db_insert_cmd', { table: 'scenarios', data: row });
 }
 
-export async function updateScenario(id: string, data: Scenario): Promise<void> {
+export async function updateScenario(
+  id: string,
+  data: Scenario
+): Promise<void> {
   // updated_at is now handled by the backend
   await invoke('db_update_cmd', {
     table: 'scenarios',
@@ -131,11 +238,16 @@ export async function listPromptTemplates(): Promise<PromptTemplate[]> {
   return Array.isArray(rows) ? rows : [];
 }
 
-export async function insertPromptTemplate(data: Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+export async function insertPromptTemplate(
+  data: Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at'>
+): Promise<string> {
   return invoke<string>('db_insert_cmd', { table: 'prompt_templates', data });
 }
 
-export async function updatePromptTemplate(id: string, data: Partial<PromptTemplate>): Promise<void> {
+export async function updatePromptTemplate(
+  id: string,
+  data: Partial<PromptTemplate>
+): Promise<void> {
   await invoke('db_update_cmd', {
     table: 'prompt_templates',
     query: { where: { id } },
@@ -161,7 +273,7 @@ export async function listAgents(): Promise<AgentRecord[]> {
     },
   });
   const arr = Array.isArray(rows) ? rows : [];
-  return arr.filter((r) => r.archived_at == null);
+  return arr.filter(r => r.archived_at == null);
 }
 
 export async function getAgentById(id: string): Promise<AgentRecord | null> {
@@ -178,7 +290,10 @@ export async function insertAgent(
   return invoke<string>('db_insert_cmd', { table: 'agents', data });
 }
 
-export async function updateAgent(id: string, data: Partial<AgentRecord>): Promise<void> {
+export async function updateAgent(
+  id: string,
+  data: Partial<AgentRecord>
+): Promise<void> {
   await invoke('db_update_cmd', {
     table: 'agents',
     query: { where: { id } },
@@ -198,9 +313,10 @@ export function agentRecordToListAgent(record: AgentRecord): {
   starred: boolean;
 } {
   const tools = parseJsonArray(record.tools_json);
-  const hasGoal = !!(record.agent_goal?.trim());
-  const hasInstructions = !!(record.system_instructions?.trim());
-  const status: 'ready' | 'needs-config' = hasGoal && hasInstructions ? 'ready' : 'needs-config';
+  const hasGoal = !!record.agent_goal?.trim();
+  const hasInstructions = !!record.system_instructions?.trim();
+  const status: 'ready' | 'needs-config' =
+    hasGoal && hasInstructions ? 'ready' : 'needs-config';
   return {
     id: record.id,
     name: record.name,
@@ -247,7 +363,18 @@ export async function getOrCreateAccount(): Promise<Account> {
  * Upserts account: inserts if table is empty, updates if account exists.
  */
 export async function upsertAccount(
-  data: Partial<Pick<Account, 'first_name' | 'last_name' | 'avatar' | 'role' | 'use_case' | 'timezone' | 'usage_context'>>
+  data: Partial<
+    Pick<
+      Account,
+      | 'first_name'
+      | 'last_name'
+      | 'avatar'
+      | 'role'
+      | 'use_case'
+      | 'timezone'
+      | 'usage_context'
+    >
+  >
 ): Promise<Account> {
   const rows: Account[] = await invoke('db_select_cmd', {
     table: 'accounts',
@@ -319,14 +446,16 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
   const paramsRaw = JSON.parse((row.parameters_json as string) ?? '[]');
   const parameters = Array.isArray(paramsRaw)
     ? paramsRaw.map((p: Record<string, unknown>) => ({
-      id: typeof p.id === 'string' ? p.id : crypto.randomUUID(),
-      name: typeof p.name === 'string' ? p.name : '',
-      type: ['string', 'number', 'boolean', 'object', 'array'].includes(String(p.type))
-        ? (p.type as ToolParameter['type'])
-        : 'string',
-      description: typeof p.description === 'string' ? p.description : '',
-      required: p.required === true,
-    }))
+        id: typeof p.id === 'string' ? p.id : crypto.randomUUID(),
+        name: typeof p.name === 'string' ? p.name : '',
+        type: ['string', 'number', 'boolean', 'object', 'array'].includes(
+          String(p.type)
+        )
+          ? (p.type as ToolParameter['type'])
+          : 'string',
+        description: typeof p.description === 'string' ? p.description : '',
+        required: p.required === true,
+      }))
     : [];
   return {
     id: (row.id as string) ?? crypto.randomUUID(),
@@ -334,21 +463,33 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
     description: (row.description as string) ?? '',
     parameters,
     mockResponse: (row.mock_response as string) ?? '{}',
-    mockMode: row.mock_mode === 'code' || row.mock_mode === 'json' ? row.mock_mode : 'json',
+    mockMode:
+      row.mock_mode === 'code' || row.mock_mode === 'json'
+        ? row.mock_mode
+        : 'json',
   };
 }
 
-export async function insertTool(tool: Tool, scenarioId: string, sortOrder = 0): Promise<string> {
+export async function insertTool(
+  tool: Tool,
+  scenarioId: string,
+  sortOrder = 0
+): Promise<string> {
   const data = toolToDbRow(tool, scenarioId, sortOrder);
   return invoke<string>('db_insert_cmd', { table: 'tools', data });
 }
 
-export async function updateTool(id: string, updates: Partial<Tool>): Promise<void> {
+export async function updateTool(
+  id: string,
+  updates: Partial<Tool>
+): Promise<void> {
   const data: Record<string, unknown> = {};
   if (updates.name !== undefined) data.name = updates.name;
   if (updates.description !== undefined) data.description = updates.description;
-  if (updates.parameters !== undefined) data.parameters_json = JSON.stringify(updates.parameters);
-  if (updates.mockResponse !== undefined) data.mock_response = updates.mockResponse;
+  if (updates.parameters !== undefined)
+    data.parameters_json = JSON.stringify(updates.parameters);
+  if (updates.mockResponse !== undefined)
+    data.mock_response = updates.mockResponse;
   if (updates.mockMode !== undefined) data.mock_mode = updates.mockMode;
   if (Object.keys(data).length === 0) return;
   await invoke('db_update_cmd', {
@@ -358,7 +499,9 @@ export async function updateTool(id: string, updates: Partial<Tool>): Promise<vo
   });
 }
 
-export async function countToolsByScenarioId(scenarioId: string): Promise<number> {
+export async function countToolsByScenarioId(
+  scenarioId: string
+): Promise<number> {
   const count = await invoke<number>('db_count_cmd', {
     table: 'tools',
     query: { where: { scenario_id: scenarioId } },
@@ -366,7 +509,9 @@ export async function countToolsByScenarioId(scenarioId: string): Promise<number
   return typeof count === 'number' ? count : 0;
 }
 
-export async function listToolsByScenarioId(scenarioId: string): Promise<Tool[]> {
+export async function listToolsByScenarioId(
+  scenarioId: string
+): Promise<Tool[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'tools',
     query: {
@@ -385,7 +530,9 @@ export async function deleteTool(id: string): Promise<void> {
   });
 }
 
-export async function deleteToolsByScenarioId(scenarioId: string): Promise<void> {
+export async function deleteToolsByScenarioId(
+  scenarioId: string
+): Promise<void> {
   await invoke('db_delete_cmd', {
     table: 'tools',
     query: { where: { scenario_id: scenarioId } },
@@ -411,7 +558,9 @@ export async function insertAttachment(
   return invoke<string>('db_insert_cmd', { table: 'attachments', data });
 }
 
-export async function countAttachmentsByScenarioId(scenarioId: string): Promise<number> {
+export async function countAttachmentsByScenarioId(
+  scenarioId: string
+): Promise<number> {
   const count = await invoke<number>('db_count_cmd', {
     table: 'attachments',
     query: { where: { scenario_id: scenarioId } },
@@ -419,7 +568,9 @@ export async function countAttachmentsByScenarioId(scenarioId: string): Promise<
   return typeof count === 'number' ? count : 0;
 }
 
-export async function listAttachmentsByScenarioId(scenarioId: string): Promise<AttachedFile[]> {
+export async function listAttachmentsByScenarioId(
+  scenarioId: string
+): Promise<AttachedFile[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'attachments',
     query: {
@@ -429,7 +580,7 @@ export async function listAttachmentsByScenarioId(scenarioId: string): Promise<A
     },
   });
   if (!Array.isArray(rows)) return [];
-  return rows.map((row) => ({
+  return rows.map(row => ({
     id: String(row.id ?? ''),
     name: String(row.name ?? ''),
     size: Number(row.size ?? 0),
@@ -438,7 +589,9 @@ export async function listAttachmentsByScenarioId(scenarioId: string): Promise<A
   }));
 }
 
-export async function deleteAttachmentsByScenarioId(scenarioId: string): Promise<void> {
+export async function deleteAttachmentsByScenarioId(
+  scenarioId: string
+): Promise<void> {
   await invoke('db_delete_cmd', {
     table: 'attachments',
     query: { where: { scenario_id: scenarioId } },
@@ -468,7 +621,10 @@ export async function upsertAttachmentsForScenario(
 /**
  * Replace all tools for a scenario: deletes existing (including archived) and inserts the new list.
  */
-export async function upsertToolsForScenario(tools: Tool[], scenarioId: string): Promise<void> {
+export async function upsertToolsForScenario(
+  tools: Tool[],
+  scenarioId: string
+): Promise<void> {
   await deleteToolsByScenarioId(scenarioId);
   for (let i = 0; i < tools.length; i++) {
     await insertTool(tools[i], scenarioId, i);
