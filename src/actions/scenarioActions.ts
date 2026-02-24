@@ -7,6 +7,7 @@ import {
   upsertToolsForScenario,
   upsertAttachmentsForScenario,
 } from '@/lib/storage';
+import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
 
@@ -26,7 +27,9 @@ function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
   }
 }
 
-type SetStudioState = React.Dispatch<React.SetStateAction<StudioContainerState>>;
+type SetStudioState = React.Dispatch<
+  React.SetStateAction<StudioContainerState>
+>;
 
 // --- Execution Actions ---
 
@@ -44,7 +47,7 @@ export async function saveExecution(
     console.log(`Execution ${executionId} inserted.`);
     return executionId;
   } catch (error) {
-    console.error("Failed to save execution:", error);
+    console.error('Failed to save execution:', error);
     throw error;
   }
 }
@@ -57,7 +60,20 @@ export async function saveScenarioAction(
   setPrevScenarioJson: React.Dispatch<React.SetStateAction<string>>,
   scenarioName: string | null
 ) {
-  console.log("Attempting to save scenario:", studioState.currentScenario);
+  const isExistingScenario =
+    studioState.savedScenarios.some(
+      scenario => scenario.id === studioState.currentScenario.id
+    ) && Boolean(studioState.scenarioId);
+
+  trackEvent(TELEMETRY_EVENTS.SCENARIO_SAVE_STARTED, {
+    save_mode: isExistingScenario ? 'update' : 'create',
+    has_scenario_id: Boolean(studioState.scenarioId),
+    history_view_mode: studioState.historyViewMode,
+    tools_count: studioState.currentScenario.tools?.length ?? 0,
+    attachments_count: studioState.currentScenario.attachments?.length ?? 0,
+  });
+
+  console.log('Attempting to save scenario:', studioState.currentScenario);
   try {
     setStudioState(prev => ({ ...prev, isSaving: true }));
 
@@ -69,7 +85,8 @@ export async function saveScenarioAction(
     // Use JSON draft when in Raw JSON mode; otherwise use Visual mode history
     const effectiveHistory =
       studioState.historyViewMode === 'json'
-        ? parseHistoryJson(studioState.historyJsonDraft) ?? scenarioData.history
+        ? (parseHistoryJson(studioState.historyJsonDraft) ??
+          scenarioData.history)
         : scenarioData.history;
 
     const now = Date.now();
@@ -94,31 +111,46 @@ export async function saveScenarioAction(
       provider_meta_json: null,
     };
 
-    const existsInDb = studioState.savedScenarios.some((s) => s.id === studioState.currentScenario.id);
+    const existsInDb = studioState.savedScenarios.some(
+      s => s.id === studioState.currentScenario.id
+    );
     let savedId = studioState.scenarioId;
     let created_at: number;
     let updated_at: number;
 
     if (existsInDb && studioState.scenarioId) {
-      console.log("Updating existing scenario with ID:", studioState.scenarioId);
+      console.log(
+        'Updating existing scenario with ID:',
+        studioState.scenarioId
+      );
       created_at =
-        scenarioData.createdAt != null ? new Date(scenarioData.createdAt).getTime() : now;
+        scenarioData.createdAt != null
+          ? new Date(scenarioData.createdAt).getTime()
+          : now;
       updated_at = now;
       await updateScenario(studioState.scenarioId, scenarioPayload);
-      await upsertToolsForScenario(scenarioData.tools ?? [], studioState.scenarioId);
+      await upsertToolsForScenario(
+        scenarioData.tools ?? [],
+        studioState.scenarioId
+      );
       await upsertAttachmentsForScenario(
         scenarioData.attachments ?? [],
         studioState.scenarioId
       );
       console.log(`Scenario '${scenarioData.name}' updated.`);
     } else {
-      console.log("Inserting new scenario.");
+      console.log('Inserting new scenario.');
       savedId = await insertScenario(scenarioPayload);
       created_at = now;
       updated_at = now;
       await upsertToolsForScenario(scenarioData.tools ?? [], savedId);
-      await upsertAttachmentsForScenario(scenarioData.attachments ?? [], savedId);
-      console.log(`Scenario '${scenarioData.name}' inserted with ID: ${savedId}`);
+      await upsertAttachmentsForScenario(
+        scenarioData.attachments ?? [],
+        savedId
+      );
+      console.log(
+        `Scenario '${scenarioData.name}' inserted with ID: ${savedId}`
+      );
     }
 
     setStudioState(prev => {
@@ -134,24 +166,49 @@ export async function saveScenarioAction(
           updatedAt: updated_at.toString(),
         },
       };
-      setPrevScenarioJson(JSON.stringify({ ...newState.currentScenario, id: null }));
-      localStorage.setItem("lastUsedScenarioId", newState.currentScenario.id); // Set last used scenario after save
-      console.log("Scenario saved. New state:", newState);
+      setPrevScenarioJson(
+        JSON.stringify({ ...newState.currentScenario, id: null })
+      );
+      localStorage.setItem('lastUsedScenarioId', newState.currentScenario.id); // Set last used scenario after save
+      console.log('Scenario saved. New state:', newState);
       return newState;
+    });
+
+    trackEvent(TELEMETRY_EVENTS.SCENARIO_SAVE_SUCCEEDED, {
+      save_mode: isExistingScenario ? 'update' : 'create',
+      scenario_id: savedId,
+      tools_count: scenarioData.tools?.length ?? 0,
+      attachments_count: scenarioData.attachments?.length ?? 0,
     });
   } catch (error) {
     console.error('Failed to save scenario:', error);
+    trackEvent(TELEMETRY_EVENTS.SCENARIO_SAVE_FAILED, {
+      save_mode: isExistingScenario ? 'update' : 'create',
+      error_message: error instanceof Error ? error.message : 'unknown_error',
+    });
     setStudioState(prev => ({ ...prev, isSaving: false }));
     // Optionally show an error message in the UI
   }
 }
 
-export async function runScenarioAction(studioState: StudioContainerState, setStudioState: SetStudioState) {
-  console.log("Running scenario:", studioState);
+export async function runScenarioAction(
+  studioState: StudioContainerState,
+  setStudioState: SetStudioState
+) {
+  console.log('Running scenario:', studioState);
   const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
 
-  setStudioState((prev) => ({
+  trackEvent(TELEMETRY_EVENTS.SCENARIO_RUN_STARTED, {
+    scenario_id: currentScenario.id,
+    provider: configuration.provider,
+    model: configuration.model,
+    history_items: history.length,
+    tools_count: currentScenario.tools?.length ?? 0,
+    attachments_count: currentScenario.attachments?.length ?? 0,
+  });
+
+  setStudioState(prev => ({
     ...prev,
     isLoading: true,
     response: null,
@@ -204,7 +261,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     let accumulatedText = '';
     for await (const chunk of result.textStream) {
       accumulatedText += chunk;
-      setStudioState((prev) => ({
+      setStudioState(prev => ({
         ...prev,
         response: {
           text: accumulatedText,
@@ -220,18 +277,17 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
     ]);
     const ended_at = Date.now();
 
-    const { modelSteps, toolCalls } =
-      steps?.length
-        ? extractStepsAndToolCalls(
-            steps.map((s) => ({
-              text: s.text ?? '',
-              finishReason: s.finishReason ?? 'unknown',
-              usage: s.usage,
-              toolCalls: s.toolCalls ?? [],
-              toolResults: s.toolResults ?? [],
-            }))
-          )
-        : { modelSteps: [], toolCalls: [] };
+    const { modelSteps, toolCalls } = steps?.length
+      ? extractStepsAndToolCalls(
+          steps.map(s => ({
+            text: s.text ?? '',
+            finishReason: s.finishReason ?? 'unknown',
+            usage: s.usage,
+            toolCalls: s.toolCalls ?? [],
+            toolResults: s.toolResults ?? [],
+          }))
+        )
+      : { modelSteps: [], toolCalls: [] };
 
     const finalUsage = usage ?? {};
     const usageForResponse = {
@@ -245,8 +301,9 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       snapshot_json,
       input_json,
       result_json: JSON.stringify({ text: finalText, usage: finalUsage }),
-      tool_calls_json:
-        toolCalls?.length ? JSON.stringify(toolCalls) : undefined,
+      tool_calls_json: toolCalls?.length
+        ? JSON.stringify(toolCalls)
+        : undefined,
       steps_json: modelSteps?.length ? JSON.stringify(modelSteps) : undefined,
       status: 'succeeded',
       started_at,
@@ -258,7 +315,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       }),
     };
     await updateExecution(executionId, finalExecution);
-    setStudioState((prev) => ({
+    setStudioState(prev => ({
       ...prev,
       isLoading: false,
       response: {
@@ -268,10 +325,23 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
         error: undefined,
       },
     }));
+
+    trackEvent(TELEMETRY_EVENTS.SCENARIO_RUN_SUCCEEDED, {
+      scenario_id: scenarioId,
+      provider: configuration.provider,
+      model: configuration.model,
+      latency_ms: result.latency,
+      prompt_tokens: usageForResponse.promptTokens,
+      completion_tokens: usageForResponse.completionTokens,
+      total_tokens: usageForResponse.totalTokens,
+      tool_calls_count: toolCalls?.length ?? 0,
+      model_steps_count: modelSteps?.length ?? 0,
+    });
   } catch (error) {
     console.error('Error generating text:', error);
     const ended_at = Date.now();
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown error occurred';
 
     const failedExecution: Execution = {
       type: 'scenario',
@@ -286,7 +356,7 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
 
     await updateExecution(executionId, failedExecution);
 
-    setStudioState((prev) => ({
+    setStudioState(prev => ({
       ...prev,
       currentExecutionId: executionId,
       isLoading: false,
@@ -297,5 +367,12 @@ export async function runScenarioAction(studioState: StudioContainerState, setSt
       },
       isSaved: false,
     }));
+
+    trackEvent(TELEMETRY_EVENTS.SCENARIO_RUN_FAILED, {
+      scenario_id: scenarioId,
+      provider: configuration.provider,
+      model: configuration.model,
+      error_message: errorMessage,
+    });
   }
 }
