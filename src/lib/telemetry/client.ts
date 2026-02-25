@@ -9,17 +9,61 @@ import {
   type TelemetryEventName,
 } from '@/lib/telemetry/events';
 import { insertTelemetryEvent } from '@/lib/storage';
+import { getSetting } from '@/lib/storage';
 
 type TelemetryAttributeValue = string | number | boolean | null | undefined;
 type TelemetryAttributes = Record<string, TelemetryAttributeValue>;
+type PendingTelemetryEvent = {
+  eventName: TelemetryEventName;
+  attributes: TelemetryAttributes;
+};
 
-const TELEMETRY_CONSOLE_ENABLED = false; // console logging flag
-const TELEMETRY_PERSIST_ENABLED = true; // database persistence flag
+// show telemetry events in console
+const SHOW_TELEMETRY_IN_CONSOLE = false;
+
 const TRACER_NAME = 'reticle.frontend';
 const TRACER_VERSION = '0.1.0';
 
 let isInitialized = false;
+let isProviderRegistered = false;
+let initPromise: Promise<void> | null = null;
+let isTelemetryEnabled = true;
+const pendingEvents: PendingTelemetryEvent[] = [];
 const emittedOnceKeys = new Set<string>();
+
+function parseTelemetrySetting(value: string | null): boolean {
+  if (value === null) {
+    return true;
+  }
+
+  try {
+    return Boolean(JSON.parse(value));
+  } catch {
+    return value !== 'false';
+  }
+}
+
+async function reloadTelemetryEnabledFromDb(): Promise<void> {
+  const telemetrySetting = await getSetting('telemetry_enabled');
+  isTelemetryEnabled = parseTelemetrySetting(telemetrySetting);
+}
+
+function ensureProviderRegistered(): void {
+  if (isProviderRegistered) {
+    return;
+  }
+
+  const provider = new WebTracerProvider(
+    SHOW_TELEMETRY_IN_CONSOLE
+      ? {
+          spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+        }
+      : undefined
+  );
+
+  provider.register();
+  isProviderRegistered = true;
+}
 
 function normalizeAttributes(attributes: TelemetryAttributes): Attributes {
   const normalized: Attributes = {};
@@ -35,29 +79,57 @@ function normalizeAttributes(attributes: TelemetryAttributes): Attributes {
   return normalized;
 }
 
-export function initTelemetry(): void {
-  if (isInitialized) {
+export async function initTelemetry(): Promise<void> {
+  if (isInitialized || initPromise) {
+    return initPromise ?? Promise.resolve();
+  }
+
+  initPromise = (async () => {
+    await reloadTelemetryEnabledFromDb();
+
+    if (isTelemetryEnabled) {
+      ensureProviderRegistered();
+    }
+
+    isInitialized = true;
+
+    if (isTelemetryEnabled) {
+      trackEventOnce(
+        'telemetry_initialized',
+        TELEMETRY_EVENTS.TELEMETRY_INITIALIZED,
+        {
+          env_mode: import.meta.env.MODE,
+        }
+      );
+
+      const queuedEvents = pendingEvents.splice(0, pendingEvents.length);
+      for (const queuedEvent of queuedEvents) {
+        trackEvent(queuedEvent.eventName, queuedEvent.attributes);
+      }
+    } else {
+      pendingEvents.length = 0;
+    }
+
+    initPromise = null;
+  })().catch(() => {
+    isInitialized = true;
+    initPromise = null;
+  });
+
+  return initPromise;
+}
+
+export async function reloadTelemetrySettings(): Promise<void> {
+  if (!isInitialized) {
+    await initTelemetry();
     return;
   }
 
-  const provider = new WebTracerProvider(
-    TELEMETRY_CONSOLE_ENABLED
-      ? {
-          spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
-        }
-      : undefined
-  );
+  await reloadTelemetryEnabledFromDb();
 
-  provider.register();
-  isInitialized = true;
-
-  trackEventOnce(
-    'telemetry_initialized',
-    TELEMETRY_EVENTS.TELEMETRY_INITIALIZED,
-    {
-      env_mode: import.meta.env.MODE,
-    }
-  );
+  if (isTelemetryEnabled) {
+    ensureProviderRegistered();
+  }
 }
 
 function persistEvent(
@@ -66,7 +138,7 @@ function persistEvent(
   traceId: string,
   spanId: string
 ): void {
-  if (!TELEMETRY_PERSIST_ENABLED) {
+  if (!isTelemetryEnabled) {
     return;
   }
 
@@ -85,6 +157,16 @@ export function trackEvent(
   eventName: TelemetryEventName,
   attributes: TelemetryAttributes = {}
 ): void {
+  if (!isInitialized) {
+    pendingEvents.push({ eventName, attributes });
+    void initTelemetry();
+    return;
+  }
+
+  if (!isTelemetryEnabled) {
+    return;
+  }
+
   const normalizedAttributes = normalizeAttributes(attributes);
 
   const tracer = trace.getTracer(TRACER_NAME, TRACER_VERSION);
