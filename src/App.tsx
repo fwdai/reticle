@@ -1,5 +1,6 @@
 import { ComponentType } from "react";
 import Navigation from "./components/Layout/Nav";
+import { LoadingScreen } from "./components/LoadingScreen";
 import Home from "./features/Home";
 import Studio from "./features/Scenarios";
 import Agents from "./features/Agents";
@@ -22,11 +23,15 @@ const pages: Partial<Record<Page, ComponentType>> = {
 };
 
 function App() {
-  const { appState } = useAppContext();
+  const { appState, isAppReady } = useAppContext();
   const PageComponent = pages[appState.currentPage] as ComponentType;
 
+  if (!isAppReady) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light">
+    <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light animate-fade-in">
       <Navigation />
       <PageComponent />
     </div>

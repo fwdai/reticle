@@ -1,6 +1,16 @@
 import React, { createContext, useState, ReactNode, useContext } from 'react';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { Page, SettingsSectionId } from '@/types';
+import { hasApiKeys, listScenarios, listAgents, listExecutions } from '@/lib/storage';
+
+/** Onboarding status computed at startup; used by Home to avoid duplicate fetches */
+export interface OnboardingStatus {
+  isLoading: boolean;
+  hasApiKey: boolean;
+  hasScenarioOrAgent: boolean;
+  hasCompletedRun: boolean;
+  isComplete: boolean;
+}
 
 // Define the shape of the global application state
 interface AppState {
@@ -24,6 +34,12 @@ interface AppContextType {
     options?: { settingsSection?: SettingsSectionId }
   ) => void;
   setSettingsSection: (section: SettingsSectionId) => void;
+  /** True when all startup data has been loaded */
+  isAppReady: boolean;
+  /** Onboarding status from startup; available when isAppReady */
+  onboardingStatus: OnboardingStatus | null;
+  /** Re-run onboarding check (e.g. when returning to Home after adding API key) */
+  refreshOnboardingStatus: () => Promise<void>;
 }
 
 // Create the AppContext
@@ -47,11 +63,71 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [appState, setAppState] = useState<AppState>({
     isSidebarOpen: true,
     theme: 'light',
-    currentPage: 'studio',
+    currentPage: 'home',
     settingsSection: 'api-keys',
     defaultProvider: null,
     defaultModel: null,
   });
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
+
+  async function loadOnboardingStatus(): Promise<OnboardingStatus> {
+    try {
+      const [apiKeys, scenarios, agents, executions] = await Promise.all([
+        hasApiKeys(),
+        listScenarios(),
+        listAgents(),
+        listExecutions({ limit: 100 }),
+      ]);
+
+      const hasScenarioOrAgent = scenarios.length > 0 || agents.length > 0;
+      const hasCompletedRun = executions.some(
+        (e) => e.status === 'succeeded' && e.started_at != null
+      );
+
+      return {
+        isLoading: false,
+        hasApiKey: apiKeys,
+        hasScenarioOrAgent,
+        hasCompletedRun,
+        isComplete: apiKeys && hasScenarioOrAgent && hasCompletedRun,
+      };
+    } catch {
+      return {
+        isLoading: false,
+        hasApiKey: false,
+        hasScenarioOrAgent: false,
+        hasCompletedRun: false,
+        isComplete: false,
+      };
+    }
+  }
+
+  const refreshOnboardingStatus = React.useCallback(async () => {
+    const status = await loadOnboardingStatus();
+    setOnboardingStatus(status);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStartupData() {
+      const [onboarding] = await Promise.all([
+        loadOnboardingStatus(),
+        // Add more startup data loaders here as needed
+      ]);
+
+      if (!cancelled) {
+        setOnboardingStatus(onboarding);
+        setIsAppReady(true);
+      }
+    }
+
+    loadStartupData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setAppState((prevState) => ({

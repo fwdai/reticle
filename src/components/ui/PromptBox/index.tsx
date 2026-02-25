@@ -91,7 +91,7 @@ function PromptBox({
       {/* Prompt/System Textarea */}
       <div className="flex-1 bg-white border border-border-light rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden min-h-64">
         <div className="h-10 p-6 border-b border-border-light bg-sidebar-light/50 flex justify-between items-center">
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest whitespace-nowrap">
             {label}
           </span>
           <div className="flex items-center justify-end gap-4 w-full max-w-lg">

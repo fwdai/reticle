@@ -261,29 +261,29 @@ function Runs() {
             </div>
           </div> */}
           <div className="flex-1 min-h-0 overflow-auto custom-scrollbar min-w-0">
-            <table className="w-full text-left border-collapse min-w-[1000px]">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="sticky top-0 bg-white border-b border-border-light z-10">
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-16">Status</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Scenario Name</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-56">Model</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Latency</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Tokens</th>
-                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-24">Cost</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right w-32">Timestamp</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-14">Status</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest min-w-0">Scenario Name</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-32">Model</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-20">Latency</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-20">Tokens</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest w-20">Cost</th>
+                  <th className="px-4 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right w-28">Timestamp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-8 py-12 text-center text-sm text-text-muted">
+                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-text-muted">
                       Loading runs…
                     </td>
                   </tr>
                 )}
                 {!isLoading && runs.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-8 py-12 text-center text-sm text-text-muted">
+                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-text-muted">
                       No runs yet. Run a scenario from Studio to see executions here.
                     </td>
                   </tr>
@@ -295,22 +295,22 @@ function Runs() {
                       onClick={() => setSelectedRun(run)}
                       className="table-row-hover transition-colors group cursor-pointer"
                     >
-                      <td className="px-8 py-4">
+                      <td className="px-4 py-4">
                         {run.status === "success" ? (
                           <CheckCircle className="text-green-500 size-5" />
                         ) : (
                           <XCircle className="text-red-500 size-5" />
                         )}
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-text-main group-hover:text-primary-600 transition-colors">
+                      <td className="px-4 py-4 min-w-0">
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-text-main group-hover:text-primary-600 transition-colors truncate">
                             {run.scenarioName}
                           </span>
-                          <span className="text-[10px] font-mono text-text-muted">{run.id}</span>
+                          <span className="text-[10px] font-mono text-text-muted truncate">{run.id}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 min-w-0">
                         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono font-bold text-slate-700 max-w-full inline-block truncate">
                           {run.model}
                         </span>
@@ -329,7 +329,7 @@ function Runs() {
                       <td className="px-4 py-4">
                         <span className="text-xs font-mono text-text-main">{run.cost}</span>
                       </td>
-                      <td className="px-8 py-4 text-right">
+                      <td className="px-4 py-4 text-right">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="text-xs text-text-muted cursor-default transition-colors group-hover:text-text-main">
