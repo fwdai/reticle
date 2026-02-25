@@ -230,6 +230,20 @@
   .animate-flow-vertical-reversed {
     animation: flow-vertical-reversed 2s ease-in-out infinite;
   }
+  .animate-pulse-ring-outer {
+    animation: pulse-ring-outer 2s ease-in-out infinite;
+  }
+  .animate-pulse-ring-inner {
+    animation: pulse-ring-inner 2s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+  .animate-pulse-icon {
+    animation: pulse-icon 2s ease-in-out infinite;
+  }
+  .loading-ellipsis::after {
+    content: "";
+    animation: ellipsis 2s infinite;
+  }
 }
 
 @keyframes fade-in {
@@ -287,6 +301,53 @@
   100% { top: 0%; opacity: 0; }
 }
 
+@keyframes pulse-ring-outer {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-ring-inner {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 1;  }
+  50% { opacity: 0.8;  }
+}
+
+@keyframes ellipsis {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
+}
+
 .resize-handle {
   position: relative;
   background-color: transparent;
@@ -326,3 +387,5 @@
 .resize-handle-vertical:hover::before {
   background-color: var(--primary); /* Primary color on hover */
 }
+
+

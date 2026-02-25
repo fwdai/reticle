@@ -3,25 +3,32 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import OnboardingView from "./OnboardingView";
 import { DashboardView } from "./Dashboard";
-import { useOnboardingStatus } from "./useOnboardingStatus";
+import { useAppContext } from "@/contexts/AppContext";
 
 function HomePage() {
   const [appVersion, setAppVersion] = useState<string | null>(null);
-  const onboarding = useOnboardingStatus();
+  const { onboardingStatus, refreshOnboardingStatus } = useAppContext();
 
   useEffect(() => {
     getVersion().then(setAppVersion);
   }, []);
 
+  // Refresh onboarding when Home is shown (keeps data fresh after Settings/Studio changes)
+  useEffect(() => {
+    refreshOnboardingStatus();
+  }, [refreshOnboardingStatus]);
+
+  // onboardingStatus is set by AppContext startup before isAppReady becomes true
+  if (!onboardingStatus) {
+    return null;
+  }
+  const onboarding = onboardingStatus;
+
   return (
     <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden ml-2">
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-[1200px] mx-auto px-10 py-12">
-          {onboarding.isLoading ? (
-            <div className="flex items-center justify-center min-h-[300px] text-slate-500">
-              Loading…
-            </div>
-          ) : onboarding.isComplete ? (
+          {onboarding.isComplete ? (
             <DashboardView />
           ) : (
             <OnboardingView
