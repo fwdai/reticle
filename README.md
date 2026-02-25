@@ -45,6 +45,7 @@ Reticle focuses on the design phase of AI development — helping engineers unde
 ## 🌟 Features
 
 ### ⚙️ Scenario Execution
+
 Design and run fully-configurable LLM calls with deterministic control.
 
 - System & user prompts with live token estimation
@@ -53,8 +54,8 @@ Design and run fully-configurable LLM calls with deterministic control.
 - Inspect raw request/response payloads
 - Latency, token breakdown, and per-run cost estimation
 
-
 ### 🔍 Execution Trace
+
 See what actually happened — not just the final output.
 
 - Visual flow from prompt → model → tool calls → response
@@ -62,8 +63,8 @@ See what actually happened — not just the final output.
 - Tool call arguments and intermediate outputs
 - Reproducible runs with explicit parameters
 
-
 ### 🛠 Tool Definitions
+
 Define and simulate function/tool calls before writing backend code.
 
 - JSON schema builder with OpenAI-compatible output
@@ -71,32 +72,32 @@ Define and simulate function/tool calls before writing backend code.
 - Toggle between structured and raw modes
 - Copy-ready schema export
 
-
 ### 📎 Multimodal Inputs
+
 Test real-world scenarios with structured and unstructured data.
 
 - Drag-and-drop file attachments (PDF, CSV, images, etc.)
 - Batch management with size tracking
 - File-aware execution context
 
-
 ### 🧩 Prompt Templates
+
 Reusable building blocks for consistent AI behavior.
 
 - Variable-based templates (`{{var}}`)
 - Inline highlighting and validation
 - Versioned usage across scenarios
 
-
 ### 🔄 Model Comparison
+
 Validate behavior across providers before committing.
 
 - Run the same scenario against multiple models
 - Compare outputs, latency, and cost side-by-side
 - Identify drift or regression quickly
 
+### 🧠 Agent Simulation _(coming soon)_
 
-### 🧠 Agent Simulation *(coming soon)*
 Design and simulate multi-step tool-calling agents.
 
 - Step-by-step execution graph
@@ -104,13 +105,21 @@ Design and simulate multi-step tool-calling agents.
 - Token and cost accumulation per cycle
 - Export agent configuration for production integration
 
-
 > All execution happens locally. API keys and credentials never leave your machine.
-
 
 <br />
 
 ## 🛠 Development Setup
+
+### Telemetry (Development)
+
+Reticle includes an initial OpenTelemetry setup for frontend instrumentation in development mode.
+
+- Export: console span exporter (browser console)
+- Enabled in: `vite dev` only
+- Current events: page navigation, scenario save lifecycle, scenario run lifecycle
+
+Implementation entry point: `src/lib/telemetry`
 
 ### Requirements
 
@@ -139,7 +148,6 @@ Contributions are welcome! Here's how to get started:
 3. **Commit** — `git commit -m "feat: add my feature"`
 4. **Push** — `git push origin feat/my-feature`
 5. **Open a Pull Request**
-
 
 <br />
 

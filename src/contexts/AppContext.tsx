@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
+import React, { createContext, useState, ReactNode, useContext } from 'react';
+import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { Page, SettingsSectionId } from '@/types';
 import { hasApiKeys, listScenarios, listAgents, listExecutions } from '@/lib/storage';
 
@@ -28,7 +29,10 @@ interface AppContextType {
   setAppState: React.Dispatch<React.SetStateAction<AppState>>;
   toggleSidebar: () => void;
   toggleTheme: () => void;
-  setCurrentPage: (page: Page, options?: { settingsSection?: SettingsSectionId }) => void;
+  setCurrentPage: (
+    page: Page,
+    options?: { settingsSection?: SettingsSectionId }
+  ) => void;
   setSettingsSection: (section: SettingsSectionId) => void;
   /** True when all startup data has been loaded */
   isAppReady: boolean;
@@ -126,31 +130,47 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   }, []);
 
   const toggleSidebar = () => {
-    setAppState(prevState => ({
+    setAppState((prevState) => ({
       ...prevState,
       isSidebarOpen: !prevState.isSidebarOpen,
     }));
   };
 
   const toggleTheme = () => {
-    setAppState(prevState => ({
+    setAppState((prevState) => ({
       ...prevState,
       theme: prevState.theme === 'light' ? 'dark' : 'light',
     }));
   };
 
-  const setCurrentPage = (page: Page, options?: { settingsSection?: SettingsSectionId }) => {
-    setAppState(prevState => ({
-      ...prevState,
-      currentPage: page,
-      ...(page === 'settings' && options?.settingsSection != null && {
-        settingsSection: options.settingsSection,
-      }),
-    }));
+  const setCurrentPage = (
+    page: Page,
+    options?: { settingsSection?: SettingsSectionId }
+  ) => {
+    setAppState((prevState) => {
+      const nextState = {
+        ...prevState,
+        currentPage: page,
+        ...(page === 'settings' &&
+          options?.settingsSection != null && {
+            settingsSection: options.settingsSection,
+          }),
+      };
+
+      if (prevState.currentPage !== page) {
+        trackEvent(TELEMETRY_EVENTS.PAGE_NAVIGATED, {
+          from_page: prevState.currentPage,
+          to_page: page,
+          settings_section: options?.settingsSection,
+        });
+      }
+
+      return nextState;
+    });
   };
 
   const setSettingsSection = (section: SettingsSectionId) => {
-    setAppState(prevState => ({
+    setAppState((prevState) => ({
       ...prevState,
       settingsSection: section,
     }));
@@ -165,9 +185,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         toggleTheme,
         setCurrentPage,
         setSettingsSection,
-        isAppReady,
-        onboardingStatus,
-        refreshOnboardingStatus,
       }}
     >
       {children}
