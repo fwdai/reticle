@@ -37,7 +37,7 @@ export function DashboardView() {
     : "Welcome back!";
 
   return (
-    <div className="mx-auto max-w-[1200px] animate-fade-in space-y-8 pb-8">
+    <div className="mx-auto max-w-[1200px] animate-fade-in space-y-8 ">
       {/* Greeting */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
