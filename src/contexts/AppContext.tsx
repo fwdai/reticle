@@ -1,4 +1,4 @@
-import React, { createContext, useState, ReactNode, useContext } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { Page, SettingsSectionId } from '@/types';
 import { hasApiKeys, listScenarios, listAgents, listExecutions } from '@/lib/storage';
@@ -185,6 +185,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         toggleTheme,
         setCurrentPage,
         setSettingsSection,
+        isAppReady,
+        onboardingStatus,
+        refreshOnboardingStatus,
       }}
     >
       {children}
