@@ -2,6 +2,8 @@ use tauri::Manager;
 use tauri::WebviewWindowBuilder;
 use serde_json::Value;
 
+mod runner;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -75,6 +77,7 @@ pub fn run() {
             let db_conn = database::init_database(&app_handle)
                 .expect("Failed to initialize database");
             app.manage(db_conn);
+            app.manage(Arc::new(Mutex::new(runner::RunnerManager::new())));
             tauri::async_runtime::spawn(server::start_proxy_server(app_handle.clone()));
 
             // Create main window with drag-drop disabled so HTML5 drop zone works
@@ -85,6 +88,7 @@ pub fn run() {
 
             Ok(())
         })
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -97,7 +101,11 @@ pub fn run() {
             db_select_cmd,
             db_update_cmd,
             db_delete_cmd,
-            db_count_cmd
+            db_count_cmd,
+            runner::runner_spawn,
+            runner::runner_send,
+            runner::runner_kill,
+            runner::runner_list,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

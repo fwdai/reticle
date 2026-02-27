@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Deno sidecar binaries (downloaded via scripts/download-deno.sh)
+src-tauri/binaries/
