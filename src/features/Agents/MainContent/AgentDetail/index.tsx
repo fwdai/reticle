@@ -11,6 +11,8 @@ import { Panel as Runs } from "./Runs";
 import { mockRuns } from "./Runs/constants";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
+import { runAgentAction } from "@/actions/agentActions";
+import type { ExecutionState } from "@/contexts/AgentContext";
 
 export type { AgentDetailAgent };
 
@@ -52,12 +54,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const [isLoading, setIsLoading] = useState(!isNew);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
   const skipNextAutoSaveRef = useRef(!isNew);
-  const [execution, setExecution] = useState<{
-    status: "idle" | "running" | "success" | "error";
-    elapsedSeconds?: number;
-    tokens?: number;
-    cost?: number;
-  }>({ status: "idle" });
+  const [execution, setExecution] = useState<ExecutionState>({ status: "idle", steps: [] });
 
   const loadAgent = useCallback(async () => {
     if (effectiveId === "new") return;
@@ -180,11 +177,13 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
 
   const runStartRef = useRef<number | null>(null);
 
-  const handleRun = useCallback((_taskInput?: string) => {
+  const handleRun = useCallback(async (taskInput?: string) => {
+    if (!taskInput?.trim() || effectiveId === "new") return;
     runStartRef.current = Date.now();
-    setExecution({ status: "running", elapsedSeconds: 0 });
-    // TODO: implement actual agent execution with taskInput, update execution with tokens/cost on completion
-  }, []);
+    const record = await getAgentById(effectiveId);
+    if (!record) return;
+    await runAgentAction(record, taskInput.trim(), setExecution);
+  }, [effectiveId]);
 
   useEffect(() => {
     if (execution.status !== "running") return;

@@ -195,7 +195,6 @@ export async function runScenarioAction(
   studioState: StudioContainerState,
   setStudioState: SetStudioState
 ) {
-  console.log('Running scenario:', studioState);
   const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
 
@@ -279,14 +278,14 @@ export async function runScenarioAction(
 
     const { modelSteps, toolCalls } = steps?.length
       ? extractStepsAndToolCalls(
-          steps.map(s => ({
-            text: s.text ?? '',
-            finishReason: s.finishReason ?? 'unknown',
-            usage: s.usage,
-            toolCalls: s.toolCalls ?? [],
-            toolResults: s.toolResults ?? [],
-          }))
-        )
+        steps.map(s => ({
+          text: s.text ?? '',
+          finishReason: s.finishReason ?? 'unknown',
+          usage: s.usage,
+          toolCalls: s.toolCalls ?? [],
+          toolResults: s.toolResults ?? [],
+        }))
+      )
       : { modelSteps: [], toolCalls: [] };
 
     const finalUsage = usage ?? {};

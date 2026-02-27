@@ -1,11 +1,13 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { AgentExecutionStatus } from "@/types";
+import type { AgentExecutionStatus, ExecutionStep } from "@/types";
 
 export interface ExecutionState {
   status: AgentExecutionStatus;
   elapsedSeconds?: number;
   tokens?: number;
   cost?: number;
+  steps: ExecutionStep[];
+  executionId?: string;
 }
 
 interface AgentContextType {

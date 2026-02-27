@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { Header } from "./Header";
 import { Prompt } from "./Prompt";
 import { ExecutionTimeline } from "./ExecutionTimeline";
-import { mockExecution } from "./constants";
 import { useExecutionAnimation } from "./useExecutionAnimation";
 import { useAgentContext } from "@/contexts/AgentContext";
 import type { StepType } from "@/types";
@@ -18,6 +17,7 @@ export function RuntimePanel() {
 
   const { stepPhases, lineProgress } = useExecutionAnimation(
     execution.status,
+    execution.steps,
     filter,
     scrollRef
   );
@@ -36,12 +36,14 @@ export function RuntimePanel() {
     window.setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const totalTokens = mockExecution.reduce((a, s) => a + (s.tokens || 0), 0);
-  const totalCost = mockExecution.reduce(
+  const totalTokens = execution.steps.reduce((a, s) => a + (s.tokens || 0), 0);
+  const totalCost = execution.steps.reduce(
     (a, s) => a + parseFloat((s.cost || "$0").replace("$", "")),
     0
   );
-  const totalLoops = Math.max(...mockExecution.map((s) => s.loop || 0));
+  const totalLoops = execution.steps.length > 0
+    ? Math.max(...execution.steps.map((s) => s.loop || 0))
+    : 0;
 
   return (
     <section className="h-full flex flex-col overflow-hidden rounded-b-xl">
@@ -53,7 +55,7 @@ export function RuntimePanel() {
         totalTokens={totalTokens}
         totalCost={totalCost}
         totalLoops={totalLoops}
-        stepCount={mockExecution.length}
+        stepCount={execution.steps.length}
       />
 
       <Prompt />
@@ -61,6 +63,7 @@ export function RuntimePanel() {
       <ExecutionTimeline
         ref={scrollRef}
         status={execution.status}
+        steps={execution.steps}
         filter={filter}
         onFilterChange={setFilter}
         expandedSteps={expandedSteps}

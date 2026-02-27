@@ -7,6 +7,9 @@ export const TELEMETRY_EVENTS = {
   SCENARIO_RUN_STARTED: "scenario.run.started",
   SCENARIO_RUN_SUCCEEDED: "scenario.run.succeeded",
   SCENARIO_RUN_FAILED: "scenario.run.failed",
+  AGENT_RUN_STARTED: "agent.run.started",
+  AGENT_RUN_SUCCEEDED: "agent.run.succeeded",
+  AGENT_RUN_FAILED: "agent.run.failed",
 } as const;
 
 export type TelemetryEventName =

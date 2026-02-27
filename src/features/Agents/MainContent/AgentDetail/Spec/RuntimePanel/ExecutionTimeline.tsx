@@ -1,12 +1,13 @@
 import { forwardRef } from "react";
 import { Zap } from "lucide-react";
-import { filterOptions, mockExecution } from "./constants";
-import { ExecutionStep } from "./ExecutionStep";
-import type { AgentExecutionStatus, StepPhase, StepType } from "@/types";
+import { filterOptions } from "./constants";
+import { ExecutionStep as ExecutionStepItem } from "./ExecutionStep";
+import type { AgentExecutionStatus, ExecutionStep, StepPhase, StepType } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface ExecutionTimelineProps {
   status: AgentExecutionStatus;
+  steps: ExecutionStep[];
   filter: StepType | "all";
   onFilterChange: (filter: StepType | "all") => void;
   expandedSteps: Set<string>;
@@ -24,6 +25,7 @@ export const ExecutionTimeline = forwardRef<
 >(function ExecutionTimeline(
   {
     status,
+    steps,
     filter,
     onFilterChange,
     expandedSteps,
@@ -36,8 +38,8 @@ export const ExecutionTimeline = forwardRef<
   },
   ref
 ) {
-  const steps =
-    filter === "all" ? mockExecution : mockExecution.filter((s) => s.type === filter);
+  const filteredSteps =
+    filter === "all" ? steps : steps.filter((s) => s.type === filter);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -78,13 +80,13 @@ export const ExecutionTimeline = forwardRef<
           </div>
         ) : (
           <div className="py-3">
-            {steps.map((step, idx) => {
+            {filteredSteps.map((step, idx) => {
               const phase = stepPhases.get(step.id) || "hidden";
               const lp = lineProgress.get(step.id) || 0;
               const isExpanded = expandedSteps.has(step.id);
-              const isLast = idx === steps.length - 1;
+              const isLast = idx === filteredSteps.length - 1;
               const showLoopDivider =
-                idx > 0 && step.loop !== steps[idx - 1]?.loop;
+                idx > 0 && step.loop !== filteredSteps[idx - 1]?.loop;
 
               if (phase === "hidden") return null;
 
@@ -100,7 +102,7 @@ export const ExecutionTimeline = forwardRef<
                     </div>
                   )}
 
-                  <ExecutionStep
+                  <ExecutionStepItem
                     step={step}
                     phase={phase}
                     lineProgress={lp}
