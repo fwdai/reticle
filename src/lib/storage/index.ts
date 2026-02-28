@@ -595,6 +595,46 @@ export async function listToolsByScenarioId(
     : [];
 }
 
+export interface ToolMeta {
+  updatedAt: number | null;
+  usedBy: number;
+}
+
+export async function listSharedToolsWithMeta(): Promise<(Tool & ToolMeta)[]> {
+  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
+    table: 'tools',
+    query: { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' },
+  });
+  const tools = Array.isArray(rows) ? rows : [];
+  const toolIds = tools.map(r => r.id as string);
+
+  let linkCounts: Record<string, number> = {};
+  if (toolIds.length > 0) {
+    const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+      table: 'tool_links',
+      query: {},
+    });
+    const allLinks = Array.isArray(links) ? links : [];
+    const relevantIds = new Set(toolIds);
+    for (const link of allLinks) {
+      if (relevantIds.has(link.tool_id)) {
+        linkCounts[link.tool_id] = (linkCounts[link.tool_id] ?? 0) + 1;
+      }
+    }
+  }
+
+  return tools.map(row => ({
+    ...dbRowToTool(row),
+    updatedAt: typeof row.updated_at === 'number' ? row.updated_at : null,
+    usedBy: linkCounts[row.id as string] ?? 0,
+  }));
+}
+
+export async function insertGlobalTool(tool: Tool): Promise<string> {
+  const data = toolToDbRow({ ...tool, isShared: true });
+  return invoke<string>('db_insert_cmd', { table: 'tools', data });
+}
+
 export async function listSharedTools(): Promise<Tool[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'tools',

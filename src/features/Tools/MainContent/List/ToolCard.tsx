@@ -7,10 +7,22 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import type { RegistryTool } from "../../types";
+import type { ToolWithMeta } from "../../types";
+
+function formatRelativeTime(epoch: number | null): string {
+  if (!epoch) return "—";
+  const seconds = Math.floor(Date.now() / 1000 - epoch);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 interface ToolCardProps {
-  tool: RegistryTool;
+  tool: ToolWithMeta;
   onSelect: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onCopySchema: (e: React.MouseEvent) => void;
@@ -33,9 +45,6 @@ export function ToolCard({ tool, onSelect, onDelete, onCopySchema }: ToolCardPro
           <h3 className="text-sm font-semibold font-mono text-text-main truncate group-hover:text-primary transition-colors">
             {tool.name || "untitled"}
           </h3>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-text-muted flex-shrink-0">
-            {tool.category}
-          </span>
         </div>
         <p className="text-xs text-text-muted truncate leading-relaxed mb-2">
           {tool.description || "No description"}
@@ -47,7 +56,7 @@ export function ToolCard({ tool, onSelect, onDelete, onCopySchema }: ToolCardPro
           </span>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-text-muted">
             <Zap className="h-3 w-3" />
-            {tool.usedBy} agent{tool.usedBy !== 1 ? "s" : ""}
+            {tool.usedBy} linked
           </span>
         </div>
       </div>
@@ -64,10 +73,10 @@ export function ToolCard({ tool, onSelect, onDelete, onCopySchema }: ToolCardPro
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-            Response
+            Used by
           </span>
-          <span className="text-xs font-mono text-text-main uppercase">
-            {tool.mockMode ?? "json"}
+          <span className="text-xs text-text-main">
+            {tool.usedBy} {tool.usedBy === 1 ? "entity" : "entities"}
           </span>
         </div>
         <div className="flex flex-col">
@@ -76,7 +85,7 @@ export function ToolCard({ tool, onSelect, onDelete, onCopySchema }: ToolCardPro
           </span>
           <span className="text-xs text-text-main flex items-center gap-1">
             <Clock className="h-3 w-3 text-text-muted" />
-            {tool.updatedAt}
+            {formatRelativeTime(tool.updatedAt)}
           </span>
         </div>
       </div>

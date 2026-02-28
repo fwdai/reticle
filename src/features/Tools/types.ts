@@ -1,9 +1,7 @@
-import type { Tool, ToolParameter } from "@/components/Tools/types";
+export type { Tool, ToolParameter } from "@/components/Tools/types";
+import type { Tool } from "@/components/Tools/types";
 
-export type { ToolParameter };
-
-export interface RegistryTool extends Tool {
-  category: string;
+export interface ToolWithMeta extends Tool {
+  updatedAt: number | null;
   usedBy: number;
-  updatedAt: string;
 }

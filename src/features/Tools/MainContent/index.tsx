@@ -1,57 +1,117 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { SaveStatus } from "@/components/ui/EditableTitle";
 
 import MainContent from "@/components/Layout/MainContent";
 import Header from "../Header";
 import { ToolList } from "./List";
 import { ToolDetail } from "./ToolDetail";
-import type { Category } from "../constants";
-import type { RegistryTool } from "../types";
+import { createEmptyTool } from "../constants";
+import {
+  listSharedToolsWithMeta,
+  insertGlobalTool,
+  updateTool as updateToolInDb,
+  deleteTool as deleteToolFromDb,
+} from "@/lib/storage";
+import type { Tool, ToolWithMeta } from "../types";
 
-interface ToolsMainContentProps {
-  tools: RegistryTool[];
-  activeCategory: Category;
-  onAddTool: () => string;
-  onUpdateTool: (id: string, updates: Partial<RegistryTool>) => void;
-  onDeleteTool: (id: string) => void;
-}
+const DEBOUNCE_MS = 800;
 
-function ToolsMainContent({
-  tools,
-  activeCategory,
-  onAddTool,
-  onUpdateTool,
-  onDeleteTool,
-}: ToolsMainContentProps) {
+function ToolsMainContent() {
+  const [tools, setTools] = useState<ToolWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingUpdatesRef = useRef<{ id: string; updates: Partial<Tool> } | null>(null);
+
+  const refreshTools = useCallback(async () => {
+    const rows = await listSharedToolsWithMeta();
+    setTools(rows);
+  }, []);
+
+  useEffect(() => {
+    refreshTools();
+  }, [refreshTools]);
 
   const selectedTool = tools.find((t) => t.id === selectedId) ?? null;
 
-  const filtered = useMemo(
-    () =>
-      tools.filter((t) => {
-        const matchesSearch =
-          !searchQuery ||
-          t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory =
-          activeCategory === "All" || t.category === activeCategory;
-        return matchesSearch && matchesCategory;
-      }),
-    [tools, searchQuery, activeCategory]
+  const filtered = tools.filter((t) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      t.description.toLowerCase().includes(q)
+    );
+  });
+
+  const flushSave = useCallback(async () => {
+    const pending = pendingUpdatesRef.current;
+    if (!pending) return;
+    pendingUpdatesRef.current = null;
+    setSaveStatus("saving");
+    try {
+      await updateToolInDb(pending.id, pending.updates);
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("unsaved");
+    }
+  }, []);
+
+  const handleUpdate = useCallback(
+    (id: string, updates: Partial<Tool>) => {
+      setTools((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+      );
+      setSaveStatus("unsaved");
+
+      const prev = pendingUpdatesRef.current;
+      pendingUpdatesRef.current =
+        prev && prev.id === id
+          ? { id, updates: { ...prev.updates, ...updates } }
+          : { id, updates };
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(flushSave, DEBOUNCE_MS);
+    },
+    [flushSave]
   );
 
-  const handleCreate = () => {
-    const id = onAddTool();
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleCreate = useCallback(async () => {
+    const newTool = createEmptyTool();
+    const id = await insertGlobalTool(newTool);
+    await refreshTools();
     setSelectedId(id);
-  };
+    setSaveStatus("saved");
+  }, [refreshTools]);
 
-  const handleDelete = (id: string) => {
-    onDeleteTool(id);
-    if (selectedId === id) setSelectedId(null);
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      pendingUpdatesRef.current = null;
+      await deleteToolFromDb(id);
+      if (selectedId === id) setSelectedId(null);
+      await refreshTools();
+    },
+    [selectedId, refreshTools]
+  );
 
-  const copyToolSchema = useCallback((tool: RegistryTool) => {
+  const handleBack = useCallback(async () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      await flushSave();
+    }
+    setSelectedId(null);
+    setSaveStatus("saved");
+    refreshTools();
+  }, [flushSave, refreshTools]);
+
+  const copyToolSchema = useCallback((tool: Tool) => {
     const schema = {
       type: "function",
       function: {
@@ -78,8 +138,9 @@ function ToolsMainContent({
     return (
       <ToolDetail
         tool={selectedTool}
-        onBack={() => setSelectedId(null)}
-        onUpdate={onUpdateTool}
+        saveStatus={saveStatus}
+        onBack={handleBack}
+        onUpdate={handleUpdate}
         onDelete={handleDelete}
       />
     );

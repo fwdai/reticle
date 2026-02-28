@@ -15,7 +15,7 @@ export function EmptyState({ hasSearch, onCreateTool }: EmptyStateProps) {
       <p className="text-xs text-text-muted mb-5 max-w-xs">
         {hasSearch
           ? "Try a different search query."
-          : "Create your first tool to get started."}
+          : "Create your first shared tool to make it available across scenarios and agents."}
       </p>
       {!hasSearch && (
         <button

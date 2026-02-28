@@ -1,14 +1,14 @@
 import { ToolCard } from "./ToolCard";
 import { EmptyState } from "./EmptyState";
-import type { RegistryTool } from "../../types";
+import type { ToolWithMeta } from "../../types";
 
 interface ToolListProps {
-  tools: RegistryTool[];
+  tools: ToolWithMeta[];
   searchQuery: string;
   onSelectTool: (id: string) => void;
   onCreateTool: () => void;
   onDeleteTool: (id: string) => void;
-  onCopySchema: (tool: RegistryTool) => void;
+  onCopySchema: (tool: ToolWithMeta) => void;
 }
 
 export function ToolList({

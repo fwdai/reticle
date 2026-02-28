@@ -9,24 +9,45 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  Clock,
   Zap,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MainContent from "@/components/Layout/MainContent";
 import LayoutHeader from "@/components/Layout/Header";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, PARAM_TYPES, createEmptyParam } from "../../constants";
-import type { RegistryTool, ToolParameter } from "../../types";
+import { EditableTitle, type SaveStatus } from "@/components/ui/EditableTitle";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { PARAM_TYPES, createEmptyParam } from "../../constants";
+import type { Tool, ToolParameter, ToolWithMeta } from "../../types";
+
+function formatRelativeTime(epoch: number | null): string {
+  if (!epoch) return "—";
+  const seconds = Math.floor(Date.now() / 1000 - epoch);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 interface ToolDetailProps {
-  tool: RegistryTool;
+  tool: ToolWithMeta;
+  saveStatus: SaveStatus;
   onBack: () => void;
-  onUpdate: (id: string, updates: Partial<RegistryTool>) => void;
+  onUpdate: (id: string, updates: Partial<Tool>) => void;
   onDelete: (id: string) => void;
 }
 
-export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps) {
+export function ToolDetail({ tool, saveStatus, onBack, onUpdate, onDelete }: ToolDetailProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     params: true,
     output: true,
@@ -80,7 +101,6 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
 
   return (
     <MainContent>
-      {/* Header */}
       <LayoutHeader>
         <div className="flex items-center gap-4">
           <button
@@ -91,12 +111,13 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
             Tools
           </button>
           <div className="h-5 w-px bg-border-light" />
-          <span className="text-sm font-semibold text-text-main truncate">
-            {tool.name || "New Tool"}
-          </span>
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
-            {tool.category}
-          </span>
+          <EditableTitle
+            value={tool.name}
+            onChange={(name) => onUpdate(tool.id, { name })}
+            placeholder="Name your tool..."
+            saveStatus={saveStatus}
+            autoFocus={!tool.name}
+          />
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -120,7 +141,6 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
         </div>
       </LayoutHeader>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
         <div className="mx-auto max-w-3xl">
           {/* Tool Definition */}
@@ -163,22 +183,6 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
                   rows={3}
                   className={cn(inputClass, "resize-none leading-relaxed")}
                 />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                  Category
-                </label>
-                <select
-                  value={tool.category}
-                  onChange={(e) => onUpdate(tool.id, { category: e.target.value })}
-                  className={cn(inputClass, "w-auto font-medium")}
-                >
-                  {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -249,21 +253,25 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
                           placeholder="param_name"
                           className="w-[140px] rounded-lg border border-border-light bg-white px-3 py-2 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                         />
-                        <select
+                        <Select
                           value={param.type}
-                          onChange={(e) =>
+                          onValueChange={(val) =>
                             updateParam(param.id, {
-                              type: e.target.value as ToolParameter["type"],
+                              type: val as ToolParameter["type"],
                             })
                           }
-                          className="rounded-lg border border-border-light bg-white px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                         >
-                          {PARAM_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-[110px] h-auto py-2 px-3 text-xs font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PARAM_TYPES.map((t) => (
+                              <SelectItem key={t} value={t} className="text-xs">
+                                {t}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <button
                           onClick={() =>
                             updateParam(param.id, { required: !param.required })
@@ -379,13 +387,15 @@ export function ToolDetail({ tool, onBack, onUpdate, onDelete }: ToolDetailProps
                   {tool.usedBy}
                 </span>
                 <span className="text-xs text-text-muted">
-                  agents using this tool
+                  {tool.usedBy === 1
+                    ? "scenario or agent using this tool"
+                    : "scenarios and agents using this tool"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-text-muted" />
                 <span className="text-xs text-text-muted">
-                  Updated {tool.updatedAt}
+                  Updated {formatRelativeTime(tool.updatedAt)}
                 </span>
               </div>
             </div>
