@@ -12,7 +12,7 @@ import type { AttachedFile } from '@/contexts/StudioContext';
 import type {
   Tool,
   ToolParameter,
-} from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
+} from '@/components/Tools/types';
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 
@@ -425,7 +425,6 @@ export async function upsertAccount(
 /** DB row shape for tools table (snake_case columns) */
 interface ToolDbRow {
   id?: string;
-  scenario_id: string;
   name: string;
   description: string;
   parameters_json: string;
@@ -433,13 +432,13 @@ interface ToolDbRow {
   mock_mode: 'json' | 'code';
   code?: string | null;
   is_enabled?: number;
+  is_global?: number;
   sort_order?: number;
 }
 
-function toolToDbRow(tool: Tool, scenarioId: string, sortOrder = 0): ToolDbRow {
+function toolToDbRow(tool: Tool, sortOrder = 0): ToolDbRow {
   return {
     id: tool.id,
-    scenario_id: scenarioId,
     name: tool.name,
     description: tool.description,
     parameters_json: JSON.stringify(tool.parameters),
@@ -447,6 +446,7 @@ function toolToDbRow(tool: Tool, scenarioId: string, sortOrder = 0): ToolDbRow {
     mock_mode: tool.mockMode ?? 'json',
     code: null,
     is_enabled: 1,
+    is_global: tool.isGlobal ? 1 : 0,
     sort_order: sortOrder,
   };
 }
@@ -476,16 +476,57 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
       row.mock_mode === 'code' || row.mock_mode === 'json'
         ? row.mock_mode
         : 'json',
+    isGlobal: row.is_global === 1,
   };
+}
+
+export async function linkTool(
+  toolId: string,
+  toolableId: string,
+  toolableType: 'scenario' | 'agent'
+): Promise<void> {
+  try {
+    await invoke('db_insert_cmd', {
+      table: 'tool_links',
+      data: { tool_id: toolId, toolable_id: toolableId, toolable_type: toolableType },
+    });
+  } catch {
+    // Ignore UNIQUE constraint violations (already linked)
+  }
+}
+
+export async function unlinkTool(
+  toolId: string,
+  toolableId: string,
+  toolableType: 'scenario' | 'agent'
+): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'tool_links',
+    query: { where: { tool_id: toolId, toolable_id: toolableId, toolable_type: toolableType } },
+  });
+}
+
+export async function getLinkedToolIds(
+  toolableId: string,
+  toolableType: 'scenario' | 'agent'
+): Promise<string[]> {
+  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+    table: 'tool_links',
+    query: { where: { toolable_id: toolableId, toolable_type: toolableType } },
+  });
+  return Array.isArray(links) ? links.map(l => l.tool_id) : [];
 }
 
 export async function insertTool(
   tool: Tool,
-  scenarioId: string,
+  toolableId: string,
+  toolableType: 'scenario' | 'agent',
   sortOrder = 0
 ): Promise<string> {
-  const data = toolToDbRow(tool, scenarioId, sortOrder);
-  return invoke<string>('db_insert_cmd', { table: 'tools', data });
+  const data = toolToDbRow(tool, sortOrder);
+  const toolId = await invoke<string>('db_insert_cmd', { table: 'tools', data });
+  await linkTool(toolId, toolableId, toolableType);
+  return toolId;
 }
 
 export async function updateTool(
@@ -500,6 +541,7 @@ export async function updateTool(
   if (updates.mockResponse !== undefined)
     data.mock_response = updates.mockResponse;
   if (updates.mockMode !== undefined) data.mock_mode = updates.mockMode;
+  if (updates.isGlobal !== undefined) data.is_global = updates.isGlobal ? 1 : 0;
   if (Object.keys(data).length === 0) return;
   await invoke('db_update_cmd', {
     table: 'tools',
@@ -508,12 +550,26 @@ export async function updateTool(
   });
 }
 
+/** Set a tool back to local: delete all its links, re-link to given scenario only, set is_global=0 */
+export async function unglobalTool(toolId: string, scenarioId: string): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'tool_links',
+    query: { where: { tool_id: toolId } },
+  });
+  await linkTool(toolId, scenarioId, 'scenario');
+  await invoke('db_update_cmd', {
+    table: 'tools',
+    query: { where: { id: toolId } },
+    data: { is_global: 0 },
+  });
+}
+
 export async function countToolsByScenarioId(
   scenarioId: string
 ): Promise<number> {
   const count = await invoke<number>('db_count_cmd', {
-    table: 'tools',
-    query: { where: { scenario_id: scenarioId } },
+    table: 'tool_links',
+    query: { where: { toolable_id: scenarioId, toolable_type: 'scenario' } },
   });
   return typeof count === 'number' ? count : 0;
 }
@@ -521,15 +577,50 @@ export async function countToolsByScenarioId(
 export async function listToolsByScenarioId(
   scenarioId: string
 ): Promise<Tool[]> {
+  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+    table: 'tool_links',
+    query: { where: { toolable_id: scenarioId, toolable_type: 'scenario' } },
+  });
+  const toolIds = Array.isArray(links) ? links.map(l => l.tool_id) : [];
+  if (toolIds.length === 0) return [];
+
+  const allRows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
+    table: 'tools',
+    query: { orderBy: 'sort_order', orderDirection: 'asc' },
+  });
+  return Array.isArray(allRows)
+    ? allRows
+        .filter(r => toolIds.includes(r.id as string) && r.is_global === 0)
+        .map(dbRowToTool)
+    : [];
+}
+
+export async function listGlobalTools(): Promise<Tool[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'tools',
-    query: {
-      where: { scenario_id: scenarioId },
-      orderBy: 'sort_order',
-      orderDirection: 'asc',
-    },
+    query: { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' },
   });
   return Array.isArray(rows) ? rows.map(dbRowToTool) : [];
+}
+
+export async function listToolsForEntity(
+  toolableId: string,
+  toolableType: 'scenario' | 'agent'
+): Promise<Tool[]> {
+  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+    table: 'tool_links',
+    query: { where: { toolable_id: toolableId, toolable_type: toolableType } },
+  });
+  const toolIds = Array.isArray(links) ? links.map(l => l.tool_id) : [];
+  if (toolIds.length === 0) return [];
+
+  const allRows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
+    table: 'tools',
+    query: { orderBy: 'sort_order', orderDirection: 'asc' },
+  });
+  return Array.isArray(allRows)
+    ? allRows.filter(r => toolIds.includes(r.id as string)).map(dbRowToTool)
+    : [];
 }
 
 export async function deleteTool(id: string): Promise<void> {
@@ -542,10 +633,18 @@ export async function deleteTool(id: string): Promise<void> {
 export async function deleteToolsByScenarioId(
   scenarioId: string
 ): Promise<void> {
-  await invoke('db_delete_cmd', {
-    table: 'tools',
-    query: { where: { scenario_id: scenarioId } },
+  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+    table: 'tool_links',
+    query: { where: { toolable_id: scenarioId, toolable_type: 'scenario' } },
   });
+  // Delete local (non-global) tools only — ON DELETE CASCADE removes their tool_links rows.
+  // Global tools (is_global=1) are left intact; their links to this scenario are preserved.
+  for (const link of Array.isArray(links) ? links : []) {
+    await invoke('db_delete_cmd', {
+      table: 'tools',
+      query: { where: { id: link.tool_id, is_global: 0 } },
+    });
+  }
 }
 
 // --- Attachments ---
@@ -628,15 +727,25 @@ export async function upsertAttachmentsForScenario(
 }
 
 /**
- * Replace all tools for a scenario: deletes existing (including archived) and inserts the new list.
+ * Sync tools for a scenario. Tools are already individually persisted via addTool/updateTool/
+ * removeTool, so this only needs to insert tools that aren't in the DB yet (e.g. tools added
+ * before the scenario was first saved) and ensure their links exist.
  */
 export async function upsertToolsForScenario(
   tools: Tool[],
   scenarioId: string
 ): Promise<void> {
-  await deleteToolsByScenarioId(scenarioId);
   for (let i = 0; i < tools.length; i++) {
-    await insertTool(tools[i], scenarioId, i);
+    const tool = tools[i];
+    const existing = await invoke<unknown[]>('db_select_cmd', {
+      table: 'tools',
+      query: { where: { id: tool.id }, limit: 1 },
+    });
+    if (existing.length === 0) {
+      await insertTool(tool, scenarioId, 'scenario', i);
+    } else {
+      await linkTool(tool.id, scenarioId, 'scenario');
+    }
   }
 }
 

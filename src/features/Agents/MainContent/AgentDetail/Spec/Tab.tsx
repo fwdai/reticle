@@ -1,14 +1,13 @@
 import { GoalPanel } from "./GoalPanel";
 import { SystemInstructionsPanel } from "./SystemInstructionsPanel";
-import { ToolsSelectorPanel } from "./ToolsSelectorPanel";
 import { LoopControlsPanel } from "./LoopControlsPanel";
 import { MemoryPanel } from "./MemoryPanel";
+import { ToolsContainer } from "@/components/Tools/ToolsContainer";
 
 interface TabProps {
+  agentId: string | null;
   agentGoal: string;
   systemInstructions: string;
-  selectedTools: string[];
-  toolSearch: string;
   maxIterations: number[];
   timeout: number[];
   retryPolicy: string;
@@ -17,8 +16,6 @@ interface TabProps {
   memorySource: string;
   onAgentGoalChange: (value: string) => void;
   onSystemInstructionsChange: (value: string) => void;
-  onToolToggle: (id: string) => void;
-  onToolSearchChange: (value: string) => void;
   onMaxIterationsChange: (value: number[]) => void;
   onTimeoutChange: (value: number[]) => void;
   onRetryPolicyChange: (value: string) => void;
@@ -28,10 +25,9 @@ interface TabProps {
 }
 
 export function Tab({
+  agentId,
   agentGoal,
   systemInstructions,
-  selectedTools,
-  toolSearch,
   maxIterations,
   timeout,
   retryPolicy,
@@ -40,8 +36,6 @@ export function Tab({
   memorySource,
   onAgentGoalChange,
   onSystemInstructionsChange,
-  onToolToggle,
-  onToolSearchChange,
   onMaxIterationsChange,
   onTimeoutChange,
   onRetryPolicyChange,
@@ -53,11 +47,9 @@ export function Tab({
     <div className="p-6 space-y-5">
       <GoalPanel value={agentGoal} onChange={onAgentGoalChange} />
       <SystemInstructionsPanel value={systemInstructions} onChange={onSystemInstructionsChange} />
-      <ToolsSelectorPanel
-        selectedTools={selectedTools}
-        search={toolSearch}
-        onToolToggle={onToolToggle}
-        onSearchChange={onToolSearchChange}
+      <ToolsContainer
+        entityId={agentId}
+        entityType="agent"
       />
       <LoopControlsPanel
         maxIterations={maxIterations}

@@ -24,6 +24,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0013_add_steps_json_to_executions.sql")),
         M::up(include_str!("../migrations/0014_create_agents_table.sql")),
         M::up(include_str!("../migrations/0015_create_telemetry_events_table.sql")),
+        M::up(include_str!("../migrations/0016_restructure_tools.sql")),
     ])
 }
 

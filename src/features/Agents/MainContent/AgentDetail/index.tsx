@@ -29,15 +29,13 @@ function parseParamsJson(json: string): { temperature?: number; top_p?: number; 
 
 export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const isNew = agent.id === "new";
-  const [effectiveId, setEffectiveId] = useState(agent.id);
+  const [effectiveId, setEffectiveId] = useState<string | null>(isNew ? null : agent.id);
   const [agentName, setAgentName] = useState(agent.name);
   const [description, setDescription] = useState(agent.description ?? "");
   const [provider, setProvider] = useState("openai");
   const [model, setModel] = useState(agent.model || "gpt-4.1");
   const [agentGoal, setAgentGoal] = useState("");
   const [systemInstructions, setSystemInstructions] = useState("");
-  const [selectedTools, setSelectedTools] = useState<string[]>([]);
-  const [toolSearch, setToolSearch] = useState("");
   const [temperature, setTemperature] = useState([0.4]);
   const [topP, setTopP] = useState([0.95]);
   const [maxTokens, setMaxTokens] = useState([4096]);
@@ -57,7 +55,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const [execution, setExecution] = useState<ExecutionState>({ status: "idle", steps: [] });
 
   const loadAgent = useCallback(async () => {
-    if (effectiveId === "new") return;
+    if (!effectiveId) return;
     setIsLoading(true);
     try {
       const record = await getAgentById(effectiveId);
@@ -68,15 +66,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
         setModel(record.model);
         setAgentGoal(record.agent_goal ?? "");
         setSystemInstructions(record.system_instructions ?? "");
-        const tools = (() => {
-          try {
-            const v = JSON.parse(record.tools_json ?? "[]");
-            return Array.isArray(v) ? v.map(String) : [];
-          } catch {
-            return [];
-          }
-        })();
-        setSelectedTools(tools);
         const params = parseParamsJson(record.params_json);
         setTemperature([params.temperature ?? 0.4]);
         setTopP([params.top_p ?? 0.95]);
@@ -99,12 +88,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     loadAgent();
   }, [loadAgent]);
 
-  const toggleTool = (id: string) => {
-    setSelectedTools((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
-    );
-  };
-
   const buildPayload = useCallback(() => ({
     name: agentName.trim() || "Untitled Agent",
     description: description.trim() || null,
@@ -118,7 +101,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     }),
     agent_goal: agentGoal.trim() || null,
     system_instructions: systemInstructions.trim() || null,
-    tools_json: JSON.stringify(selectedTools),
+    tools_json: "[]",
     max_iterations: maxIterations[0],
     timeout_seconds: timeoutValue[0],
     retry_policy: retryPolicy,
@@ -126,30 +109,16 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     memory_enabled: memoryEnabled ? 1 : 0,
     memory_source: memorySource,
   }), [
-    agentName,
-    description,
-    provider,
-    model,
-    temperature,
-    topP,
-    maxTokens,
-    seed,
-    agentGoal,
-    systemInstructions,
-    selectedTools,
-    maxIterations,
-    timeoutValue,
-    retryPolicy,
-    toolCallStrategy,
-    memoryEnabled,
-    memorySource,
+    agentName, description, provider, model, temperature, topP, maxTokens, seed,
+    agentGoal, systemInstructions, maxIterations, timeoutValue, retryPolicy,
+    toolCallStrategy, memoryEnabled, memorySource,
   ]);
 
   const performSave = useCallback(async () => {
     setSaveStatus("saving");
     try {
       const payload = buildPayload();
-      if (effectiveId === "new") {
+      if (!effectiveId) {
         const id = await insertAgent(payload);
         setEffectiveId(id);
         onSaved?.();
@@ -165,7 +134,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
 
   useEffect(() => {
     if (isLoading) return;
-    if (effectiveId === "new" && !agentName.trim()) return;
+    if (!effectiveId && !agentName.trim()) return;
     if (skipNextAutoSaveRef.current) {
       skipNextAutoSaveRef.current = false;
       return;
@@ -178,7 +147,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const runStartRef = useRef<number | null>(null);
 
   const handleRun = useCallback(async (taskInput?: string) => {
-    if (!taskInput?.trim() || effectiveId === "new") return;
+    if (!taskInput?.trim() || !effectiveId) return;
     runStartRef.current = Date.now();
     const record = await getAgentById(effectiveId);
     if (!record) return;
@@ -190,10 +159,8 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     const interval = setInterval(() => {
       if (runStartRef.current) {
         const elapsed = (Date.now() - runStartRef.current) / 1000;
-        setExecution((prev) =>
-          prev.status === "running"
-            ? { ...prev, elapsedSeconds: elapsed }
-            : prev
+        setExecution(prev =>
+          prev.status === "running" ? { ...prev, elapsedSeconds: elapsed } : prev
         );
       }
     }, 100);
@@ -223,12 +190,11 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
             <TabPanel title="Agent Spec">
               <Spec
+                agentId={effectiveId}
                 provider={provider}
                 model={model}
                 agentGoal={agentGoal}
                 systemInstructions={systemInstructions}
-                selectedTools={selectedTools}
-                toolSearch={toolSearch}
                 maxIterations={maxIterations}
                 timeout={timeoutValue}
                 retryPolicy={retryPolicy}
@@ -244,8 +210,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
                 onModelChange={setModel}
                 onAgentGoalChange={setAgentGoal}
                 onSystemInstructionsChange={setSystemInstructions}
-                onToolToggle={toggleTool}
-                onToolSearchChange={setToolSearch}
                 onMaxIterationsChange={setMaxIterations}
                 onTimeoutChange={setTimeoutValue}
                 onRetryPolicyChange={setRetryPolicy}
@@ -256,7 +220,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
                 onTopPChange={setTopP}
                 onMaxTokensChange={setMaxTokens}
                 onSeedChange={setSeed}
-                onShowAdvancedToggle={() => setShowAdvanced((v) => !v)}
+                onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
               />
             </TabPanel>
             <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>

@@ -18,7 +18,7 @@ import { ConfigChip } from "./ConfigChip";
 import { PROVIDERS_LIST } from "@/constants/providers";
 import { cn } from "@/lib/utils";
 import type { ConfigurationState, HistoryItem, AttachedFile, ResponseState } from "@/contexts/StudioContext";
-import type { Tool } from "@/features/Scenarios/MainContent/Editor/Main/Tools/types";
+import type { Tool } from "@/components/Tools/types";
 import type { EditorTabIndex } from "@/contexts/StudioContext";
 import type { PersistedToolCall } from "@/features/Runs/MainContent/RunDetail/executionToTraceSteps";
 

@@ -1,5 +1,5 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { Tool } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
+import type { Tool } from '@/components/Tools/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario, getSetting } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';

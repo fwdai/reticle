@@ -111,14 +111,11 @@ export async function saveScenarioAction(
       provider_meta_json: null,
     };
 
-    const existsInDb = studioState.savedScenarios.some(
-      s => s.id === studioState.currentScenario.id
-    );
     let savedId = studioState.scenarioId;
     let created_at: number;
     let updated_at: number;
 
-    if (existsInDb && studioState.scenarioId) {
+    if (studioState.scenarioId) {
       console.log(
         'Updating existing scenario with ID:',
         studioState.scenarioId

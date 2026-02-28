@@ -7,12 +7,11 @@ import { ModelParamsSidebar } from "./ModelParamsSidebar";
 import { RuntimePanel } from "./RuntimePanel";
 
 interface LayoutProps {
+  agentId: string | null;
   provider: string;
   model: string;
   agentGoal: string;
   systemInstructions: string;
-  selectedTools: string[];
-  toolSearch: string;
   maxIterations: number[];
   timeout: number[];
   retryPolicy: string;
@@ -28,8 +27,6 @@ interface LayoutProps {
   onModelChange: (value: string) => void;
   onAgentGoalChange: (value: string) => void;
   onSystemInstructionsChange: (value: string) => void;
-  onToolToggle: (id: string) => void;
-  onToolSearchChange: (value: string) => void;
   onMaxIterationsChange: (value: number[]) => void;
   onTimeoutChange: (value: number[]) => void;
   onRetryPolicyChange: (value: string) => void;
@@ -44,12 +41,11 @@ interface LayoutProps {
 }
 
 export function SpecLayout({
+  agentId,
   provider,
   model,
   agentGoal,
   systemInstructions,
-  selectedTools,
-  toolSearch,
   maxIterations,
   timeout,
   retryPolicy,
@@ -65,8 +61,6 @@ export function SpecLayout({
   onModelChange,
   onAgentGoalChange,
   onSystemInstructionsChange,
-  onToolToggle,
-  onToolSearchChange,
   onMaxIterationsChange,
   onTimeoutChange,
   onRetryPolicyChange,
@@ -87,17 +81,12 @@ export function SpecLayout({
   useEffect(() => {
     const calculateMaxSizes = () => {
       if (mainContentRef.current) {
-        const totalAvailableHeight = mainContentRef.current.offsetHeight;
-        setMaxResponseHeight(totalAvailableHeight * 0.7);
+        setMaxResponseHeight(mainContentRef.current.offsetHeight * 0.7);
       }
     };
-
     calculateMaxSizes();
     window.addEventListener("resize", calculateMaxSizes);
-
-    return () => {
-      window.removeEventListener("resize", calculateMaxSizes);
-    };
+    return () => window.removeEventListener("resize", calculateMaxSizes);
   }, []);
 
   const COLLAPSED_HEIGHT = 114;
@@ -116,27 +105,19 @@ export function SpecLayout({
   });
 
   useEffect(() => {
-    if (
-      execution.status &&
-      execution.status !== "idle" &&
-      responsePanelHeight <= COLLAPSED_HEIGHT
-    ) {
+    if (execution.status && execution.status !== "idle" && responsePanelHeight <= COLLAPSED_HEIGHT) {
       setResponsePanelHeight(Math.min(EXPANDED_HEIGHT, maxResponseHeight));
     }
   }, [execution.status, responsePanelHeight, maxResponseHeight, setResponsePanelHeight]);
 
   return (
-    <div
-      ref={mainContentRef}
-      className="flex-1 flex flex-col overflow-hidden min-h-0 h-full"
-    >
+    <div ref={mainContentRef} className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
       <div className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
         <div className="flex-1 min-h-0 min-w-0 overflow-auto custom-scrollbar bg-[#FCFDFF]">
           <Tab
+            agentId={agentId}
             agentGoal={agentGoal}
             systemInstructions={systemInstructions}
-            selectedTools={selectedTools}
-            toolSearch={toolSearch}
             maxIterations={maxIterations}
             timeout={timeout}
             retryPolicy={retryPolicy}
@@ -145,8 +126,6 @@ export function SpecLayout({
             memorySource={memorySource}
             onAgentGoalChange={onAgentGoalChange}
             onSystemInstructionsChange={onSystemInstructionsChange}
-            onToolToggle={onToolToggle}
-            onToolSearchChange={onToolSearchChange}
             onMaxIterationsChange={onMaxIterationsChange}
             onTimeoutChange={onTimeoutChange}
             onRetryPolicyChange={onRetryPolicyChange}
@@ -155,7 +134,6 @@ export function SpecLayout({
             onMemorySourceChange={onMemorySourceChange}
           />
         </div>
-
         <div className="w-[300px] min-h-0 overflow-auto custom-scrollbar flex-shrink-0 border-l border-border-light bg-slate-50">
           <ModelParamsSidebar
             provider={provider}
@@ -180,7 +158,6 @@ export function SpecLayout({
         className="h-3 resize-handle resize-handle-horizontal cursor-ns-resize -mb-[5px] flex-shrink-0"
         onMouseDown={handleResponseMouseDown}
       />
-
       <div
         className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
         style={{ height: responsePanelHeight }}

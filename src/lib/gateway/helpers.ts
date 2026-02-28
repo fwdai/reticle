@@ -3,7 +3,7 @@ import { PROVIDERS_LIST } from '@/constants/providers';
 import { jsonSchema, tool, type ToolSet } from 'ai';
 import { ANTHROPIC_VERSION, REASONING_MODEL_PREFIXES } from './constants';
 import type { AttachedFile } from '@/contexts/StudioContext';
-import type { Tool } from '@/features/Scenarios/MainContent/Editor/Main/Tools/types';
+import type { Tool } from '@/components/Tools/types';
 
 export function getProviderHeaders(providerId: string): Record<string, string> {
   const providerConfig = PROVIDERS_LIST.find((p) => p.id === providerId);
