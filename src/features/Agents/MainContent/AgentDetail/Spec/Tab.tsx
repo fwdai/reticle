@@ -2,10 +2,8 @@ import { GoalPanel } from "./GoalPanel";
 import { SystemInstructionsPanel } from "./SystemInstructionsPanel";
 import { LoopControlsPanel } from "./LoopControlsPanel";
 import { MemoryPanel } from "./MemoryPanel";
-import { ToolsContainer } from "@/components/Tools/ToolsContainer";
 
 interface TabProps {
-  agentId: string | null;
   agentGoal: string;
   systemInstructions: string;
   maxIterations: number[];
@@ -25,7 +23,6 @@ interface TabProps {
 }
 
 export function Tab({
-  agentId,
   agentGoal,
   systemInstructions,
   maxIterations,
@@ -47,10 +44,6 @@ export function Tab({
     <div className="p-6 space-y-5">
       <GoalPanel value={agentGoal} onChange={onAgentGoalChange} />
       <SystemInstructionsPanel value={systemInstructions} onChange={onSystemInstructionsChange} />
-      <ToolsContainer
-        entityId={agentId}
-        entityType="agent"
-      />
       <LoopControlsPanel
         maxIterations={maxIterations}
         timeout={timeout}

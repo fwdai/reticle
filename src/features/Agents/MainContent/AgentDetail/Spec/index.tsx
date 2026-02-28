@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from "react";
+import { Tabs } from "@/components/ui/Tabs";
+import TabPanel from "@/components/ui/Tabs/TabPanel";
 import useResizablePanel from "@/hooks/useResizablePanel";
 import { useAgentContext } from "@/contexts/AgentContext";
+import { ToolsContainer } from "@/components/Tools/ToolsContainer";
 
 import { Tab } from "./Tab";
 import { ModelParamsSidebar } from "./ModelParamsSidebar";
 import { RuntimePanel } from "./RuntimePanel";
+
+const panelContentClass = "h-full min-h-0 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]";
 
 interface LayoutProps {
   agentId: string | null;
@@ -113,27 +118,35 @@ export function SpecLayout({
   return (
     <div ref={mainContentRef} className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
       <div className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
-        <div className="flex-1 min-h-0 min-w-0 overflow-auto custom-scrollbar bg-[#FCFDFF]">
-          <Tab
-            agentId={agentId}
-            agentGoal={agentGoal}
-            systemInstructions={systemInstructions}
-            maxIterations={maxIterations}
-            timeout={timeout}
-            retryPolicy={retryPolicy}
-            toolCallStrategy={toolCallStrategy}
-            memoryEnabled={memoryEnabled}
-            memorySource={memorySource}
-            onAgentGoalChange={onAgentGoalChange}
-            onSystemInstructionsChange={onSystemInstructionsChange}
-            onMaxIterationsChange={onMaxIterationsChange}
-            onTimeoutChange={onTimeoutChange}
-            onRetryPolicyChange={onRetryPolicyChange}
-            onToolCallStrategyChange={onToolCallStrategyChange}
-            onMemoryEnabledChange={onMemoryEnabledChange}
-            onMemorySourceChange={onMemorySourceChange}
-          />
-        </div>
+        <Tabs>
+          <TabPanel title="Agent Spec">
+            <div className={panelContentClass}>
+              <Tab
+                agentGoal={agentGoal}
+                systemInstructions={systemInstructions}
+                maxIterations={maxIterations}
+                timeout={timeout}
+                retryPolicy={retryPolicy}
+                toolCallStrategy={toolCallStrategy}
+                memoryEnabled={memoryEnabled}
+                memorySource={memorySource}
+                onAgentGoalChange={onAgentGoalChange}
+                onSystemInstructionsChange={onSystemInstructionsChange}
+                onMaxIterationsChange={onMaxIterationsChange}
+                onTimeoutChange={onTimeoutChange}
+                onRetryPolicyChange={onRetryPolicyChange}
+                onToolCallStrategyChange={onToolCallStrategyChange}
+                onMemoryEnabledChange={onMemoryEnabledChange}
+                onMemorySourceChange={onMemorySourceChange}
+              />
+            </div>
+          </TabPanel>
+          <TabPanel title="Tools">
+            <div className={panelContentClass}>
+              <ToolsContainer entityId={agentId} entityType="agent" />
+            </div>
+          </TabPanel>
+        </Tabs>
         <div className="w-[300px] min-h-0 overflow-auto custom-scrollbar flex-shrink-0 border-l border-border-light bg-slate-50">
           <ModelParamsSidebar
             provider={provider}
