@@ -191,7 +191,7 @@ function ToolCard({ tool, isShared, isEnabled = true, onClick, onEdit, onRemove 
           active ? "bg-primary/15 text-primary" : "bg-slate-100 text-text-muted"
         )}
       >
-        {isShared ? <Globe className="h-3.5 w-  3.5" /> : <Wrench className="h-3.5 w-3.5" />}
+        <Wrench className="h-3.5 w-3.5" />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -199,11 +199,6 @@ function ToolCard({ tool, isShared, isEnabled = true, onClick, onEdit, onRemove 
           <p className="text-xs font-semibold text-text-main truncate">
             {tool.name || "Untitled"}
           </p>
-          {isShared && (
-            <span className="rounded bg-slate-200 px-1 py-0.5 text-[9px] font-bold uppercase text-text-muted flex-shrink-0">
-              shared
-            </span>
-          )}
         </div>
         <p className="text-[10px] text-text-muted line-clamp-1 mt-0.5">
           {tool.description || "No description"}
