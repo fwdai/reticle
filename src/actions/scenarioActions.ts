@@ -6,6 +6,7 @@ import {
   updateExecution,
   upsertToolsForScenario,
   upsertAttachmentsForScenario,
+  listToolsForEntity,
 } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
@@ -212,13 +213,17 @@ export async function runScenarioAction(
   }));
 
   const scenarioId = currentScenario.id!;
+
+  // Fetch all tools linked to this scenario (local + shared) from the DB
+  const allTools = await listToolsForEntity(scenarioId, 'scenario');
+
   const snapshot = {
     name: currentScenario.name,
     systemPrompt,
     userPrompt,
     configuration,
     history,
-    tools: currentScenario.tools,
+    tools: allTools,
     attachments: currentScenario.attachments,
   };
   const snapshot_json = JSON.stringify(snapshot);
@@ -249,7 +254,7 @@ export async function runScenarioAction(
         topP: configuration.topP,
         maxTokens: configuration.maxTokens,
       },
-      currentScenario.tools,
+      allTools,
       currentScenario.attachments
     );
 
