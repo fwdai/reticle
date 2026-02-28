@@ -69,7 +69,7 @@ export async function loadAttachmentsAsContentParts(
 }
 
 /** Convert scenario tools to AI SDK tool format. Uses mockResponse for execute. */
-export function scenarioToolsToAiSdkTools(tools: Tool[]): ToolSet {
+export function toolConfigToAiSdkTools(tools: Tool[]): ToolSet {
   const result: ToolSet = {};
   for (const t of tools) {
     const properties: Record<

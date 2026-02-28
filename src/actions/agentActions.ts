@@ -1,6 +1,7 @@
 import { ToolLoopAgent, stepCountIs } from 'ai';
 import { createModel } from '@/lib/gateway';
-import { insertExecution, updateExecution } from '@/lib/storage';
+import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
+import { insertExecution, updateExecution, listToolsForEntity } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import type { ExecutionState } from '@/contexts/AgentContext';
 import type { AgentRecord, Execution, ExecutionStep } from '@/types';
@@ -59,6 +60,10 @@ export async function runAgentAction(
         .filter(Boolean)
         .join('\n\n') || undefined;
 
+    // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
+    const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
+    const tools = toolConfigToAiSdkTools(linkedTools);
+
     // Create ToolLoopAgent directly so we can consume fullStream.
     // streamWithEvents uses experimental_transform which is a streamText-only option
     // and is silently ignored by ToolLoopAgent — fullStream is the correct way to get events.
@@ -66,6 +71,7 @@ export async function runAgentAction(
       id: agentRecord.id,
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
       instructions,
+      tools: Object.keys(tools).length ? tools : undefined,
       maxRetries: 3,
       stopWhen: stepCountIs(agentRecord.max_iterations ?? 10),
       ...(agentRecord.timeout_seconds

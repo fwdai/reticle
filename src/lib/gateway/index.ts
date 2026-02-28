@@ -12,7 +12,7 @@ import {
   getProviderHeaders,
   isReasoningModel,
   loadAttachmentsAsContentParts,
-  scenarioToolsToAiSdkTools,
+  toolConfigToAiSdkTools,
 } from './helpers';
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
@@ -133,7 +133,7 @@ export const streamText = async (
   }
   messages.push({ role: 'user', content: userContent });
 
-  const aiTools = tools?.length ? scenarioToolsToAiSdkTools(tools) : undefined;
+  const aiTools = tools?.length ? toolConfigToAiSdkTools(tools) : undefined;
 
   const result = await streamTextAi({
     model: createModel(config, gateway),
