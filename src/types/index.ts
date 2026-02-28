@@ -2,6 +2,7 @@ export type Page =
   | 'home'
   | 'studio'
   | 'agents'
+  | 'tools'
   | 'environments'
   | 'runs'
   | 'settings'

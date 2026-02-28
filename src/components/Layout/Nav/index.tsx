@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Home, Activity, Layers, Settings, FileCode, User, Zap } from "lucide-react";
+import { Home, Activity, Layers, Settings, FileCode, User, Zap, Wrench } from "lucide-react";
 import reticleLogo from "@/assets/reticle-logo.svg";
 import { Page, type SettingsSectionId } from "@/types";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipArrow } from "@/components/ui/tooltip";
@@ -40,6 +40,7 @@ function Navigation() {
     { id: "home" as Page, icon: Home, label: "Home" },
     { id: "studio" as Page, icon: FileCode, label: "Scenarios" },
     { id: "agents" as Page, icon: Zap, label: "Agents" },
+    { id: "tools" as Page, icon: Wrench, label: "Tools" },
     { id: "templates" as Page, icon: Layers, label: "Templates" },
     // { id: "environments" as Page, icon: Layers, label: "Environments" },
     { id: "runs" as Page, icon: Activity, label: "Runs" },
