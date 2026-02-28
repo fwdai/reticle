@@ -3,11 +3,11 @@ import {
   insertTool,
   updateTool as updateToolStorage,
   deleteTool,
-  listGlobalTools,
+  listSharedTools,
   listToolsForEntity,
   linkTool,
   unlinkTool,
-  unglobalTool,
+  unsharedTool,
 } from "@/lib/storage";
 import { createEmptyTool, createEmptyParam } from "./constants";
 import type { Tool, ToolParameter } from "./types";
@@ -18,7 +18,7 @@ interface ToolsContainerProps {
   entityId: string | null;
   entityType: "scenario" | "agent";
   /**
-   * Called whenever the local (non-global) tools list changes.
+   * Called whenever the local (non-shared) tools list changes.
    * Use this to sync tools into parent state (e.g. StudioContext).
    */
   onLocalToolsChange?: (tools: Tool[]) => void;
@@ -35,8 +35,8 @@ export function ToolsContainer({
   onLocalToolsChange,
 }: ToolsContainerProps) {
   const [localTools, setLocalToolsState] = useState<Tool[]>([]);
-  const [globalTools, setGlobalTools] = useState<Tool[]>([]);
-  const [enabledGlobalToolIds, setEnabledGlobalToolIds] = useState<string[]>([]);
+  const [sharedTools, setSharedTools] = useState<Tool[]>([]);
+  const [enabledSharedToolIds, setEnabledSharedToolIds] = useState<string[]>([]);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     params: true,
@@ -58,15 +58,15 @@ export function ToolsContainer({
     let cancelled = false;
 
     Promise.all([
-      listGlobalTools(),
+      listSharedTools(),
       listToolsForEntity(entityId, entityType),
-    ]).then(([globals, linked]) => {
+    ]).then(([shared, linked]) => {
       if (cancelled) return;
-      const local = linked.filter(t => !t.isGlobal);
-      const enabledGlobals = linked.filter(t => t.isGlobal).map(t => t.id);
-      setGlobalTools(globals);
+      const local = linked.filter(t => !t.isShared);
+      const enabledShared = linked.filter(t => t.isShared).map(t => t.id);
+      setSharedTools(shared);
       setLocalToolsState(local);
-      setEnabledGlobalToolIds(enabledGlobals);
+      setEnabledSharedToolIds(enabledShared);
       onLocalToolsChange?.(local);
     }).catch(e => console.warn("Failed to load tools:", e));
 
@@ -90,14 +90,14 @@ export function ToolsContainer({
     setLocalTools(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     if (!entityId) return;
     try {
-      if (updates.isGlobal === false) {
-        await unglobalTool(id, entityId);
-        const globals = await listGlobalTools();
-        setGlobalTools(globals);
-      } else if (updates.isGlobal === true) {
+      if (updates.isShared === false) {
+        await unsharedTool(id, entityId);
+        const shared = await listSharedTools();
+        setSharedTools(shared);
+      } else if (updates.isShared === true) {
         await updateToolStorage(id, updates);
-        const globals = await listGlobalTools();
-        setGlobalTools(globals);
+        const shared = await listSharedTools();
+        setSharedTools(shared);
       } else {
         await updateToolStorage(id, updates);
       }
@@ -168,10 +168,10 @@ export function ToolsContainer({
     });
   }, [entityId, setLocalTools]);
 
-  const toggleGlobalTool = useCallback(async (toolId: string) => {
+  const toggleSharedTool = useCallback(async (toolId: string) => {
     if (!entityId) return;
-    const isEnabled = enabledGlobalToolIds.includes(toolId);
-    setEnabledGlobalToolIds(prev => isEnabled ? prev.filter(id => id !== toolId) : [...prev, toolId]);
+    const isEnabled = enabledSharedToolIds.includes(toolId);
+    setEnabledSharedToolIds(prev => isEnabled ? prev.filter(id => id !== toolId) : [...prev, toolId]);
     try {
       if (isEnabled) {
         await unlinkTool(toolId, entityId, entityType);
@@ -179,9 +179,9 @@ export function ToolsContainer({
         await linkTool(toolId, entityId, entityType);
       }
     } catch (e) {
-      console.warn("Failed to toggle global tool:", e);
+      console.warn("Failed to toggle shared tool:", e);
     }
-  }, [entityId, entityType, enabledGlobalToolIds]);
+  }, [entityId, entityType, enabledSharedToolIds]);
 
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -208,12 +208,12 @@ export function ToolsContainer({
   return (
     <ToolsPanel
       localTools={localTools}
-      globalTools={globalTools}
-      enabledGlobalToolIds={enabledGlobalToolIds}
+      sharedTools={sharedTools}
+      enabledSharedToolIds={enabledSharedToolIds}
       onAddTool={addTool}
       onSelectTool={setSelectedToolId}
       onRemoveTool={removeTool}
-      onToggleGlobalTool={toggleGlobalTool}
+      onToggleSharedTool={toggleSharedTool}
     />
   );
 }

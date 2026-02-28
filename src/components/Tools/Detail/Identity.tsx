@@ -47,23 +47,23 @@ export function Identity({ tool, onUpdate }: IdentityProps) {
           <div className="flex items-center gap-2.5">
             <Globe className="h-3.5 w-3.5 text-text-muted" />
             <div>
-              <p className="text-xs font-semibold text-text-main">Global tool</p>
+              <p className="text-xs font-semibold text-text-main">Shared tool</p>
               <p className="text-[10px] text-text-muted">Available to all scenarios and agents</p>
             </div>
           </div>
           <button
             role="switch"
-            aria-checked={tool.isGlobal ?? false}
-            onClick={() => onUpdate({ isGlobal: !(tool.isGlobal ?? false) })}
+            aria-checked={tool.isShared ?? false}
+            onClick={() => onUpdate({ isShared: !(tool.isShared ?? false) })}
             className={cn(
               "relative h-5 w-9 rounded-full transition-colors flex-shrink-0",
-              tool.isGlobal ? "bg-primary" : "bg-slate-200"
+              tool.isShared ? "bg-primary" : "bg-slate-200"
             )}
           >
             <span
               className={cn(
                 "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
-                tool.isGlobal ? "left-4" : "left-0.5"
+                tool.isShared ? "left-4" : "left-0.5"
               )}
             />
           </button>

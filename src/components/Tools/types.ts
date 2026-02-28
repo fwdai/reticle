@@ -13,7 +13,7 @@ export interface Tool {
   parameters: ToolParameter[];
   mockResponse: string;
   mockMode?: "json" | "code";
-  isGlobal?: boolean;
+  isShared?: boolean;
 }
 
 /** Normalize tools from DB (may have legacy llmDescription/developerDescription format) */
@@ -48,7 +48,7 @@ export function normalizeToolFromDb(raw: unknown): Tool | null {
         : "{}";
   const mockMode =
     o.mockMode === "code" || o.mockMode === "json" ? o.mockMode : "json";
-  const isGlobal = o.isGlobal === true || o.is_global === 1;
+  const isShared = o.isShared === true || o.is_global === 1;
 
   return {
     id,
@@ -57,6 +57,6 @@ export function normalizeToolFromDb(raw: unknown): Tool | null {
     parameters,
     mockResponse,
     mockMode,
-    isGlobal,
+    isShared,
   };
 }

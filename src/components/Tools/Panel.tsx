@@ -1,37 +1,44 @@
-import { Globe, Pencil, Plus, Trash2, Wrench } from "lucide-react";
+import { useState } from "react";
+import { Globe, Pencil, Plus, Search, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle } from "./constants";
 import type { Tool } from "./types";
 
+type ViewMode = "local" | "shared";
+
 interface ToolsPanelProps {
-  /** Non-global tools owned by this entity */
   localTools: Tool[];
-  /** All global tools in the system */
-  globalTools: Tool[];
-  /** Which global tool IDs are currently enabled for this entity */
-  enabledGlobalToolIds: string[];
-  /** If provided, renders "Add Tool" button in header */
+  sharedTools: Tool[];
+  enabledSharedToolIds: string[];
   onAddTool?: () => void;
-  /** If provided, local tool cards navigate to the editor on click */
   onSelectTool?: (id: string) => void;
-  /** If provided, shows delete button on local tool cards */
   onRemoveTool?: (id: string) => void;
-  /** Toggle a global tool on/off for this entity */
-  onToggleGlobalTool: (toolId: string) => void;
+  onToggleSharedTool: (toolId: string) => void;
 }
 
 export function ToolsPanel({
   localTools,
-  globalTools,
-  enabledGlobalToolIds,
+  sharedTools,
+  enabledSharedToolIds,
   onAddTool,
   onSelectTool,
   onRemoveTool,
-  onToggleGlobalTool,
+  onToggleSharedTool,
 }: ToolsPanelProps) {
-  const hasAnyTools = localTools.length > 0 || globalTools.length > 0;
-  const totalCount = localTools.length + enabledGlobalToolIds.length;
+  const [view, setView] = useState<ViewMode>("shared");
+  const [search, setSearch] = useState("");
+
+  const totalCount = localTools.length + enabledSharedToolIds.length;
+
+  const filteredShared = sharedTools.filter((t) => {
+    const q = search.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      (t.description ?? "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className={panelBase}>
@@ -46,210 +53,187 @@ export function ToolsPanel({
             </span>
           )}
         </div>
-        {onAddTool && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/10"
-            onClick={onAddTool}
-          >
-            <Plus className="h-3 w-3" />
-            ADD TOOL
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {view === "local" && onAddTool && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/10"
+              onClick={onAddTool}
+            >
+              <Plus className="h-3 w-3" />
+              ADD TOOL
+            </Button>
+          )}
+          <SegmentedSwitch
+            size="section"
+            options={[
+              { value: "shared" as ViewMode, label: "Shared" },
+              { value: "local" as ViewMode, label: "Local" },
+            ]}
+            value={view}
+            onChange={setView}
+          />
+        </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Empty state */}
-        {!hasAnyTools && (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Wrench className="h-5 w-5" />
-            </div>
-            <p className="mb-1 text-sm font-medium text-text-main">No tools configured</p>
-            <p className="mb-5 max-w-[260px] text-xs text-text-muted">
-              Define function calling tools for the LLM. Specify input schema and mock
-              outputs to test tool calling behavior.
-            </p>
-            {onAddTool && (
-              <Button
-                size="sm"
-                className="h-9 gap-1.5 font-medium px-5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
-                onClick={onAddTool}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Create First Tool
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Local tools */}
-        {localTools.length > 0 && (
-          <div className="space-y-2">
-            {localTools.length > 0 && globalTools.length > 0 && (
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted px-1">
-                My Tools
+      {view === "local" ? (
+        <div className="p-4">
+          {localTools.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Wrench className="h-5 w-5" />
+              </div>
+              <p className="mb-1 text-sm font-medium text-text-main">No tools configured</p>
+              <p className="mb-5 max-w-[260px] text-xs text-text-muted">
+                Define function calling tools for the LLM. Specify input schema and mock
+                outputs to test tool calling behavior.
               </p>
-            )}
+              {onAddTool && (
+                <Button
+                  size="sm"
+                  className="h-9 gap-1.5 font-medium px-5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
+                  onClick={onAddTool}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Create First Tool
+                </Button>
+              )}
+            </div>
+          ) : (
             <div className="grid grid-cols-2 gap-2">
               {localTools.map((tool) => (
-                <LocalToolCard
+                <ToolCard
                   key={tool.id}
                   tool={tool}
-                  onSelect={onSelectTool ? () => onSelectTool(tool.id) : undefined}
+                  onClick={onSelectTool ? () => onSelectTool(tool.id) : undefined}
+                  onEdit={onSelectTool ? () => onSelectTool(tool.id) : undefined}
                   onRemove={onRemoveTool ? () => onRemoveTool(tool.id) : undefined}
                 />
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Global tools */}
-        {globalTools.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
-                Global Tools
-              </p>
-              <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-text-muted">
-                {enabledGlobalToolIds.length}/{globalTools.length} ENABLED
-              </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border-light bg-white px-3 py-1.5">
+              <Search className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search shared tools…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-xs text-text-main placeholder:text-text-muted focus:outline-none"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {globalTools.map((tool) => {
-                const isEnabled = enabledGlobalToolIds.includes(tool.id);
-                return (
-                  <GlobalToolCard
+          </div>
+
+          <div className="p-4 pt-1">
+            {sharedTools.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-text-muted">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <p className="mb-1 text-sm font-medium text-text-main">No shared tools yet</p>
+                <p className="max-w-[240px] text-xs text-text-muted">
+                  Mark a tool as shared to make it available across scenarios and agents.
+                </p>
+              </div>
+            ) : filteredShared.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-xs text-text-muted">No tools match "{search}"</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {filteredShared.map((tool) => (
+                  <ToolCard
                     key={tool.id}
                     tool={tool}
-                    isEnabled={isEnabled}
-                    onToggle={() => onToggleGlobalTool(tool.id)}
+                    isShared
+                    isEnabled={enabledSharedToolIds.includes(tool.id)}
+                    onClick={() => onToggleSharedTool(tool.id)}
                   />
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-interface LocalToolCardProps {
+interface ToolCardProps {
   tool: Tool;
-  onSelect?: () => void;
+  isShared?: boolean;
+  isEnabled?: boolean;
+  onClick?: () => void;
+  onEdit?: () => void;
   onRemove?: () => void;
 }
 
-function LocalToolCard({ tool, onSelect, onRemove }: LocalToolCardProps) {
+function ToolCard({ tool, isShared, isEnabled = true, onClick, onEdit, onRemove }: ToolCardProps) {
+  const active = !isShared || isEnabled;
+
   return (
     <div
       className={cn(
-        "group relative flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 transition-all",
-        onSelect && "cursor-pointer hover:border-primary/50 hover:bg-primary/8"
-      )}
-      onClick={onSelect}
-    >
-      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary mt-0.5">
-        <Wrench className="h-3.5 w-3.5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-text-main truncate">
-          {tool.name || "Untitled"}
-        </p>
-        <p className="text-[10px] text-text-muted line-clamp-1 mt-0.5">
-          {tool.description || "No description"}
-        </p>
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-            {tool.parameters.length} PARAM{tool.parameters.length !== 1 ? "S" : ""}
-          </span>
-          {tool.mockMode === "code" && (
-            <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[9px] font-bold text-warning">
-              CODE
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Action buttons (shown on hover) */}
-      <div className="absolute top-2 right-2 hidden group-hover:flex items-center gap-1">
-        {onSelect && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onSelect(); }}
-            className="flex h-6 w-6 items-center justify-center rounded bg-white border border-border-light text-text-muted hover:text-primary transition-all"
-            title="Edit"
-          >
-            <Pencil className="h-3 w-3" />
-          </button>
-        )}
-        {onRemove && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="flex h-6 w-6 items-center justify-center rounded bg-white border border-border-light text-text-muted hover:text-destructive transition-all"
-            title="Delete"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface GlobalToolCardProps {
-  tool: Tool;
-  isEnabled: boolean;
-  onToggle: () => void;
-}
-
-function GlobalToolCard({ tool, isEnabled, onToggle }: GlobalToolCardProps) {
-  return (
-    <button
-      onClick={onToggle}
-      className={cn(
-        "flex items-start gap-3 rounded-lg border p-3 text-left transition-all duration-200",
-        isEnabled
-          ? "border-primary/40 bg-primary/5"
+        "group relative flex items-start gap-3 rounded-lg border p-3 transition-all",
+        onClick && "cursor-pointer",
+        active
+          ? "border-primary/30 bg-primary/5 hover:border-primary/50"
           : "border-border-light bg-white hover:border-slate-300"
       )}
+      onClick={onClick}
     >
       <div
         className={cn(
           "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg mt-0.5 transition-colors",
-          isEnabled ? "bg-primary/15 text-primary" : "bg-slate-100 text-text-muted"
+          active ? "bg-primary/15 text-primary" : "bg-slate-100 text-text-muted"
         )}
       >
-        <Globe className="h-3.5 w-3.5" />
+        {isShared ? <Globe className="h-3.5 w-  3.5" /> : <Wrench className="h-3.5 w-3.5" />}
       </div>
+
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "text-xs font-semibold truncate",
-            isEnabled ? "text-text-main" : "text-text-main/80"
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-xs font-semibold text-text-main truncate">
+            {tool.name || "Untitled"}
+          </p>
+          {isShared && (
+            <span className="rounded bg-slate-200 px-1 py-0.5 text-[9px] font-bold uppercase text-text-muted flex-shrink-0">
+              shared
+            </span>
           )}
-        >
-          {tool.name || "Untitled"}
-        </p>
+        </div>
         <p className="text-[10px] text-text-muted line-clamp-1 mt-0.5">
           {tool.description || "No description"}
         </p>
       </div>
-      {/* Mini toggle indicator */}
-      <div
-        className={cn(
-          "relative h-4 w-7 rounded-full flex-shrink-0 mt-1 transition-colors",
-          isEnabled ? "bg-primary" : "bg-slate-200"
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform",
-            isEnabled ? "left-3.5" : "left-0.5"
+
+      {(onEdit || onRemove) && (
+        <div className="absolute top-2 right-2 hidden group-hover:flex items-center gap-1">
+          {onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="flex h-6 w-6 items-center justify-center rounded bg-white border border-border-light text-text-muted hover:text-primary transition-all"
+              title="Edit"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
           )}
-        />
-      </div>
-    </button>
+          {onRemove && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="flex h-6 w-6 items-center justify-center rounded bg-white border border-border-light text-text-muted hover:text-destructive transition-all"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -446,7 +446,7 @@ function toolToDbRow(tool: Tool, sortOrder = 0): ToolDbRow {
     mock_mode: tool.mockMode ?? 'json',
     code: null,
     is_enabled: 1,
-    is_global: tool.isGlobal ? 1 : 0,
+    is_global: tool.isShared ? 1 : 0,
     sort_order: sortOrder,
   };
 }
@@ -476,7 +476,7 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
       row.mock_mode === 'code' || row.mock_mode === 'json'
         ? row.mock_mode
         : 'json',
-    isGlobal: row.is_global === 1,
+    isShared: row.is_global === 1,
   };
 }
 
@@ -541,7 +541,7 @@ export async function updateTool(
   if (updates.mockResponse !== undefined)
     data.mock_response = updates.mockResponse;
   if (updates.mockMode !== undefined) data.mock_mode = updates.mockMode;
-  if (updates.isGlobal !== undefined) data.is_global = updates.isGlobal ? 1 : 0;
+  if (updates.isShared !== undefined) data.is_global = updates.isShared ? 1 : 0;
   if (Object.keys(data).length === 0) return;
   await invoke('db_update_cmd', {
     table: 'tools',
@@ -550,8 +550,8 @@ export async function updateTool(
   });
 }
 
-/** Set a tool back to local: delete all its links, re-link to given scenario only, set is_global=0 */
-export async function unglobalTool(toolId: string, scenarioId: string): Promise<void> {
+/** Set a tool back to local: delete all its links, re-link to given entity only, set is_global=0 */
+export async function unsharedTool(toolId: string, scenarioId: string): Promise<void> {
   await invoke('db_delete_cmd', {
     table: 'tool_links',
     query: { where: { tool_id: toolId } },
@@ -595,7 +595,7 @@ export async function listToolsByScenarioId(
     : [];
 }
 
-export async function listGlobalTools(): Promise<Tool[]> {
+export async function listSharedTools(): Promise<Tool[]> {
   const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
     table: 'tools',
     query: { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' },
