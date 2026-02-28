@@ -40,7 +40,6 @@ export function ToolDetail({
             onChange={(name) => onUpdate(tool.id, { name })}
             placeholder="Name your tool..."
             saveStatus={saveStatus}
-            autoFocus={!tool.name}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -68,6 +67,7 @@ export function ToolDetail({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
         <ToolDetailBody
           tool={tool}
+          autoFocusName={!tool.name}
           usedBy={tool.usedBy}
           updatedAt={tool.updatedAt}
           onUpdate={onUpdate}

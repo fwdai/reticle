@@ -10,6 +10,7 @@ import { Usage } from "./Usage";
 interface ToolDetailProps {
   tool: Tool;
   showSharedToggle?: boolean;
+  autoFocusName?: boolean;
   usedBy?: number;
   updatedAt?: number | null;
   onUpdate: (id: string, updates: Partial<Tool>) => void;
@@ -18,6 +19,7 @@ interface ToolDetailProps {
 export function ToolDetail({
   tool,
   showSharedToggle = false,
+  autoFocusName = false,
   usedBy,
   updatedAt,
   onUpdate,
@@ -51,6 +53,7 @@ export function ToolDetail({
       <ToolDefinition
         tool={tool}
         showSharedToggle={showSharedToggle}
+        autoFocusName={autoFocusName}
         onUpdate={(updates) => onUpdate(tool.id, updates)}
       />
 

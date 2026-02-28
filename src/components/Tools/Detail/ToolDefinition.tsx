@@ -6,12 +6,14 @@ import type { Tool } from "../types";
 interface ToolDefinitionProps {
   tool: Tool;
   showSharedToggle?: boolean;
+  autoFocusName?: boolean;
   onUpdate: (updates: Partial<Tool>) => void;
 }
 
 export function ToolDefinition({
   tool,
   showSharedToggle = false,
+  autoFocusName = false,
   onUpdate,
 }: ToolDefinitionProps) {
   return (
@@ -30,6 +32,7 @@ export function ToolDefinition({
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="e.g. get_weather, search_docs"
             className={cn(inputBase, "font-mono")}
+            autoFocus={autoFocusName}
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"

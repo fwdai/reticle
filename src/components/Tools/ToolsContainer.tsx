@@ -175,6 +175,7 @@ export function ToolsContainer({
         <ToolDetail
           tool={selectedTool}
           showSharedToggle
+          autoFocusName={!selectedTool.name}
           usedBy={toolMeta?.usedBy}
           updatedAt={toolMeta?.updatedAt}
           onUpdate={updateTool}
