@@ -52,6 +52,9 @@ export function Output({
                 : "text-text-muted hover:text-text-main"
             )}
           >
+            {tool.mockMode === "json" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            )}
             <Braces className="h-3 w-3" />
             MOCK
           </button>
@@ -67,6 +70,9 @@ export function Output({
                 : "text-text-muted hover:text-text-main"
             )}
           >
+            {tool.mockMode === "code" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            )}
             <Terminal className="h-3 w-3" />
             CODE
           </button>
@@ -83,7 +89,7 @@ export function Output({
                 placeholder='{ "result": "..." }'
               />
               <p className="mt-2 text-[10px] tracking-wide text-text-muted">
-                THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL DURING A TEST RUN
+                ACTIVE — THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL
               </p>
             </>
           ) : (
@@ -95,7 +101,7 @@ export function Output({
                 placeholder={`// Tool implementation\nasync function execute(params) {\n  // your code here\n  return { result: "..." };\n}`}
               />
               <p className="mt-2 text-[10px] tracking-wide text-text-muted">
-                THIS CODE WILL BE EXECUTED WHEN THE LLM CALLS THIS TOOL DURING A TEST RUN
+                ACTIVE — THIS CODE WILL BE EXECUTED WHEN THE LLM CALLS THIS TOOL
               </p>
             </>
           )}
