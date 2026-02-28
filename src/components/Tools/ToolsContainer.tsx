@@ -8,26 +8,22 @@ import {
   linkTool,
   unlinkTool,
   unsharedTool,
+  getToolMeta,
 } from "@/lib/storage";
-import { createEmptyTool, createEmptyParam } from "./constants";
-import type { Tool, ToolParameter } from "./types";
+import type { ToolMeta } from "@/lib/storage";
+import { createEmptyTool } from "./constants";
+import type { Tool } from "./types";
 import { ToolsPanel } from "./Panel";
 import { ToolDetail } from "./Detail";
+import { DetailHeader } from "./Detail/Header";
 
 interface ToolsContainerProps {
   entityId: string | null;
   entityType: "scenario" | "agent";
-  /** Called whenever the local (non-shared) tools list changes. */
   onLocalToolsChange?: (tools: Tool[]) => void;
-  /** Called whenever the set of enabled shared tool IDs changes. */
   onEnabledSharedToolIdsChange?: (ids: string[]) => void;
 }
 
-/**
- * Self-contained tool management panel.
- * Loads tools from DB, handles all CRUD, and manages panel ↔ detail view state.
- * Used in both the Scenario tools tab and the Agent spec.
- */
 export function ToolsContainer({
   entityId,
   entityType,
@@ -36,23 +32,23 @@ export function ToolsContainer({
 }: ToolsContainerProps) {
   const [localTools, setLocalToolsState] = useState<Tool[]>([]);
   const [sharedTools, setSharedTools] = useState<Tool[]>([]);
-  const [enabledSharedToolIds, setEnabledSharedToolIds] = useState<string[]>([]);
+  const [enabledSharedToolIds, setEnabledSharedToolIds] = useState<string[]>(
+    []
+  );
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    params: true,
-    output: true,
-  });
+  const [toolMeta, setToolMeta] = useState<ToolMeta | null>(null);
 
-  // Keep local state + notify parent
-  const setLocalTools = useCallback((updater: (prev: Tool[]) => Tool[]) => {
-    setLocalToolsState(prev => {
-      const next = updater(prev);
-      onLocalToolsChange?.(next);
-      return next;
-    });
-  }, [onLocalToolsChange]);
+  const setLocalTools = useCallback(
+    (updater: (prev: Tool[]) => Tool[]) => {
+      setLocalToolsState((prev) => {
+        const next = updater(prev);
+        onLocalToolsChange?.(next);
+        return next;
+      });
+    },
+    [onLocalToolsChange]
+  );
 
-  // Load tools from DB whenever entityId changes
   useEffect(() => {
     if (!entityId) return;
     let cancelled = false;
@@ -60,23 +56,37 @@ export function ToolsContainer({
     Promise.all([
       listSharedTools(),
       listToolsForEntity(entityId, entityType),
-    ]).then(([shared, linked]) => {
-      if (cancelled) return;
-      const local = linked.filter(t => !t.isShared);
-      const enabledShared = linked.filter(t => t.isShared).map(t => t.id);
-      setSharedTools(shared);
-      setLocalToolsState(local);
-      setEnabledSharedToolIds(enabledShared);
-      onLocalToolsChange?.(local);
-      onEnabledSharedToolIdsChange?.(enabledShared);
-    }).catch(e => console.warn("Failed to load tools:", e));
+    ])
+      .then(([shared, linked]) => {
+        if (cancelled) return;
+        const local = linked.filter((t) => !t.isShared);
+        const enabledShared = linked.filter((t) => t.isShared).map((t) => t.id);
+        setSharedTools(shared);
+        setLocalToolsState(local);
+        setEnabledSharedToolIds(enabledShared);
+        onLocalToolsChange?.(local);
+        onEnabledSharedToolIdsChange?.(enabledShared);
+      })
+      .catch((e) => console.warn("Failed to load tools:", e));
 
-    return () => { cancelled = true; };
-  }, [entityId, entityType]); // intentionally exclude onLocalToolsChange
+    return () => {
+      cancelled = true;
+    };
+  }, [entityId, entityType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!selectedToolId) {
+      setToolMeta(null);
+      return;
+    }
+    getToolMeta(selectedToolId)
+      .then(setToolMeta)
+      .catch(() => setToolMeta(null));
+  }, [selectedToolId]);
 
   const addTool = useCallback(async () => {
     const newTool = createEmptyTool();
-    setLocalTools(prev => [...prev, newTool]);
+    setLocalTools((prev) => [...prev, newTool]);
     setSelectedToolId(newTool.id);
     if (entityId) {
       try {
@@ -87,126 +97,89 @@ export function ToolsContainer({
     }
   }, [entityId, entityType, localTools.length, setLocalTools]);
 
-  const updateTool = useCallback(async (id: string, updates: Partial<Tool>) => {
-    setLocalTools(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-    if (!entityId) return;
-    try {
-      if (updates.isShared === false) {
-        await unsharedTool(id, entityId);
-        const shared = await listSharedTools();
-        setSharedTools(shared);
-      } else if (updates.isShared === true) {
-        await updateToolStorage(id, updates);
-        const shared = await listSharedTools();
-        setSharedTools(shared);
-      } else {
-        await updateToolStorage(id, updates);
-      }
-    } catch (e) {
-      console.warn("Failed to update tool:", e);
-    }
-  }, [entityId, setLocalTools]);
-
-  const removeTool = useCallback(async (id: string) => {
-    if (entityId) {
+  const updateTool = useCallback(
+    async (id: string, updates: Partial<Tool>) => {
+      setLocalTools((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+      );
+      if (!entityId) return;
       try {
-        await deleteTool(id);
+        if (updates.isShared === false) {
+          await unsharedTool(id, entityId);
+          const shared = await listSharedTools();
+          setSharedTools(shared);
+        } else if (updates.isShared === true) {
+          await updateToolStorage(id, updates);
+          const shared = await listSharedTools();
+          setSharedTools(shared);
+        } else {
+          await updateToolStorage(id, updates);
+        }
       } catch (e) {
-        console.warn("Failed to delete tool:", e);
-        return;
+        console.warn("Failed to update tool:", e);
       }
-    }
-    setLocalTools(prev => prev.filter(t => t.id !== id));
-    if (selectedToolId === id) setSelectedToolId(null);
-  }, [entityId, selectedToolId, setLocalTools]);
+    },
+    [entityId, setLocalTools]
+  );
 
-  const addParam = useCallback((toolId: string) => {
-    setLocalTools(prev => {
-      const next = prev.map(t =>
-        t.id === toolId ? { ...t, parameters: [...t.parameters, createEmptyParam()] } : t
-      );
-      const updated = next.find(t => t.id === toolId);
-      if (updated && entityId) {
-        updateToolStorage(toolId, { parameters: updated.parameters }).catch(e =>
-          console.warn("Failed to persist param add:", e)
-        );
+  const removeTool = useCallback(
+    async (id: string) => {
+      if (entityId) {
+        try {
+          await deleteTool(id);
+        } catch (e) {
+          console.warn("Failed to delete tool:", e);
+          return;
+        }
       }
-      return next;
-    });
-  }, [entityId, setLocalTools]);
+      setLocalTools((prev) => prev.filter((t) => t.id !== id));
+      if (selectedToolId === id) setSelectedToolId(null);
+    },
+    [entityId, selectedToolId, setLocalTools]
+  );
 
-  const updateParam = useCallback((toolId: string, paramId: string, updates: Partial<ToolParameter>) => {
-    setLocalTools(prev => {
-      const next = prev.map(t =>
-        t.id === toolId
-          ? { ...t, parameters: t.parameters.map(p => p.id === paramId ? { ...p, ...updates } : p) }
-          : t
-      );
-      const updated = next.find(t => t.id === toolId);
-      if (updated && entityId) {
-        updateToolStorage(toolId, { parameters: updated.parameters }).catch(e =>
-          console.warn("Failed to persist param update:", e)
-        );
+  const toggleSharedTool = useCallback(
+    async (toolId: string) => {
+      if (!entityId) return;
+      const isEnabled = enabledSharedToolIds.includes(toolId);
+      setEnabledSharedToolIds((prev) => {
+        const next = isEnabled
+          ? prev.filter((id) => id !== toolId)
+          : [...prev, toolId];
+        onEnabledSharedToolIdsChange?.(next);
+        return next;
+      });
+      try {
+        if (isEnabled) {
+          await unlinkTool(toolId, entityId, entityType);
+        } else {
+          await linkTool(toolId, entityId, entityType);
+        }
+      } catch (e) {
+        console.warn("Failed to toggle shared tool:", e);
       }
-      return next;
-    });
-  }, [entityId, setLocalTools]);
+    },
+    [entityId, entityType, enabledSharedToolIds] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
-  const removeParam = useCallback((toolId: string, paramId: string) => {
-    setLocalTools(prev => {
-      const next = prev.map(t =>
-        t.id === toolId
-          ? { ...t, parameters: t.parameters.filter(p => p.id !== paramId) }
-          : t
-      );
-      const updated = next.find(t => t.id === toolId);
-      if (updated && entityId) {
-        updateToolStorage(toolId, { parameters: updated.parameters }).catch(e =>
-          console.warn("Failed to persist param remove:", e)
-        );
-      }
-      return next;
-    });
-  }, [entityId, setLocalTools]);
-
-  const toggleSharedTool = useCallback(async (toolId: string) => {
-    if (!entityId) return;
-    const isEnabled = enabledSharedToolIds.includes(toolId);
-    setEnabledSharedToolIds(prev => {
-      const next = isEnabled ? prev.filter(id => id !== toolId) : [...prev, toolId];
-      onEnabledSharedToolIdsChange?.(next);
-      return next;
-    });
-    try {
-      if (isEnabled) {
-        await unlinkTool(toolId, entityId, entityType);
-      } else {
-        await linkTool(toolId, entityId, entityType);
-      }
-    } catch (e) {
-      console.warn("Failed to toggle shared tool:", e);
-    }
-  }, [entityId, entityType, enabledSharedToolIds]);
-
-  const toggleSection = (key: string) => {
-    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const selectedTool = localTools.find(t => t.id === selectedToolId);
+  const selectedTool = localTools.find((t) => t.id === selectedToolId);
 
   if (selectedTool) {
     return (
-      <ToolDetail
-        tool={selectedTool}
-        expandedSections={expandedSections}
-        onBack={() => setSelectedToolId(null)}
-        onUpdateTool={updateTool}
-        onRemoveTool={removeTool}
-        onAddParam={addParam}
-        onUpdateParam={updateParam}
-        onRemoveParam={removeParam}
-        onToggleSection={toggleSection}
-      />
+      <div className="space-y-4">
+        <DetailHeader
+          tool={selectedTool}
+          onBack={() => setSelectedToolId(null)}
+          onRemove={() => removeTool(selectedTool.id)}
+        />
+        <ToolDetail
+          tool={selectedTool}
+          showSharedToggle
+          usedBy={toolMeta?.usedBy}
+          updatedAt={toolMeta?.updatedAt}
+          onUpdate={updateTool}
+        />
+      </div>
     );
   }
 

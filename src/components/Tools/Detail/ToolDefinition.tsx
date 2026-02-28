@@ -3,16 +3,21 @@ import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle, inputBase } from "../constants";
 import type { Tool } from "../types";
 
-interface IdentityProps {
+interface ToolDefinitionProps {
   tool: Tool;
+  showSharedToggle?: boolean;
   onUpdate: (updates: Partial<Tool>) => void;
 }
 
-export function Identity({ tool, onUpdate }: IdentityProps) {
+export function ToolDefinition({
+  tool,
+  showSharedToggle = false,
+  onUpdate,
+}: ToolDefinitionProps) {
   return (
     <div className={panelBase}>
       <div className={panelHeader}>
-        <span className={panelTitle}>Identity</span>
+        <span className={panelTitle}>Tool Definition</span>
       </div>
       <div className="space-y-4 p-5">
         <div className="space-y-1.5">
@@ -43,31 +48,37 @@ export function Identity({ tool, onUpdate }: IdentityProps) {
             className={cn(inputBase, "resize-none leading-relaxed")}
           />
         </div>
-        <div className="flex items-center justify-between rounded-lg border border-border-light bg-slate-50 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <Globe className="h-3.5 w-3.5 text-text-muted" />
-            <div>
-              <p className="text-xs font-semibold text-text-main">Shared tool</p>
-              <p className="text-[10px] text-text-muted">Available to all scenarios and agents</p>
+        {showSharedToggle && (
+          <div className="flex items-center justify-between rounded-lg border border-border-light bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <Globe className="h-3.5 w-3.5 text-text-muted" />
+              <div>
+                <p className="text-xs font-semibold text-text-main">
+                  Shared tool
+                </p>
+                <p className="text-[10px] text-text-muted">
+                  Available to all scenarios and agents
+                </p>
+              </div>
             </div>
-          </div>
-          <button
-            role="switch"
-            aria-checked={tool.isShared ?? false}
-            onClick={() => onUpdate({ isShared: !(tool.isShared ?? false) })}
-            className={cn(
-              "relative h-5 w-9 rounded-full transition-colors flex-shrink-0",
-              tool.isShared ? "bg-primary" : "bg-slate-200"
-            )}
-          >
-            <span
+            <button
+              role="switch"
+              aria-checked={tool.isShared ?? false}
+              onClick={() => onUpdate({ isShared: !(tool.isShared ?? false) })}
               className={cn(
-                "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
-                tool.isShared ? "left-4" : "left-0.5"
+                "relative h-5 w-9 rounded-full transition-colors flex-shrink-0",
+                tool.isShared ? "bg-primary" : "bg-slate-200"
               )}
-            />
-          </button>
-        </div>
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
+                  tool.isShared ? "left-4" : "left-0.5"
+                )}
+              />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

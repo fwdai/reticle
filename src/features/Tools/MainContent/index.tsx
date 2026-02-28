@@ -6,6 +6,7 @@ import Header from "../Header";
 import { ToolList } from "./List";
 import { ToolDetail } from "./ToolDetail";
 import { createEmptyTool } from "../constants";
+import { copyToolSchema } from "@/components/Tools/utils";
 import {
   listSharedToolsWithMeta,
   insertGlobalTool,
@@ -110,29 +111,6 @@ function ToolsMainContent() {
     setSaveStatus("saved");
     refreshTools();
   }, [flushSave, refreshTools]);
-
-  const copyToolSchema = useCallback((tool: Tool) => {
-    const schema = {
-      type: "function",
-      function: {
-        name: tool.name,
-        description: tool.description,
-        parameters: {
-          type: "object",
-          properties: Object.fromEntries(
-            tool.parameters.map((p) => [
-              p.name,
-              { type: p.type, description: p.description },
-            ])
-          ),
-          required: tool.parameters
-            .filter((p) => p.required)
-            .map((p) => p.name),
-        },
-      },
-    };
-    navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
-  }, []);
 
   if (selectedTool) {
     return (

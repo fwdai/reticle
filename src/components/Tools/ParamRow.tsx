@@ -1,5 +1,12 @@
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { PARAM_TYPES } from "./constants";
 import type { ToolParameter } from "./types";
 
@@ -11,46 +18,50 @@ interface ParamRowProps {
 
 export function ParamRow({ param, onUpdate, onRemove }: ParamRowProps) {
   return (
-    <div className="group rounded-xl border border-border-light bg-white p-3 hover:border-primary/30 transition-all">
-      <div className="flex items-start gap-3">
-        <div className="flex flex-1 flex-wrap gap-2">
-          <input
-            type="text"
-            value={param.name}
-            onChange={(e) => onUpdate({ name: e.target.value })}
-            placeholder="param_name"
-            className="w-[140px] rounded-lg border border-border-light bg-white px-3 py-2 font-mono text-xs focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-all"
-            autoCapitalize="off"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-          <select
-            value={param.type}
-            onChange={(e) => onUpdate({ type: e.target.value as ToolParameter["type"] })}
-            className="rounded-lg border border-border-light bg-white px-3 py-2 text-xs font-medium text-text-main focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-          >
+    <div className="group rounded-xl border border-border-light bg-slate-50 p-3 hover:border-primary/30 transition-all">
+      <div className="flex items-center gap-2.5">
+        <input
+          type="text"
+          value={param.name}
+          onChange={(e) => onUpdate({ name: e.target.value })}
+          placeholder="param_name"
+          className="w-[140px] rounded-lg border border-border-light bg-white px-3 py-2 font-mono text-xs focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+          autoCapitalize="off"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        <Select
+          value={param.type}
+          onValueChange={(val) =>
+            onUpdate({ type: val as ToolParameter["type"] })
+          }
+        >
+          <SelectTrigger className="w-[110px] h-auto py-2 px-3 text-xs font-medium">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
             {PARAM_TYPES.map((t) => (
-              <option key={t} value={t}>
+              <SelectItem key={t} value={t} className="text-xs">
                 {t}
-              </option>
+              </SelectItem>
             ))}
-          </select>
-          <button
-            onClick={() => onUpdate({ required: !param.required })}
-            className={cn(
-              "rounded-lg border px-3 py-2 text-[10px] font-bold tracking-wide transition-all",
-              param.required
-                ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-border-light bg-white text-text-muted hover:text-text-main"
-            )}
-          >
-            {param.required ? "REQUIRED" : "OPTIONAL"}
-          </button>
-        </div>
+          </SelectContent>
+        </Select>
+        <button
+          onClick={() => onUpdate({ required: !param.required })}
+          className={cn(
+            "rounded-lg border px-2.5 py-2 text-[10px] font-bold tracking-wide transition-all",
+            param.required
+              ? "border-primary/30 bg-primary/10 text-primary"
+              : "border-border-light bg-white text-text-muted hover:text-text-main"
+          )}
+        >
+          {param.required ? "REQUIRED" : "OPTIONAL"}
+        </button>
         <button
           onClick={onRemove}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-text-muted hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+          className="ml-auto flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -60,7 +71,7 @@ export function ParamRow({ param, onUpdate, onRemove }: ParamRowProps) {
         value={param.description}
         onChange={(e) => onUpdate({ description: e.target.value })}
         placeholder="Parameter description (helps the LLM understand usage)"
-        className="mt-2 w-full rounded-lg border border-border-light bg-white px-3 py-2 text-xs text-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-text-main transition-all"
+        className="mt-2.5 w-full rounded-lg border border-border-light bg-white px-3 py-2 text-xs text-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-text-main transition-all"
       />
     </div>
   );

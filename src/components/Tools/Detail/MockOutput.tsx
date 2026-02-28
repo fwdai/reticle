@@ -31,7 +31,7 @@ export function MockOutput({
           ) : (
             <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
           )}
-          <span className={panelTitle}>Tool Response Mock</span>
+          <span className={panelTitle}>Tool Response</span>
         </div>
         <div className="flex items-center rounded-lg border border-border-light bg-white p-0.5">
           <button

@@ -630,6 +630,23 @@ export async function listSharedToolsWithMeta(): Promise<(Tool & ToolMeta)[]> {
   }));
 }
 
+export async function getToolMeta(toolId: string): Promise<ToolMeta> {
+  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
+    table: 'tools',
+    query: { where: { id: toolId } },
+  });
+  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  const updatedAt = row && typeof row.updated_at === 'number' ? row.updated_at : null;
+
+  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
+    table: 'tool_links',
+    query: { where: { tool_id: toolId } },
+  });
+  const usedBy = Array.isArray(links) ? links.length : 0;
+
+  return { updatedAt, usedBy };
+}
+
 export async function insertGlobalTool(tool: Tool): Promise<string> {
   const data = toolToDbRow({ ...tool, isShared: true });
   return invoke<string>('db_insert_cmd', { table: 'tools', data });

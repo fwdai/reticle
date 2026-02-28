@@ -1,12 +1,6 @@
-import type { Tool, ToolParameter } from "./types";
+import type { Tool } from "./types";
 
-export const PARAM_TYPES = [
-  "string",
-  "number",
-  "boolean",
-  "object",
-  "array",
-] as const;
+export { PARAM_TYPES, createEmptyParam } from "@/components/Tools/constants";
 
 export function createEmptyTool(): Tool {
   return {
@@ -17,15 +11,5 @@ export function createEmptyTool(): Tool {
     mockResponse: '{\n  "result": "success"\n}',
     mockMode: "json",
     isShared: true,
-  };
-}
-
-export function createEmptyParam(): ToolParameter {
-  return {
-    id: crypto.randomUUID(),
-    name: "",
-    type: "string",
-    description: "",
-    required: true,
   };
 }

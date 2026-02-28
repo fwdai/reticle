@@ -11,7 +11,7 @@ interface DetailHeaderProps {
 
 export function DetailHeader({ tool, onBack, onRemove }: DetailHeaderProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 max-w-4xl mx-auto">
       <button
         onClick={onBack}
         className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-light bg-white text-text-muted hover:text-text-main hover:border-primary/40 transition-all"

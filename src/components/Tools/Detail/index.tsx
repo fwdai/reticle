@@ -1,63 +1,80 @@
+import { useState } from "react";
+import { createEmptyParam } from "../constants";
 import type { Tool, ToolParameter } from "../types";
-import { DetailHeader } from "./Header";
-import { Identity } from "./Identity";
+import { ToolDefinition } from "./ToolDefinition";
 import { MockOutput } from "./MockOutput";
 import { Parameters } from "./Parameters";
 import { SchemaPreview } from "./SchemaPreview";
+import { Usage } from "./Usage";
 
 interface ToolDetailProps {
   tool: Tool;
-  expandedSections: Record<string, boolean>;
-  onBack: () => void;
-  onUpdateTool: (id: string, updates: Partial<Tool>) => void;
-  onRemoveTool: (id: string) => void;
-  onAddParam: (toolId: string) => void;
-  onUpdateParam: (toolId: string, paramId: string, updates: Partial<ToolParameter>) => void;
-  onRemoveParam: (toolId: string, paramId: string) => void;
-  onToggleSection: (key: string) => void;
+  showSharedToggle?: boolean;
+  usedBy?: number;
+  updatedAt?: number | null;
+  onUpdate: (id: string, updates: Partial<Tool>) => void;
 }
 
 export function ToolDetail({
   tool,
-  expandedSections,
-  onBack,
-  onUpdateTool,
-  onRemoveTool,
-  onAddParam,
-  onUpdateParam,
-  onRemoveParam,
-  onToggleSection,
+  showSharedToggle = false,
+  usedBy,
+  updatedAt,
+  onUpdate,
 }: ToolDetailProps) {
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({ params: true, output: true });
+
+  const toggleSection = (key: string) =>
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const addParam = () =>
+    onUpdate(tool.id, {
+      parameters: [...tool.parameters, createEmptyParam()],
+    });
+
+  const updateParam = (paramId: string, updates: Partial<ToolParameter>) =>
+    onUpdate(tool.id, {
+      parameters: tool.parameters.map((p) =>
+        p.id === paramId ? { ...p, ...updates } : p
+      ),
+    });
+
+  const removeParam = (paramId: string) =>
+    onUpdate(tool.id, {
+      parameters: tool.parameters.filter((p) => p.id !== paramId),
+    });
+
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      <DetailHeader
+      <ToolDefinition
         tool={tool}
-        onBack={onBack}
-        onRemove={() => onRemoveTool(tool.id)}
-      />
-
-      <Identity
-        tool={tool}
-        onUpdate={(updates) => onUpdateTool(tool.id, updates)}
+        showSharedToggle={showSharedToggle}
+        onUpdate={(updates) => onUpdate(tool.id, updates)}
       />
 
       <Parameters
         tool={tool}
         expanded={expandedSections.params ?? true}
-        onToggle={() => onToggleSection("params")}
-        onAddParam={() => onAddParam(tool.id)}
-        onUpdateParam={(paramId, updates) => onUpdateParam(tool.id, paramId, updates)}
-        onRemoveParam={(paramId) => onRemoveParam(tool.id, paramId)}
+        onToggle={() => toggleSection("params")}
+        onAddParam={addParam}
+        onUpdateParam={updateParam}
+        onRemoveParam={removeParam}
       />
 
       <MockOutput
         tool={tool}
         expanded={expandedSections.output ?? true}
-        onToggle={() => onToggleSection("output")}
-        onUpdate={(updates) => onUpdateTool(tool.id, updates)}
+        onToggle={() => toggleSection("output")}
+        onUpdate={(updates) => onUpdate(tool.id, updates)}
       />
 
       <SchemaPreview tool={tool} />
+
+      {usedBy !== undefined && (
+        <Usage usedBy={usedBy} updatedAt={updatedAt ?? null} />
+      )}
     </div>
   );
 }
