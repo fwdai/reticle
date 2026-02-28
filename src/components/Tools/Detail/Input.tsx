@@ -5,7 +5,7 @@ import { panelBase, panelHeader, panelTitle } from "../constants";
 import { ParamRow } from "../ParamRow";
 import type { Tool, ToolParameter } from "../types";
 
-interface ParametersProps {
+interface InputProps {
   tool: Tool;
   expanded: boolean;
   onToggle: () => void;
@@ -14,14 +14,14 @@ interface ParametersProps {
   onRemoveParam: (paramId: string) => void;
 }
 
-export function Parameters({
+export function Input({
   tool,
   expanded,
   onToggle,
   onAddParam,
   onUpdateParam,
   onRemoveParam,
-}: ParametersProps) {
+}: InputProps) {
   return (
     <div className={panelBase}>
       <button

@@ -3,19 +3,19 @@ import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle, inputBase } from "../constants";
 import type { Tool } from "../types";
 
-interface ToolDefinitionProps {
+interface DefinitionProps {
   tool: Tool;
   showSharedToggle?: boolean;
   autoFocusName?: boolean;
   onUpdate: (updates: Partial<Tool>) => void;
 }
 
-export function ToolDefinition({
+export function Definition({
   tool,
   showSharedToggle = false,
   autoFocusName = false,
   onUpdate,
-}: ToolDefinitionProps) {
+}: DefinitionProps) {
   return (
     <div className={panelBase}>
       <div className={panelHeader}>

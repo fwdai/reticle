@@ -3,19 +3,19 @@ import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle, inputBase } from "../constants";
 import type { Tool } from "../types";
 
-interface MockOutputProps {
+interface OutputProps {
   tool: Tool;
   expanded: boolean;
   onToggle: () => void;
   onUpdate: (updates: Partial<Tool>) => void;
 }
 
-export function MockOutput({
+export function Output({
   tool,
   expanded,
   onToggle,
   onUpdate,
-}: MockOutputProps) {
+}: OutputProps) {
   return (
     <div className={panelBase}>
       <button

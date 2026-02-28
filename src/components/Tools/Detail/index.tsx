@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { createEmptyParam } from "../constants";
 import type { Tool, ToolParameter } from "../types";
-import { ToolDefinition } from "./ToolDefinition";
-import { MockOutput } from "./MockOutput";
-import { Parameters } from "./Parameters";
+import { Definition } from "./Definition";
+import { Input } from "./Input";
+import { Output } from "./Output";
 import { SchemaPreview } from "./SchemaPreview";
 import { Usage } from "./Usage";
 
@@ -50,14 +50,14 @@ export function ToolDetail({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      <ToolDefinition
+      <Definition
         tool={tool}
         showSharedToggle={showSharedToggle}
         autoFocusName={autoFocusName}
         onUpdate={(updates) => onUpdate(tool.id, updates)}
       />
 
-      <Parameters
+      <Input
         tool={tool}
         expanded={expandedSections.params ?? true}
         onToggle={() => toggleSection("params")}
@@ -66,7 +66,7 @@ export function ToolDetail({
         onRemoveParam={removeParam}
       />
 
-      <MockOutput
+      <Output
         tool={tool}
         expanded={expandedSections.output ?? true}
         onToggle={() => toggleSection("output")}
