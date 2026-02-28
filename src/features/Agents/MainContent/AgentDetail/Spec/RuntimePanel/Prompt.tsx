@@ -58,7 +58,7 @@ export function Prompt() {
               "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-300",
               taskInput.trim() && !isRunning
                 ? "bg-primary text-white hover:bg-primary/90 cursor-pointer"
-                : "bg-gray-100 text-text-muted/40 cursor-not-allowed"
+                : "bg-primary/40 text-white cursor-not-allowed"
             )}
           >
             {isRunning ? (

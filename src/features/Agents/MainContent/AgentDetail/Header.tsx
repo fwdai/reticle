@@ -1,4 +1,4 @@
-import { ArrowLeft, Share, Play } from "lucide-react";
+import { ArrowLeft, Share } from "lucide-react";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { EditableTitle, type SaveStatus } from "@/components/ui/EditableTitle";
 import LayoutHeader from "@/components/Layout/Header";
@@ -11,7 +11,6 @@ interface HeaderProps {
   onBack: () => void;
   onAgentNameChange: (name: string) => void;
   onViewModeChange: (mode: string) => void;
-  onRun: () => void;
 }
 
 export function Header({
@@ -22,7 +21,6 @@ export function Header({
   onBack,
   onAgentNameChange,
   onViewModeChange,
-  onRun,
 }: HeaderProps) {
   return (
     <LayoutHeader>
@@ -52,14 +50,6 @@ export function Header({
           value={viewMode}
           onChange={onViewModeChange}
         />
-        <div className="h-6 w-px bg-border-light" />
-        <button
-          onClick={onRun}
-          className="h-9 px-5 rounded-xl gap-2 inline-flex items-center justify-center text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
-        >
-          <Play className="h-3.5 w-3.5" />
-          Run Agent
-        </button>
         <button className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">
           <Share size={18} />
         </button>
