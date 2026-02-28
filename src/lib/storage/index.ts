@@ -444,7 +444,7 @@ function toolToDbRow(tool: Tool, sortOrder = 0): ToolDbRow {
     parameters_json: JSON.stringify(tool.parameters),
     mock_response: tool.mockResponse,
     mock_mode: tool.mockMode ?? 'json',
-    code: null,
+    code: tool.code ?? null,
     is_enabled: 1,
     is_global: tool.isShared ? 1 : 0,
     sort_order: sortOrder,
@@ -476,6 +476,7 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
       row.mock_mode === 'code' || row.mock_mode === 'json'
         ? row.mock_mode
         : 'json',
+    code: typeof row.code === 'string' ? row.code : undefined,
     isShared: row.is_global === 1,
   };
 }
@@ -541,6 +542,7 @@ export async function updateTool(
   if (updates.mockResponse !== undefined)
     data.mock_response = updates.mockResponse;
   if (updates.mockMode !== undefined) data.mock_mode = updates.mockMode;
+  if (updates.code !== undefined) data.code = updates.code;
   if (updates.isShared !== undefined) data.is_global = updates.isShared ? 1 : 0;
   if (Object.keys(data).length === 0) return;
   await invoke('db_update_cmd', {

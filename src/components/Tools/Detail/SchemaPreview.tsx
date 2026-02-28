@@ -2,6 +2,7 @@ import { Copy } from "lucide-react";
 import { panelBase, panelHeader, panelTitle } from "../constants";
 import { copyToolSchema, getToolSchemaForPreview } from "../utils";
 import type { Tool } from "../types";
+import { CodeEditor } from "@/components/ui/CodeEditor";
 
 interface SchemaPreviewProps {
   tool: Tool;
@@ -23,9 +24,12 @@ export function SchemaPreview({ tool }: SchemaPreviewProps) {
         </button>
       </div>
       <div className="p-4">
-        <pre className="overflow-x-auto text-[12px] leading-relaxed font-mono p-4 rounded-lg bg-sidebar-light/30 border border-border-light">
-          {JSON.stringify(schema, null, 2)}
-        </pre>
+        <CodeEditor
+          value={JSON.stringify(schema, null, 2)}
+          onChange={() => {}}
+          readOnly
+          minHeight="100px"
+        />
       </div>
     </div>
   );

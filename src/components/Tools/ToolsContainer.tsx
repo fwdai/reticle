@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   insertTool,
   updateTool as updateToolStorage,
@@ -11,11 +11,14 @@ import {
   getToolMeta,
 } from "@/lib/storage";
 import type { ToolMeta } from "@/lib/storage";
+import type { SaveStatus } from "@/components/ui/EditableTitle";
 import { createEmptyTool } from "./constants";
 import type { Tool } from "./types";
 import { ToolsPanel } from "./Panel";
 import { ToolDetail } from "./Detail";
 import { DetailHeader } from "./Detail/Header";
+
+const DEBOUNCE_MS = 800;
 
 interface ToolsContainerProps {
   entityId: string | null;
@@ -37,6 +40,9 @@ export function ToolsContainer({
   );
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [toolMeta, setToolMeta] = useState<ToolMeta | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<{ id: string; updates: Partial<Tool> } | null>(null);
 
   const setLocalTools = useCallback(
     (updater: (prev: Tool[]) => Tool[]) => {
@@ -97,33 +103,59 @@ export function ToolsContainer({
     }
   }, [entityId, entityType, localTools.length, setLocalTools]);
 
+  const flushToolSave = useCallback(async () => {
+    const pending = pendingRef.current;
+    if (!pending || !entityId) return;
+    pendingRef.current = null;
+    setSaveStatus("saving");
+    try {
+      if (pending.updates.isShared === false) {
+        await unsharedTool(pending.id, entityId);
+        const shared = await listSharedTools();
+        setSharedTools(shared);
+      } else if (pending.updates.isShared === true) {
+        await updateToolStorage(pending.id, pending.updates);
+        const shared = await listSharedTools();
+        setSharedTools(shared);
+      } else {
+        await updateToolStorage(pending.id, pending.updates);
+      }
+      setSaveStatus("saved");
+    } catch (e) {
+      console.warn("Failed to update tool:", e);
+      setSaveStatus("unsaved");
+    }
+  }, [entityId]);
+
   const updateTool = useCallback(
-    async (id: string, updates: Partial<Tool>) => {
+    (id: string, updates: Partial<Tool>) => {
       setLocalTools((prev) =>
         prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
       );
-      if (!entityId) return;
-      try {
-        if (updates.isShared === false) {
-          await unsharedTool(id, entityId);
-          const shared = await listSharedTools();
-          setSharedTools(shared);
-        } else if (updates.isShared === true) {
-          await updateToolStorage(id, updates);
-          const shared = await listSharedTools();
-          setSharedTools(shared);
-        } else {
-          await updateToolStorage(id, updates);
-        }
-      } catch (e) {
-        console.warn("Failed to update tool:", e);
-      }
+      setSaveStatus("unsaved");
+
+      const prev = pendingRef.current;
+      pendingRef.current =
+        prev && prev.id === id
+          ? { id, updates: { ...prev.updates, ...updates } }
+          : { id, updates };
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(flushToolSave, DEBOUNCE_MS);
     },
-    [entityId, setLocalTools]
+    [flushToolSave, setLocalTools]
   );
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const removeTool = useCallback(
     async (id: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      pendingRef.current = null;
       if (entityId) {
         try {
           await deleteTool(id);
@@ -169,7 +201,14 @@ export function ToolsContainer({
       <div className="space-y-4">
         <DetailHeader
           tool={selectedTool}
-          onBack={() => setSelectedToolId(null)}
+          onBack={async () => {
+            if (debounceRef.current) {
+              clearTimeout(debounceRef.current);
+              await flushToolSave();
+            }
+            setSelectedToolId(null);
+            setSaveStatus("saved");
+          }}
           onRemove={() => removeTool(selectedTool.id)}
         />
         <ToolDetail
@@ -178,6 +217,7 @@ export function ToolsContainer({
           autoFocusName={!selectedTool.name}
           usedBy={toolMeta?.usedBy}
           updatedAt={toolMeta?.updatedAt}
+          saveStatus={saveStatus}
           onUpdate={updateTool}
         />
       </div>

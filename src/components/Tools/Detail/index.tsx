@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createEmptyParam } from "../constants";
 import type { Tool, ToolParameter } from "../types";
+import type { SaveStatus } from "@/components/ui/EditableTitle";
 import { Definition } from "./Definition";
 import { Input } from "./Input";
 import { Output } from "./Output";
@@ -13,6 +14,7 @@ interface ToolDetailProps {
   autoFocusName?: boolean;
   usedBy?: number;
   updatedAt?: number | null;
+  saveStatus?: SaveStatus;
   onUpdate: (id: string, updates: Partial<Tool>) => void;
 }
 
@@ -22,6 +24,7 @@ export function ToolDetail({
   autoFocusName = false,
   usedBy,
   updatedAt,
+  saveStatus,
   onUpdate,
 }: ToolDetailProps) {
   const [expandedSections, setExpandedSections] = useState<
@@ -71,6 +74,7 @@ export function ToolDetail({
         expanded={expandedSections.output ?? true}
         onToggle={() => toggleSection("output")}
         onUpdate={(updates) => onUpdate(tool.id, updates)}
+        saveStatus={saveStatus}
       />
 
       <SchemaPreview tool={tool} />

@@ -13,6 +13,7 @@ export interface Tool {
   parameters: ToolParameter[];
   mockResponse: string;
   mockMode?: "json" | "code";
+  code?: string;
   isShared?: boolean;
 }
 
@@ -48,6 +49,7 @@ export function normalizeToolFromDb(raw: unknown): Tool | null {
         : "{}";
   const mockMode =
     o.mockMode === "code" || o.mockMode === "json" ? o.mockMode : "json";
+  const code = typeof o.code === "string" ? o.code : undefined;
   const isShared = o.isShared === true || o.is_global === 1;
 
   return {
@@ -57,6 +59,7 @@ export function normalizeToolFromDb(raw: unknown): Tool | null {
     parameters,
     mockResponse,
     mockMode,
+    code,
     isShared,
   };
 }

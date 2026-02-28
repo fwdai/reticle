@@ -1,13 +1,17 @@
 import { Braces, ChevronDown, ChevronRight, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { panelBase, panelHeader, panelTitle, inputBase } from "../constants";
+import { panelBase, panelHeader, panelTitle } from "../constants";
 import type { Tool } from "../types";
+import { CodeEditor } from "@/components/ui/CodeEditor";
+import { SaveIndicator } from "@/components/ui/SaveIndicator";
+import type { SaveStatus } from "@/components/ui/EditableTitle";
 
 interface OutputProps {
   tool: Tool;
   expanded: boolean;
   onToggle: () => void;
   onUpdate: (updates: Partial<Tool>) => void;
+  saveStatus?: SaveStatus;
 }
 
 export function Output({
@@ -15,6 +19,7 @@ export function Output({
   expanded,
   onToggle,
   onUpdate,
+  saveStatus,
 }: OutputProps) {
   return (
     <div className={panelBase}>
@@ -32,6 +37,7 @@ export function Output({
             <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
           )}
           <span className={panelTitle}>Tool Response</span>
+          {saveStatus && <SaveIndicator status={saveStatus} />}
         </div>
         <div className="flex items-center rounded-lg border border-border-light bg-white p-0.5">
           <button
@@ -71,15 +77,9 @@ export function Output({
         <div className="p-4">
           {tool.mockMode === "json" ? (
             <>
-              <textarea
+              <CodeEditor
                 value={tool.mockResponse}
-                onChange={(e) => onUpdate({ mockResponse: e.target.value })}
-                spellCheck={false}
-                rows={8}
-                className={cn(
-                  inputBase,
-                  "font-mono text-[13px] leading-relaxed p-4 resize-none focus:border-primary/50"
-                )}
+                onChange={(val) => onUpdate({ mockResponse: val })}
                 placeholder='{ "result": "..." }'
               />
               <p className="mt-2 text-[10px] tracking-wide text-text-muted">
@@ -88,25 +88,15 @@ export function Output({
             </>
           ) : (
             <>
-              <textarea
-                value={tool.mockResponse}
-                onChange={(e) => onUpdate({ mockResponse: e.target.value })}
-                spellCheck={false}
-                rows={10}
-                className={cn(
-                  inputBase,
-                  "font-mono text-[13px] leading-relaxed p-4 resize-none focus:border-primary/50"
-                )}
+              <CodeEditor
+                value={tool.code ?? ""}
+                onChange={(val) => onUpdate({ code: val })}
+                language="javascript"
                 placeholder={`// Tool implementation\nasync function execute(params) {\n  // your code here\n  return { result: "..." };\n}`}
               />
-              <div className="mt-2 flex items-center gap-2">
-                <span className="rounded-md bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                  COMING SOON
-                </span>
-                <p className="text-[10px] tracking-wide text-text-muted">
-                  CODE MODE WILL EXECUTE JS SNIPPETS AS TOOL IMPLEMENTATIONS
-                </p>
-              </div>
+              <p className="mt-2 text-[10px] tracking-wide text-text-muted">
+                THIS CODE WILL BE EXECUTED WHEN THE LLM CALLS THIS TOOL DURING A TEST RUN
+              </p>
             </>
           )}
         </div>
