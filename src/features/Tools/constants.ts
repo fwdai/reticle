@@ -2,10 +2,14 @@ import type { RegistryTool, ToolParameter } from "./types";
 
 export const CATEGORIES = [
   "All",
-  "Data",
-  "Communication",
-  "DevOps",
   "Search",
+  "HTTP / API",
+  "Database",
+  "File System",
+  "Shell / CLI",
+  "Communication",
+  "AI",
+  "Utility",
   "Custom",
 ] as const;
 
@@ -81,7 +85,7 @@ export const SEED_TOOLS: RegistryTool[] = [
     name: "query_database",
     description:
       "Execute a read-only SQL query against the connected database and return results.",
-    category: "Data",
+    category: "Database",
     parameters: [
       { id: "p7", name: "sql", type: "string", description: "SQL query to execute", required: true },
       { id: "p8", name: "params", type: "array", description: "Parameterized query values", required: false },
@@ -96,7 +100,7 @@ export const SEED_TOOLS: RegistryTool[] = [
     name: "deploy_service",
     description:
       "Trigger a deployment pipeline for the specified service and environment.",
-    category: "DevOps",
+    category: "Shell / CLI",
     parameters: [
       { id: "p9", name: "service", type: "string", description: "Service name", required: true },
       { id: "p10", name: "environment", type: "string", description: "Target environment", required: true },

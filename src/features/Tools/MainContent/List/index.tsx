@@ -7,6 +7,8 @@ interface ToolListProps {
   searchQuery: string;
   onSelectTool: (id: string) => void;
   onCreateTool: () => void;
+  onDeleteTool: (id: string) => void;
+  onCopySchema: (tool: RegistryTool) => void;
 }
 
 export function ToolList({
@@ -14,18 +16,28 @@ export function ToolList({
   searchQuery,
   onSelectTool,
   onCreateTool,
+  onDeleteTool,
+  onCopySchema,
 }: ToolListProps) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
       {tools.length === 0 ? (
         <EmptyState hasSearch={!!searchQuery} onCreateTool={onCreateTool} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-2">
           {tools.map((tool) => (
             <ToolCard
               key={tool.id}
               tool={tool}
               onSelect={() => onSelectTool(tool.id)}
+              onDelete={(e) => {
+                e.stopPropagation();
+                onDeleteTool(tool.id);
+              }}
+              onCopySchema={(e) => {
+                e.stopPropagation();
+                onCopySchema(tool);
+              }}
             />
           ))}
         </div>

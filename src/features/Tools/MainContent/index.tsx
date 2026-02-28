@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import MainContent from "@/components/Layout/MainContent";
 import Header from "../Header";
@@ -51,6 +51,29 @@ function ToolsMainContent({
     if (selectedId === id) setSelectedId(null);
   };
 
+  const copyToolSchema = useCallback((tool: RegistryTool) => {
+    const schema = {
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: {
+          type: "object",
+          properties: Object.fromEntries(
+            tool.parameters.map((p) => [
+              p.name,
+              { type: p.type, description: p.description },
+            ])
+          ),
+          required: tool.parameters
+            .filter((p) => p.required)
+            .map((p) => p.name),
+        },
+      },
+    };
+    navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
+  }, []);
+
   if (selectedTool) {
     return (
       <ToolDetail
@@ -75,6 +98,8 @@ function ToolsMainContent({
         searchQuery={searchQuery}
         onSelectTool={setSelectedId}
         onCreateTool={handleCreate}
+        onDeleteTool={handleDelete}
+        onCopySchema={copyToolSchema}
       />
     </MainContent>
   );
