@@ -15,7 +15,8 @@ const panelContentClass =
 function StudioMain() {
   const context = useContext(StudioContext);
   const fileCount = context?.studioState.currentScenario.attachments?.length ?? 0;
-  const toolsCount = context?.studioState.currentScenario.tools?.length ?? 0;
+  const toolsCount = (context?.studioState.currentScenario.tools?.length ?? 0)
+    + (context?.studioState.currentScenario.enabledSharedToolIds?.length ?? 0);
 
   return (
     <Tabs

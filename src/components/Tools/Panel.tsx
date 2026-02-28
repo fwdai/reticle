@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Globe, Pencil, Plus, Search, Trash2, Wrench } from "lucide-react";
+import { Globe, Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
+import { SearchField } from "@/components/ui/SearchField";
 import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle } from "./constants";
 import type { Tool } from "./types";
@@ -117,16 +118,13 @@ export function ToolsPanel({
       ) : (
         <div className="flex flex-col">
           <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center gap-2 rounded-lg border border-border-light bg-white px-3 py-1.5">
-              <Search className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
-              <input
-                type="text"
-                placeholder="Search shared tools…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-xs text-text-main placeholder:text-text-muted focus:outline-none"
-              />
-            </div>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search shared tools…"
+              className="w-full"
+              inputClassName="w-full sm:w-full"
+            />
           </div>
 
           <div className="p-4 pt-1">

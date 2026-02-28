@@ -17,11 +17,10 @@ import { ToolDetail } from "./Detail";
 interface ToolsContainerProps {
   entityId: string | null;
   entityType: "scenario" | "agent";
-  /**
-   * Called whenever the local (non-shared) tools list changes.
-   * Use this to sync tools into parent state (e.g. StudioContext).
-   */
+  /** Called whenever the local (non-shared) tools list changes. */
   onLocalToolsChange?: (tools: Tool[]) => void;
+  /** Called whenever the set of enabled shared tool IDs changes. */
+  onEnabledSharedToolIdsChange?: (ids: string[]) => void;
 }
 
 /**
@@ -33,6 +32,7 @@ export function ToolsContainer({
   entityId,
   entityType,
   onLocalToolsChange,
+  onEnabledSharedToolIdsChange,
 }: ToolsContainerProps) {
   const [localTools, setLocalToolsState] = useState<Tool[]>([]);
   const [sharedTools, setSharedTools] = useState<Tool[]>([]);
@@ -68,6 +68,7 @@ export function ToolsContainer({
       setLocalToolsState(local);
       setEnabledSharedToolIds(enabledShared);
       onLocalToolsChange?.(local);
+      onEnabledSharedToolIdsChange?.(enabledShared);
     }).catch(e => console.warn("Failed to load tools:", e));
 
     return () => { cancelled = true; };
@@ -171,7 +172,11 @@ export function ToolsContainer({
   const toggleSharedTool = useCallback(async (toolId: string) => {
     if (!entityId) return;
     const isEnabled = enabledSharedToolIds.includes(toolId);
-    setEnabledSharedToolIds(prev => isEnabled ? prev.filter(id => id !== toolId) : [...prev, toolId]);
+    setEnabledSharedToolIds(prev => {
+      const next = isEnabled ? prev.filter(id => id !== toolId) : [...prev, toolId];
+      onEnabledSharedToolIdsChange?.(next);
+      return next;
+    });
     try {
       if (isEnabled) {
         await unlinkTool(toolId, entityId, entityType);

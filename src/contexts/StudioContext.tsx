@@ -42,6 +42,7 @@ export interface CurrentScenario {
   systemPrompt: string;
   userPrompt: string;
   tools: Tool[];
+  enabledSharedToolIds: string[];
   history: HistoryItem[];
   attachments: AttachedFile[];
   createdAt?: string;
@@ -137,6 +138,7 @@ const initialScenario: CurrentScenario = {
   systemPrompt: 'You are a helpful assistant.',
   userPrompt: 'Hello, world!',
   tools: [],
+  enabledSharedToolIds: [],
   history: [],
   attachments: [],
 };
@@ -360,6 +362,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           systemPrompt: dbScenario.system_prompt,
           userPrompt: dbScenario.user_prompt,
           tools,
+          enabledSharedToolIds: [],
           history: JSON.parse(dbScenario.history_json || '[]'),
           attachments,
           createdAt: dbScenario.created_at?.toString(),

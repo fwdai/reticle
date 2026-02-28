@@ -1,14 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Tabs } from "@/components/ui/Tabs";
-import TabPanel from "@/components/ui/Tabs/TabPanel";
-import { TabTitle } from "@/components/ui/Tabs/TabTitle";
 import MainContent from "@/components/Layout/MainContent";
 
 import { AgentProvider } from "@/contexts/AgentContext";
 import { Header } from "./Header";
 import { SpecLayout as Spec } from "./Spec";
-import { Panel as Runs } from "./Runs";
-import { mockRuns } from "./Runs/constants";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 import { runAgentAction } from "@/actions/agentActions";
@@ -47,7 +42,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const [memoryEnabled, setMemoryEnabled] = useState(agent.memoryEnabled);
   const [memorySource, setMemorySource] = useState("local");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState("editor");
   const [isLoading, setIsLoading] = useState(!isNew);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
@@ -186,46 +180,39 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           onViewModeChange={setViewMode}
         />
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-          <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
-            <TabPanel title="Agent Spec">
-              <Spec
-                agentId={effectiveId}
-                provider={provider}
-                model={model}
-                agentGoal={agentGoal}
-                systemInstructions={systemInstructions}
-                maxIterations={maxIterations}
-                timeout={timeoutValue}
-                retryPolicy={retryPolicy}
-                toolCallStrategy={toolCallStrategy}
-                memoryEnabled={memoryEnabled}
-                memorySource={memorySource}
-                temperature={temperature}
-                topP={topP}
-                maxTokens={maxTokens}
-                seed={seed}
-                showAdvanced={showAdvanced}
-                onProviderChange={setProvider}
-                onModelChange={setModel}
-                onAgentGoalChange={setAgentGoal}
-                onSystemInstructionsChange={setSystemInstructions}
-                onMaxIterationsChange={setMaxIterations}
-                onTimeoutChange={setTimeoutValue}
-                onRetryPolicyChange={setRetryPolicy}
-                onToolCallStrategyChange={setToolCallStrategy}
-                onMemoryEnabledChange={setMemoryEnabled}
-                onMemorySourceChange={setMemorySource}
-                onTemperatureChange={setTemperature}
-                onTopPChange={setTopP}
-                onMaxTokensChange={setMaxTokens}
-                onSeedChange={setSeed}
-                onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
-              />
-            </TabPanel>
-            <TabPanel title={<TabTitle label="Runs" count={mockRuns.length} />}>
-              <Runs runs={mockRuns} />
-            </TabPanel>
-          </Tabs>
+          <Spec
+            agentId={effectiveId}
+            provider={provider}
+            model={model}
+            agentGoal={agentGoal}
+            systemInstructions={systemInstructions}
+            maxIterations={maxIterations}
+            timeout={timeoutValue}
+            retryPolicy={retryPolicy}
+            toolCallStrategy={toolCallStrategy}
+            memoryEnabled={memoryEnabled}
+            memorySource={memorySource}
+            temperature={temperature}
+            topP={topP}
+            maxTokens={maxTokens}
+            seed={seed}
+            showAdvanced={showAdvanced}
+            onProviderChange={setProvider}
+            onModelChange={setModel}
+            onAgentGoalChange={setAgentGoal}
+            onSystemInstructionsChange={setSystemInstructions}
+            onMaxIterationsChange={setMaxIterations}
+            onTimeoutChange={setTimeoutValue}
+            onRetryPolicyChange={setRetryPolicy}
+            onToolCallStrategyChange={setToolCallStrategy}
+            onMemoryEnabledChange={setMemoryEnabled}
+            onMemorySourceChange={setMemorySource}
+            onTemperatureChange={setTemperature}
+            onTopPChange={setTopP}
+            onMaxTokensChange={setMaxTokens}
+            onSeedChange={setSeed}
+            onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
+          />
         </div>
       </AgentProvider>
     </MainContent>

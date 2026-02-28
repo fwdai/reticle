@@ -16,11 +16,19 @@ export default function Tools() {
     }));
   }, [setStudioState]);
 
+  const handleEnabledSharedToolIdsChange = useCallback((ids: string[]) => {
+    setStudioState(prev => ({
+      ...prev,
+      currentScenario: { ...prev.currentScenario, enabledSharedToolIds: ids },
+    }));
+  }, [setStudioState]);
+
   return (
     <ToolsContainer
       entityId={studioState.scenarioId ?? null}
       entityType="scenario"
       onLocalToolsChange={handleLocalToolsChange}
+      onEnabledSharedToolIdsChange={handleEnabledSharedToolIdsChange}
     />
   );
 }
