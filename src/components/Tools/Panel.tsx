@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Globe, Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
@@ -28,8 +28,18 @@ export function ToolsPanel({
   onRemoveTool,
   onToggleSharedTool,
 }: ToolsPanelProps) {
-  const [view, setView] = useState<ViewMode>("shared");
+  const [view, setView] = useState<ViewMode>("local");
   const [search, setSearch] = useState("");
+  const initialViewSetRef = useRef(false);
+
+  // Once shared tools load, switch to "shared" tab if any are enabled
+  useEffect(() => {
+    if (initialViewSetRef.current) return;
+    if (enabledSharedToolIds.length > 0) {
+      setView("shared");
+      initialViewSetRef.current = true;
+    }
+  }, [enabledSharedToolIds]);
 
   const totalCount = localTools.length + enabledSharedToolIds.length;
 
