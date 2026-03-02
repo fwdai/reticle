@@ -6,6 +6,7 @@ import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
 import type { PromptTemplate } from "@/types";
 import { TemplateDetail } from "./TemplateDetail";
+import { EmptyState } from "./EmptyState";
 
 function parseVariableKeys(variablesJson: string | null | undefined): string[] {
   if (!variablesJson) return [];
@@ -125,11 +126,7 @@ function TemplatesPage() {
         {loading ? (
           <p className="text-text-muted">Loading templates…</p>
         ) : filtered.length === 0 ? (
-          <p className="text-text-muted">
-            {search
-              ? "No templates match your search."
-              : "No templates saved yet. Go to the Scenario tab to create one!"}
-          </p>
+          <EmptyState hasSearch={!!search} onCreateTemplate={onCreateTemplate} />
         ) : (
           <div className="space-y-2">
             {filtered.map((template) => {
