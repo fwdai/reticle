@@ -24,14 +24,20 @@ function Prompt() {
   };
 
   const handleVariablesChange = (variables: Variable[]) => {
-    // TODO: Implement variable handling in the context
-    console.log("Variables changed:", variables);
+    setStudioState((prev) => ({
+      ...prev,
+      currentScenario: {
+        ...prev.currentScenario,
+        userVariables: variables,
+      },
+    }));
   };
 
   return (
     <PromptBox
       type="user"
       initialPromptValue={userPrompt}
+      initialVariables={studioState.currentScenario.userVariables}
       onPromptChange={handlePromptChange}
       onVariablesChange={handleVariablesChange}
       showTemplateManager={true}

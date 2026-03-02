@@ -23,14 +23,21 @@ function SystemMessage() {
     }));
   };
 
-  const handleVariablesChange = (_variables: Variable[]) => {
-    // TODO: Implement variable handling in the context
+  const handleVariablesChange = (variables: Variable[]) => {
+    setStudioState((prev) => ({
+      ...prev,
+      currentScenario: {
+        ...prev.currentScenario,
+        systemVariables: variables,
+      },
+    }));
   };
 
   return (
     <PromptBox
       type="system"
       initialPromptValue={systemPrompt}
+      initialVariables={studioState.currentScenario.systemVariables}
       onPromptChange={handlePromptChange}
       onVariablesChange={handleVariablesChange}
       showTemplateManager={true}

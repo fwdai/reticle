@@ -1,5 +1,6 @@
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tool } from '@/components/Tools/types';
+import type { Variable } from '@/components/ui/PromptBox/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario, getSetting } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,6 +9,33 @@ import { fetchAndNormalizeModels } from '@/lib/modelManager';
 import { Collection, Scenario } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 import { PROVIDERS_LIST } from '@/constants/providers';
+
+/** Parsed shape of variables_json in scenarios table */
+export interface ScenarioVariablesJson {
+  system?: Array<{ key: string; value: string }>;
+  user?: Array<{ key: string; value: string }>;
+}
+
+function parseScenarioVariables(variablesJson: string | null | undefined): {
+  system: Variable[];
+  user: Variable[];
+} {
+  const defaultVar = (): Variable[] => [{ id: Date.now(), key: '', value: '' }];
+  if (!variablesJson) return { system: defaultVar(), user: defaultVar() };
+  try {
+    const parsed = JSON.parse(variablesJson) as ScenarioVariablesJson;
+    const withIds = (arr: Array<{ key: string; value: string }> | undefined): Variable[] => {
+      if (!Array.isArray(arr) || arr.length === 0) return defaultVar();
+      return arr.map((v, i) => ({ id: Date.now() + i, key: v.key ?? '', value: v.value ?? '' }));
+    };
+    return {
+      system: withIds(parsed.system),
+      user: withIds(parsed.user),
+    };
+  } catch {
+    return { system: defaultVar(), user: defaultVar() };
+  }
+}
 
 // --- State Interfaces ---
 
@@ -41,6 +69,8 @@ export interface CurrentScenario {
   configuration: ConfigurationState;
   systemPrompt: string;
   userPrompt: string;
+  systemVariables: Variable[];
+  userVariables: Variable[];
   tools: Tool[];
   enabledSharedToolIds: string[];
   history: HistoryItem[];
@@ -124,6 +154,10 @@ const LAST_USED_SCENARIO_ID_KEY = 'lastUsedScenarioId';
 
 // --- Initial State ---
 
+function getDefaultVariables(): Variable[] {
+  return [{ id: Date.now(), key: '', value: '' }];
+}
+
 const initialScenario: CurrentScenario = {
   id: uuidv4(),
   name: 'New Scenario',
@@ -137,6 +171,8 @@ const initialScenario: CurrentScenario = {
   },
   systemPrompt: 'You are a helpful assistant.',
   userPrompt: 'Hello, world!',
+  systemVariables: getDefaultVariables(),
+  userVariables: getDefaultVariables(),
   tools: [],
   enabledSharedToolIds: [],
   history: [],
@@ -283,6 +319,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         ...initialScenario,
         id: newId,
         configuration: scenarioConfig,
+        systemVariables: getDefaultVariables(),
+        userVariables: getDefaultVariables(),
       };
       setStudioState(prev => ({
         ...prev,
@@ -348,6 +386,10 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           }
         }
 
+        const { system: systemVariables, user: userVariables } = parseScenarioVariables(
+          dbScenario.variables_json
+        );
+
         const loadedScenario: CurrentScenario = {
           id: dbScenario.id!,
           name: dbScenario.title,
@@ -361,6 +403,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           },
           systemPrompt: dbScenario.system_prompt,
           userPrompt: dbScenario.user_prompt,
+          systemVariables,
+          userVariables,
           tools,
           enabledSharedToolIds: [],
           history: JSON.parse(dbScenario.history_json || '[]'),
@@ -423,6 +467,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           params_json: JSON.stringify(config),
           tools_json: JSON.stringify(initialScenario.tools),
           history_json: JSON.stringify(initialScenario.history),
+          variables_json: JSON.stringify({ system: [], user: [] }),
         };
 
         const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });

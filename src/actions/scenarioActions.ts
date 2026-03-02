@@ -10,7 +10,18 @@ import {
 } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
+import type { Variable } from '@/components/ui/PromptBox/types';
 import { Execution, Scenario } from '@/types';
+
+/** Replaces {{key}} placeholders in template with values from variables. */
+function substituteVariables(template: string, variables: Variable[]): string {
+  const map = Object.fromEntries(
+    variables
+      .filter((v) => v.key.trim() !== '')
+      .map((v) => [v.key.trim(), v.value])
+  );
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => map[key] ?? '');
+}
 
 function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
   try {
@@ -92,6 +103,10 @@ export async function saveScenarioAction(
 
     const now = Date.now();
 
+    const variablesPayload = {
+      system: (scenarioData.systemVariables ?? []).map((v) => ({ key: v.key, value: v.value })),
+      user: (scenarioData.userVariables ?? []).map((v) => ({ key: v.key, value: v.value })),
+    };
     const scenarioPayload: Scenario = {
       collection_id: scenarioData.collection_id,
       title: scenarioData.name,
@@ -101,7 +116,7 @@ export async function saveScenarioAction(
       system_prompt: scenarioData.systemPrompt,
       user_prompt: scenarioData.userPrompt,
       history_json: JSON.stringify(effectiveHistory),
-      variables_json: null,
+      variables_json: JSON.stringify(variablesPayload),
       params_json: JSON.stringify({
         temperature: scenarioData.configuration.temperature,
         topP: scenarioData.configuration.topP,
@@ -195,6 +210,10 @@ export async function runScenarioAction(
 ) {
   const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
+  const { systemVariables = [], userVariables = [] } = currentScenario;
+
+  const resolvedSystemPrompt = substituteVariables(systemPrompt, systemVariables);
+  const resolvedUserPrompt = substituteVariables(userPrompt, userVariables);
 
   trackEvent(TELEMETRY_EVENTS.SCENARIO_RUN_STARTED, {
     scenario_id: currentScenario.id,
@@ -219,8 +238,8 @@ export async function runScenarioAction(
 
   const snapshot = {
     name: currentScenario.name,
-    systemPrompt,
-    userPrompt,
+    systemPrompt: resolvedSystemPrompt,
+    userPrompt: resolvedUserPrompt,
     configuration,
     history,
     tools: allTools,
@@ -243,13 +262,13 @@ export async function runScenarioAction(
     setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
 
     const result = await streamText(
-      userPrompt,
-      systemPrompt,
+      resolvedUserPrompt,
+      resolvedSystemPrompt,
       history,
       {
         provider: configuration.provider,
         model: configuration.model,
-        systemPrompt: systemPrompt,
+        systemPrompt: resolvedSystemPrompt,
         temperature: configuration.temperature,
         topP: configuration.topP,
         maxTokens: configuration.maxTokens,

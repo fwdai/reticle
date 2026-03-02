@@ -25,6 +25,10 @@ function PromptBox({
     setPrompt(initialPromptValue);
   }, [initialPromptValue]);
 
+  useEffect(() => {
+    setVariables(initialVariables);
+  }, [initialVariables]);
+
   const handleVariableChange = (
     id: number,
     field: "key" | "value",
