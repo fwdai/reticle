@@ -1,4 +1,4 @@
-import { ToolLoopAgent, stepCountIs } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { createModel } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
 import { insertExecution, updateExecution, listToolsForEntity } from '@/lib/storage';
@@ -62,28 +62,28 @@ export async function runAgentAction(
 
     // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
-    const tools = toolConfigToAiSdkTools(linkedTools);
+    const aiTools = toolConfigToAiSdkTools(linkedTools);
+    const hasTools = Object.keys(aiTools).length > 0;
 
-    // Create ToolLoopAgent directly so we can consume fullStream.
-    // streamWithEvents uses experimental_transform which is a streamText-only option
-    // and is silently ignored by ToolLoopAgent — fullStream is the correct way to get events.
-    const agent = new ToolLoopAgent({
-      id: agentRecord.id,
+    const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
+
+    const result = streamText({
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
-      instructions,
-      tools: Object.keys(tools).length ? tools : undefined,
-      maxRetries: 3,
+      ...(instructions ? { system: instructions } : {}),
+      prompt: taskInput,
+      ...(hasTools ? { tools: aiTools } : {}),
       stopWhen: stepCountIs(agentRecord.max_iterations ?? 10),
+      temperature: params.temperature,
+      topP: params.top_p,
+      maxOutputTokens: params.max_tokens,
       ...(agentRecord.timeout_seconds
-        ? { timeout: { totalMs: agentRecord.timeout_seconds * 1000 } }
+        ? { abortSignal: AbortSignal.timeout(agentRecord.timeout_seconds * 1000) }
         : {}),
     });
 
     let pendingModelStepId: string | null = null;
     const pendingToolStepIds = new Map<string, string>(); // toolCallId → stepId
     let stepText = '';
-
-    const result = await agent.stream({ prompt: taskInput });
 
     for await (const chunk of result.fullStream) {
       switch (chunk.type) {
@@ -105,32 +105,27 @@ export async function runAgentAction(
         }
 
         case 'text-delta': {
-          // Accumulate text for the current step
-          stepText += (chunk as { text?: string }).text ?? '';
+          stepText += chunk.text ?? '';
           break;
         }
 
         case 'tool-call': {
-          // AI SDK v6 uses `args`, earlier used `input` — handle both
-          const tc = chunk as { toolCallId?: string; toolName: string; args?: unknown; input?: unknown };
           const id = crypto.randomUUID();
-          pendingToolStepIds.set(tc.toolCallId ?? tc.toolName, id);
+          pendingToolStepIds.set(chunk.toolCallId, id);
           stepBuffer.push({
             id,
             type: 'tool_call',
-            label: tc.toolName,
+            label: chunk.toolName,
             status: 'running',
             loop: currentLoop,
             timestamp: ts(),
-            content: JSON.stringify(tc.args ?? tc.input, null, 2),
+            content: JSON.stringify(chunk.input, null, 2),
           });
           break;
         }
 
         case 'tool-result': {
-          // AI SDK v6 uses `result`, earlier used `output` — handle both
-          const tr = chunk as { toolCallId?: string; toolName?: string; result?: unknown; output?: unknown };
-          const key = tr.toolCallId ?? tr.toolName ?? '';
+          const key = chunk.toolCallId ?? '';
           const stepId = pendingToolStepIds.get(key);
           if (stepId) {
             const idx = stepBuffer.findIndex(s => s.id === stepId);
@@ -141,7 +136,7 @@ export async function runAgentAction(
                 content:
                   stepBuffer[idx].content +
                   '\n\n' +
-                  JSON.stringify(tr.result ?? tr.output, null, 2),
+                  JSON.stringify(chunk.output, null, 2),
               };
             }
             pendingToolStepIds.delete(key);
@@ -150,21 +145,9 @@ export async function runAgentAction(
         }
 
         case 'finish-step': {
-          // Complete the pending model_call step with accumulated text + usage
-          const fs = chunk as {
-            usage?: {
-              promptTokens?: number;
-              completionTokens?: number;
-              totalTokens?: number;
-              inputTokens?: number;
-              outputTokens?: number;
-            };
-          };
-          const u = fs.usage;
+          const u = chunk.usage;
           const stepTokens = u
-            ? (u.totalTokens ??
-                (u.promptTokens ?? u.inputTokens ?? 0) +
-                  (u.completionTokens ?? u.outputTokens ?? 0))
+            ? (u.totalTokens ?? (u.inputTokens ?? 0) + (u.outputTokens ?? 0))
             : 0;
           totalTokens += stepTokens;
 
@@ -187,11 +170,9 @@ export async function runAgentAction(
       setExecution(prev => ({ ...prev, steps: [...stepBuffer], tokens: totalTokens }));
     }
 
-    // After fullStream is exhausted, result.text resolves to the complete final text
     try {
       finalText = await result.text;
     } catch {
-      // Fallback: use the last completed model_call step's content
       finalText =
         [...stepBuffer].reverse().find(s => s.type === 'model_call' && s.content)?.content ?? '';
     }

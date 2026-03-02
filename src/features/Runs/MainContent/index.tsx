@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 
-import type { Execution, Scenario } from "@/types";
+import type { Execution, Scenario, AgentRecord } from "@/types";
 import MainContent from "@/components/Layout/MainContent";
 import { Pagination } from "@/components/ui/Pagination";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { listExecutions, listScenarios, countExecutions } from "@/lib/storage";
+import { listExecutions, listScenarios, listAgents, countExecutions } from "@/lib/storage";
 import { formatDuration, formatRelativeTime } from "@/lib/helpers/time";
 import { calculateRequestCost } from "@/lib/modelPricing";
 import Header from "../Header";
@@ -24,7 +24,7 @@ interface Run {
   timestampMs?: number;
 }
 
-function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): Run {
+function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>, agentById: Map<string, AgentRecord>): Run {
   let model = "—";
   let provider = "";
   let snapshotName = "";
@@ -66,9 +66,14 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>): R
     }
   }
 
-  const scenarioName = exec.type === "scenario"
-    ? (scenarioById.get(exec.runnable_id)?.title ?? (snapshotName || "Unknown scenario"))
-    : exec.type;
+  let scenarioName: string;
+  if (exec.type === "scenario") {
+    scenarioName = scenarioById.get(exec.runnable_id)?.title ?? (snapshotName || "Unknown scenario");
+  } else if (exec.type === "agent") {
+    scenarioName = agentById.get(exec.runnable_id)?.name ?? (snapshotName || "Unknown agent");
+  } else {
+    scenarioName = snapshotName || exec.type;
+  }
 
   const status: "success" | "error" = exec.status === "succeeded" ? "success" : "error";
   const timestamp = exec.started_at ? formatRelativeTime(exec.started_at) : "—";
@@ -124,21 +129,22 @@ function Runs() {
       
       let executions: Execution[];
       let scenarios: Scenario[];
+      let agents: AgentRecord[];
       let total: number;
 
       if (query) {
-        // When searching, we fetch more to filter in memory for now
-        // A better way would be backend search, but this is the simplest "least changes"
-        [executions, scenarios, total] = await Promise.all([
-          listExecutions({ limit: 1000 }), // Fetch a large batch for searching
+        [executions, scenarios, agents, total] = await Promise.all([
+          listExecutions({ limit: 1000 }),
           listScenarios(),
+          listAgents(),
           countExecutions(),
         ]);
         
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
+        const agentById = new Map(agents.filter((a): a is AgentRecord & { id: string } => !!a.id).map((a) => [a.id, a]));
         const mapped = executions
           .filter((e): e is Execution & { id: string } => !!e.id)
-          .map((e) => executionToRun(e, scenarioById));
+          .map((e) => executionToRun(e, scenarioById, agentById));
 
         const filtered = mapped.filter(run => 
           run.scenarioName.toLowerCase().includes(query.toLowerCase()) ||
@@ -150,15 +156,17 @@ function Runs() {
         setRuns(filtered.slice(offset, offset + PAGE_SIZE));
         setTotalRuns(filtered.length);
       } else {
-        [executions, scenarios, total] = await Promise.all([
+        [executions, scenarios, agents, total] = await Promise.all([
           listExecutions({ offset, limit: PAGE_SIZE }),
           listScenarios(),
+          listAgents(),
           countExecutions(),
         ]);
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
+        const agentById = new Map(agents.filter((a): a is AgentRecord & { id: string } => !!a.id).map((a) => [a.id, a]));
         const mapped = executions
           .filter((e): e is Execution & { id: string } => !!e.id)
-          .map((e) => executionToRun(e, scenarioById));
+          .map((e) => executionToRun(e, scenarioById, agentById));
         setTotalExecutions(total);
         setRuns(mapped);
         setTotalRuns(total);
