@@ -1,12 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
   Copy,
   Archive,
   Trash2,
-  Pencil,
-  Check,
-  X,
   Variable,
   Clock,
   Activity,
@@ -16,6 +13,7 @@ import {
 } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
+import { EditableTitle } from "@/components/ui/EditableTitle";
 import { Button } from "@/components/ui/button";
 import {
   updatePromptTemplate,
@@ -62,11 +60,14 @@ interface TemplateDetailProps {
 
 export function TemplateDetail({ template, onBack, onSaved, onCreated }: TemplateDetailProps) {
   const isNew = !template.id;
-  const [isEditingName, setIsEditingName] = useState(isNew);
   const [name, setName] = useState(template.name || "");
   const [content, setContent] = useState(template.content || "");
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
+
+  useEffect(() => {
+    setName(template.name || "");
+  }, [template.id]);
 
   const variables = useMemo(() => {
     const matches = content.match(/\{\{(\w+)\}\}/g) || [];
@@ -84,12 +85,18 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
 
   const handleNameChange = (value: string) => {
     setName(value);
-    setHasChanges(true);
+    setHasChanges(
+      value.trim() !== (template.name || "").trim() ||
+      content !== (template.content || "")
+    );
   };
 
   const handleContentChange = (value: string) => {
     setContent(value);
-    setHasChanges(true);
+    setHasChanges(
+      name.trim() !== (template.name || "").trim() ||
+      value !== (template.content || "")
+    );
   };
 
   const handleSave = useCallback(async () => {
@@ -182,44 +189,14 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
           >
             {template.type === "system" ? "SYS" : "USR"}
           </span>
-          {isEditingName ? (
-            <div className="flex items-center gap-2">
-              <input
-                value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                className="h-8 rounded-lg border border-primary bg-white px-3 text-sm font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
-                autoFocus
-              />
-              <button
-                onClick={() => setIsEditingName(false)}
-                className="text-green-600 hover:text-green-700"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => {
-                  setName(template.name || "");
-                  setIsEditingName(false);
-                  if (!isNew) setHasChanges(false);
-                }}
-                className="text-text-muted hover:text-text-main"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-text-main">{name || "New Template"}</h1>
-              {!isNew && (
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="text-text-muted hover:text-text-main transition-colors"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          )}
+          <EditableTitle
+            value={name}
+            onChange={handleNameChange}
+            revertValue={!isNew ? template.name ?? "" : undefined}
+            placeholder={isNew ? "Name your template..." : "Template name..."}
+            saveStatus={saving ? "saving" : hasChanges ? "unsaved" : "saved"}
+            autoFocus={isNew}
+          />
         </div>
         <div className="flex items-center gap-2">
           {(hasChanges || isNew) && (
@@ -268,7 +245,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
         <div className="flex flex-1 flex-col overflow-y-auto custom-scrollbar p-6">
           <div className="flex flex-1 flex-col rounded-xl border border-border-light bg-white overflow-hidden">
             <div className="flex items-center justify-between border-b border-border-light px-5 py-3 bg-slate-50">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
                 Template Content
               </span>
               <div className="flex items-center gap-2">
