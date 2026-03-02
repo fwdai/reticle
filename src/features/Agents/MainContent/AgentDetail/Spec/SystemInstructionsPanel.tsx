@@ -1,4 +1,5 @@
 import { MessageSquare } from "lucide-react";
+import { PromptTextarea } from "@/components/ui/PromptBox";
 import { panelBase, panelHeader, panelTitle } from "./constants";
 
 interface SystemInstructionsPanelProps {
@@ -15,14 +16,12 @@ export function SystemInstructionsPanel({ value, onChange }: SystemInstructionsP
           <span className={panelTitle}>System Instructions</span>
         </div>
       </div>
-      <div className="p-5">
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="System prompt that defines the agent's behavior, constraints, and personality..."
-          className="min-h-[120px] w-full resize-none border-0 bg-transparent text-sm leading-relaxed focus:outline-none focus:ring-0 placeholder:text-text-muted/40"
-        />
-      </div>
+      <PromptTextarea
+        value={value}
+        onChange={onChange}
+        placeholder="System prompt that defines the agent's behavior, constraints, and personality..."
+        minHeight="240px"
+      />
     </div>
   );
 }

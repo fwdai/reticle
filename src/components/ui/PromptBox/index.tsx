@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { SaveTemplate } from "@/features/Templates/SaveTemplate";
 import { SelectTemplate } from "@/features/Templates/SelectTemplate";
 import { usePromptTemplates } from "@/hooks/usePromptTemplates";
+import { PromptTextarea } from "./PromptTextarea";
 // types
 import { PromptBoxProps, PromptTemplate, Variable } from "./types";
 
@@ -23,14 +24,6 @@ function PromptBox({
   useEffect(() => {
     setPrompt(initialPromptValue);
   }, [initialPromptValue]);
-
-  const handlePromptChangeInternal = (
-    event: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    const newPrompt = event.target.value;
-    setPrompt(newPrompt);
-    onPromptChange(newPrompt);
-  };
 
   const handleVariableChange = (
     id: number,
@@ -77,9 +70,6 @@ function PromptBox({
     upsertTemplate(newTemplate);
   };
 
-  const characterCount = prompt.length;
-  const estimatedTokenCount = Math.round(characterCount / 4); // Simple heuristic
-
   const label = type === "system" ? "System Instructions" : "User Prompt";
   const placeholder =
     type === "system"
@@ -109,20 +99,17 @@ function PromptBox({
             />
           </div>
         </div>
-        <textarea
-          className="flex-1 p-6 bg-transparent border-none focus:ring-0 text-sm resize-none text-text-main placeholder:text-gray-400"
-          placeholder={placeholder}
+        <PromptTextarea
           value={prompt}
-          onChange={handlePromptChangeInternal}
+          onChange={(newPrompt) => {
+            setPrompt(newPrompt);
+            onPromptChange(newPrompt);
+          }}
+          placeholder={placeholder}
+          minHeight="256px"
+          contentClassName="p-6"
+          textareaClassName="text-text-main placeholder:text-gray-400"
         />
-        <div className="px-5 py-2 border-t border-border-light bg-sidebar-light/30 flex justify-between items-center h-10">
-          <div className="flex items-center gap-2"></div>
-          <span className="text-[9px] text-text-muted uppercase">
-            <span className="font-medium">{characterCount}</span> CHARACTERS • ~
-            <span className="font-medium">{estimatedTokenCount}</span> TOKENS
-            (approx.)
-          </span>
-        </div>
       </div>
 
       {/* Variables Table */}
@@ -176,4 +163,5 @@ function PromptBox({
   );
 }
 
+export { PromptTextarea } from "./PromptTextarea";
 export default PromptBox;
