@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Copy,
@@ -9,12 +9,18 @@ import {
   Activity,
   Calendar,
   Hash,
-  Save,
 } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   updatePromptTemplate,
   deletePromptTemplate,
@@ -58,15 +64,27 @@ interface TemplateDetailProps {
   onCreated?: (template: PromptTemplate) => void;
 }
 
+const TEMPLATE_TYPES = [
+  { value: "user" as const, label: "User" },
+  { value: "system" as const, label: "System" },
+] as const;
+
+const DEBOUNCE_MS = 800;
+
 export function TemplateDetail({ template, onBack, onSaved, onCreated }: TemplateDetailProps) {
   const isNew = !template.id;
   const [name, setName] = useState(template.name || "");
   const [content, setContent] = useState(template.content || "");
+  const [type, setType] = useState<"system" | "user">(template.type || "user");
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
+  const skipNextAutoSaveRef = useRef(!isNew);
 
   useEffect(() => {
     setName(template.name || "");
+    setContent(template.content || "");
+    setType(template.type || "user");
+    setHasChanges(!template.id);
   }, [template.id]);
 
   const variables = useMemo(() => {
@@ -87,7 +105,8 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
     setName(value);
     setHasChanges(
       value.trim() !== (template.name || "").trim() ||
-      content !== (template.content || "")
+      content !== (template.content || "") ||
+      type !== (template.type || "user")
     );
   };
 
@@ -95,20 +114,27 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
     setContent(value);
     setHasChanges(
       name.trim() !== (template.name || "").trim() ||
-      value !== (template.content || "")
+      value !== (template.content || "") ||
+      type !== (template.type || "user")
     );
   };
 
-  const handleSave = useCallback(async () => {
+  const handleTypeChange = (value: "system" | "user") => {
+    setType(value);
+    setHasChanges(
+      name.trim() !== (template.name || "").trim() ||
+      content !== (template.content || "") ||
+      value !== (template.type || "user")
+    );
+  };
+
+  const performSave = useCallback(async () => {
     if (isNew) {
-      if (!name.trim()) {
-        alert("Please enter a template name.");
-        return;
-      }
+      if (!name.trim()) return;
       setSaving(true);
       try {
         const id = await insertPromptTemplate({
-          type: template.type || "user",
+          type,
           name: name.trim(),
           content,
           variables_json: JSON.stringify(variables),
@@ -117,6 +143,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
         const newTemplate: PromptTemplate = {
           ...template,
           id,
+          type,
           name: name.trim(),
           content,
           variables_json: JSON.stringify(variables),
@@ -131,6 +158,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
       setSaving(true);
       try {
         await updatePromptTemplate(template.id!, {
+          type,
           name,
           content,
           variables_json: JSON.stringify(variables),
@@ -143,7 +171,19 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
         setSaving(false);
       }
     }
-  }, [isNew, template, name, content, variables, onSaved, onCreated]);
+  }, [isNew, template, type, name, content, variables, onSaved, onCreated]);
+
+  useEffect(() => {
+    if (!hasChanges) return;
+    if (saving) return;
+    if (isNew && !name.trim()) return;
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
+    const timer = setTimeout(performSave, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [hasChanges, saving, isNew, name, performSave]);
 
   const handleDelete = useCallback(async () => {
     if (!template.id || !window.confirm("Are you sure you want to delete this template?")) return;
@@ -158,16 +198,16 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
   const handleDuplicate = useCallback(async () => {
     try {
       await insertPromptTemplate({
-        type: template.type,
+        type,
         name: `${template.name} (copy)`,
-        content: template.content,
-        variables_json: template.variables_json,
+        content,
+        variables_json: JSON.stringify(variables),
       });
       onSaved();
     } catch (err) {
       console.error("Failed to duplicate template:", err);
     }
-  }, [template, onSaved]);
+  }, [template.name, type, content, variables, onSaved]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-white">
@@ -181,14 +221,6 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
             Templates
           </button>
           <div className="h-5 w-px bg-border-light" />
-          <span
-            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] ${template.type === "system"
-              ? "bg-primary/10 text-primary border-primary/20"
-              : "bg-amber-50 text-amber-700 border-amber-200"
-              }`}
-          >
-            {template.type === "system" ? "SYS" : "USR"}
-          </span>
           <EditableTitle
             value={name}
             onChange={handleNameChange}
@@ -199,17 +231,6 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
           />
         </div>
         <div className="flex items-center gap-2">
-          {(hasChanges || isNew) && (
-            <Button
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              onClick={handleSave}
-              disabled={saving || (isNew && !name.trim())}
-            >
-              <Save className="h-3.5 w-3.5" />
-              {saving ? (isNew ? "Creating…" : "Saving…") : isNew ? "Create" : "Save"}
-            </Button>
-          )}
           {!isNew && (
             <>
               <Button
@@ -294,10 +315,33 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
 
         {/* Right Panel */}
         <div className="w-[280px] shrink-0 border-l border-border-light bg-white overflow-y-auto custom-scrollbar p-5 space-y-5">
+          {/* Template Type */}
+          <div className="rounded-xl border border-border-light bg-white overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border-light px-4 py-3 bg-slate-50">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                Type
+              </span>
+            </div>
+            <div className="p-4">
+              <Select value={type} onValueChange={handleTypeChange}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value} className="text-xs">
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Variables Panel */}
           <div className="rounded-xl border border-border-light bg-white overflow-hidden">
             <div className="flex items-center justify-between border-b border-border-light px-4 py-3 bg-slate-50">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
                 Variables
               </span>
               <span className="rounded-md font-mono bg-slate-100 px-2 py-0.5 text-[10px] text-text-muted">
@@ -327,7 +371,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
           {/* Usage Panel */}
           <div className="rounded-xl border border-border-light bg-white overflow-hidden">
             <div className="flex items-center justify-between border-b border-border-light px-4 py-3 bg-slate-50">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
                 Usage
               </span>
               <span className="h-2 w-2 rounded-full bg-primary" />
