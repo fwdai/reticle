@@ -74,17 +74,17 @@ function getProviderFromSnapshot(
 
 function parseUsage(usageJson: string | null | undefined): {
   tokens: number;
-  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
 } {
   try {
     const u = usageJson ? JSON.parse(usageJson) : {};
-    const prompt = u.input_tokents ?? u.inputTokens ?? 0;
-    const completion = u.output_tokens ?? u.outputTokens ?? 0;
-    const tokens = prompt + completion || (u.total_tokens ?? u.totalTokens ?? 0);
-    const costUsd = u.cost_usd ?? u.costUsd ?? 0;
-    return { tokens, costUsd };
+    const inputTokens = u.input_tokents ?? u.inputTokens ?? 0;
+    const outputTokens = u.output_tokens ?? u.outputTokens ?? 0;
+    const tokens = (inputTokens + outputTokens) || (u.total_tokens ?? u.totalTokens ?? 0);
+    return { tokens, inputTokens, outputTokens };
   } catch {
-    return { tokens: 0, costUsd: 0 };
+    return { tokens: 0, inputTokens: 0, outputTokens: 0 };
   }
 }
 
@@ -161,20 +161,12 @@ export function useDashboardData(): DashboardData {
     for (const exec of execsLastWeek) {
       const model = getModelFromSnapshot(exec.snapshot_json);
       const provider = getProviderFromSnapshot(exec.snapshot_json);
-      const { tokens, costUsd } = parseUsage(exec.usage_json);
+      const { tokens, inputTokens, outputTokens } = parseUsage(exec.usage_json);
 
-      let execCost = costUsd;
-      if (execCost === 0 && provider && model && model !== "—" && tokens > 0) {
-        try {
-          const u = exec.usage_json ? JSON.parse(exec.usage_json) : {};
-          const calculated = calculateRequestCost(provider, model, {
-            inputTokens: u.input_tokents ?? u.inputTokens ?? 0,
-            outputTokens: u.output_tokens ?? u.outputTokens ?? 0,
-          });
-          if (calculated != null) execCost = calculated;
-        } catch {
-          /* ignore */
-        }
+      let execCost = 0;
+      if (provider && model && model !== "—" && (inputTokens > 0 || outputTokens > 0)) {
+        const calculated = calculateRequestCost(provider, model, { inputTokens, outputTokens });
+        if (calculated != null) execCost = calculated;
       }
       totalTokensWeek += tokens;
       totalCostWeek += execCost;
@@ -223,14 +215,10 @@ export function useDashboardData(): DashboardData {
         exec.type === "scenario"
           ? scenarioById.get(exec.runnable_id)?.title ?? snapshot.name ?? "Unknown"
           : snapshot.name ?? exec.type;
-      const { tokens, costUsd } = parseUsage(exec.usage_json);
-      let cost = costUsd;
-      if (cost === 0 && provider && model && tokens > 0) {
-        const u = exec.usage_json ? JSON.parse(exec.usage_json) : {};
-        const calc = calculateRequestCost(provider, model, {
-          inputTokens: u.input_tokents ?? u.inputTokens ?? 0,
-          outputTokens: u.output_tokens ?? u.outputTokens ?? 0,
-        });
+      const { tokens, inputTokens, outputTokens } = parseUsage(exec.usage_json);
+      let cost = 0;
+      if (provider && model && model !== "—" && (inputTokens > 0 || outputTokens > 0)) {
+        const calc = calculateRequestCost(provider, model, { inputTokens, outputTokens });
         if (calc != null) cost = calc;
       }
       const latencyMs =

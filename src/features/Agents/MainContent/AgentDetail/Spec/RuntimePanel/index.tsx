@@ -37,10 +37,7 @@ export function RuntimePanel() {
   };
 
   const totalTokens = execution.steps.reduce((a, s) => a + (s.tokens || 0), 0);
-  const totalCost = execution.steps.reduce(
-    (a, s) => a + parseFloat((s.cost || "$0").replace("$", "")),
-    0
-  );
+
   const totalLoops = execution.steps.length > 0
     ? Math.max(...execution.steps.map((s) => s.loop || 0))
     : 0;
@@ -51,9 +48,7 @@ export function RuntimePanel() {
         status={execution.status}
         elapsedSeconds={execution.elapsedSeconds}
         tokens={execution.tokens}
-        cost={execution.cost}
         totalTokens={totalTokens}
-        totalCost={totalCost}
         totalLoops={totalLoops}
         stepCount={execution.steps.length}
       />
@@ -73,6 +68,8 @@ export function RuntimePanel() {
         stepPhases={stepPhases}
         lineProgress={lineProgress}
         hasPrompt
+        provider={execution.provider}
+        model={execution.model}
       />
     </section>
   );

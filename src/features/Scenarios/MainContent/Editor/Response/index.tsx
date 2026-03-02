@@ -1,9 +1,9 @@
 import { useContext, useState } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
-import { calculateRequestCost } from "@/lib/modelPricing";
-import { formatTokens, formatCost } from "@/lib/helpers/format";
+import { formatTokens } from "@/lib/helpers/format";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { CopyButton } from "@/components/ui/CopyButton";
+import Cost from "@/components/Cost";
 import MarkdownPreview from "./MarkdownPreview";
 import RawJsonView from "./RawJsonView";
 
@@ -32,16 +32,11 @@ function Response() {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const cost = (() => {
-    const usage = response?.usage;
-    if (!usage || (!usage.promptTokens && !usage.completionTokens && !usage.totalTokens)) return null;
-    const provider = currentScenario?.configuration?.provider;
-    const model = currentScenario?.configuration?.model;
-    if (!provider || !model) return null;
-    const inputTokens = usage.promptTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.8) : 0);
-    const outputTokens = usage.completionTokens ?? (usage.totalTokens ? Math.round(usage.totalTokens * 0.2) : 0);
-    return calculateRequestCost(provider, model, { inputTokens, outputTokens });
-  })();
+  const provider = currentScenario?.configuration?.provider;
+  const model = currentScenario?.configuration?.model;
+  const usage = response?.usage;
+  const inputTokens = usage?.promptTokens ?? (usage?.totalTokens ? Math.round(usage?.totalTokens * 0.8) : 0);
+  const outputTokens = usage?.completionTokens ?? (usage?.totalTokens ? Math.round(usage?.totalTokens * 0.2) : 0);
 
   const isStandby = !response && !isLoading;
   const isIdle = isStandby || isLoading;
@@ -94,14 +89,7 @@ function Response() {
                   </span>
                 </div>
                 <div className="h-6 w-px bg-gray-200"></div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
-                    Cost
-                  </span>
-                  <span className="text-[11px] font-bold text-text-main leading-none">
-                    {formatCost(cost)}
-                  </span>
-                </div>
+                <Cost provider={provider} model={model} inputTokens={inputTokens} outputTokens={outputTokens} />
               </>
             )}
           </div>

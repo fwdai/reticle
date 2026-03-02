@@ -1,6 +1,8 @@
 import { ChevronRight, ChevronDown, Copy, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stepConfig } from "./constants";
+import { calculateRequestCost } from "@/lib/modelPricing";
+import { formatCost } from "@/lib/helpers/format";
 import type { ExecutionStep as ExecutionStepType, StepPhase } from "@/types";
 
 interface ExecutionStepProps {
@@ -10,6 +12,8 @@ interface ExecutionStepProps {
   isExpanded: boolean;
   isLast: boolean;
   copiedId: string | null;
+  provider?: string;
+  model?: string;
   onToggle: () => void;
   onCopy: () => void;
 }
@@ -21,11 +25,20 @@ export function ExecutionStep({
   isExpanded,
   isLast,
   copiedId,
+  provider,
+  model,
   onToggle,
   onCopy,
 }: ExecutionStepProps) {
   const cfg = stepConfig[step.type];
   const Icon = cfg.icon;
+
+  const stepCost = (provider && model && (step.inputTokens || step.outputTokens))
+    ? calculateRequestCost(provider, model, {
+        inputTokens: step.inputTokens ?? 0,
+        outputTokens: step.outputTokens ?? 0,
+      })
+    : null;
 
   return (
     <div
@@ -123,9 +136,9 @@ export function ExecutionStep({
                   {step.tokens}t
                 </span>
               )}
-              {step.cost && (
+              {stepCost != null && stepCost > 0 && (
                 <span className="font-mono text-[10px] text-primary/70 flex-shrink-0">
-                  {step.cost}
+                  {formatCost(stepCost)}
                 </span>
               )}
               <span className="font-mono text-[10px] text-text-muted/30 flex-shrink-0">

@@ -1,15 +1,15 @@
 import { cn } from "@/lib/utils";
+import Cost from "@/components/Cost";
 import { formatDuration } from "@/lib/helpers/time";
-import { formatTokens, formatCost } from "@/lib/helpers/format";
+import { formatTokens } from "@/lib/helpers/format";
 import type { AgentExecutionStatus } from "@/types";
+import { useAgentContext } from "@/contexts/AgentContext";
 
 interface HeaderProps {
   status: AgentExecutionStatus;
   elapsedSeconds?: number;
   tokens?: number;
-  cost?: number;
   totalTokens: number;
-  totalCost: number;
   totalLoops: number;
   stepCount: number;
 }
@@ -41,13 +41,14 @@ export function Header({
   status,
   elapsedSeconds,
   tokens,
-  cost,
   totalTokens,
-  totalCost,
   totalLoops,
   stepCount,
 }: HeaderProps) {
   const config = statusConfig[status];
+  const { execution } = useAgentContext();
+  const inputTokens = execution.steps.reduce((a, s) => a + (s.inputTokens || 0), 0);
+  const outputTokens = execution.steps.reduce((a, s) => a + (s.outputTokens || 0), 0);
 
   return (
     <div className="h-11 flex-shrink-0 border-b border-border-light flex items-center justify-between px-6 bg-sidebar-light/40">
@@ -105,14 +106,7 @@ export function Header({
             </span>
           </div>
           <div className="h-6 w-px bg-gray-200" />
-          <div className="flex flex-col">
-            <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
-              Cost
-            </span>
-            <span className="text-[11px] font-bold text-text-main leading-none">
-              {cost != null ? formatCost(cost) : `$${totalCost.toFixed(3)}`}
-            </span>
-          </div>
+          <Cost provider={execution.provider} model={execution.model} inputTokens={inputTokens} outputTokens={outputTokens} />
         </div>
       </div>
       <span className="font-mono text-[10px] text-text-muted/60">

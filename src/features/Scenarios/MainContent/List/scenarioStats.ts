@@ -35,9 +35,7 @@ function parseLastExecution(exec: Execution): ScenarioLastRun | null {
     const prompt = usage.input_tokents ?? usage.inputTokens ?? 0;
     const completion = usage.output_tokens ?? usage.outputTokens ?? 0;
     tokens = (prompt + completion) || (usage.total_tokens ?? usage.totalTokens ?? 0);
-    costUsd = usage.cost_usd ?? usage.costUsd ?? 0;
-
-    if (costUsd === 0 && provider && model && model !== "—" && (prompt > 0 || completion > 0)) {
+    if (provider && model && model !== "—" && (prompt > 0 || completion > 0)) {
       const calculated = calculateRequestCost(provider, model, {
         inputTokens: prompt,
         outputTokens: completion,

@@ -172,7 +172,8 @@ export interface ExecutionStep {
   timestamp: string;
   duration?: string;
   tokens?: number;
-  cost?: string;
+  inputTokens?: number;
+  outputTokens?: number;
   content: string;
   meta?: Record<string, string>;
   processingMs?: number;

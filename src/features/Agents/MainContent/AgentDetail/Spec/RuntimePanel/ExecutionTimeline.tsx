@@ -17,6 +17,8 @@ interface ExecutionTimelineProps {
   stepPhases: Map<string, StepPhase>;
   lineProgress: Map<string, number>;
   hasPrompt?: boolean;
+  provider?: string;
+  model?: string;
 }
 
 export const ExecutionTimeline = forwardRef<
@@ -35,6 +37,8 @@ export const ExecutionTimeline = forwardRef<
     stepPhases,
     lineProgress,
     hasPrompt,
+    provider,
+    model,
   },
   ref
 ) {
@@ -109,6 +113,8 @@ export const ExecutionTimeline = forwardRef<
                     isExpanded={isExpanded}
                     isLast={isLast}
                     copiedId={copiedId}
+                    provider={provider}
+                    model={model}
                     onToggle={() => onToggleStep(step.id)}
                     onCopy={() => onCopy(step.id, step.content)}
                   />

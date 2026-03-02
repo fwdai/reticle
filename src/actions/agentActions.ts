@@ -21,7 +21,13 @@ export async function runAgentAction(
     model: agentRecord.model,
   });
 
-  setExecution(prev => ({ ...prev, status: 'running', steps: [] }));
+  setExecution(prev => ({
+    ...prev,
+    status: 'running',
+    steps: [],
+    provider: agentRecord.provider,
+    model: agentRecord.model,
+  }));
 
   const started_at = Date.now();
 
@@ -73,6 +79,8 @@ export async function runAgentAction(
   const stepBuffer: ExecutionStep[] = [];
   let currentLoop = 0;
   let totalTokens = 0;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
   let finalText = '';
 
   // Emit task_received immediately so the UI shows something before the first LLM round-trip
@@ -181,10 +189,14 @@ export async function runAgentAction(
 
         case 'finish-step': {
           const u = chunk.usage;
+          const inputTokens = u?.inputTokens ?? 0;
+          const outputTokens = u?.outputTokens ?? 0;
           const stepTokens = u
-            ? (u.totalTokens ?? (u.inputTokens ?? 0) + (u.outputTokens ?? 0))
+            ? (u.totalTokens ?? inputTokens + outputTokens)
             : 0;
           totalTokens += stepTokens;
+          totalInputTokens += inputTokens;
+          totalOutputTokens += outputTokens;
 
           if (pendingModelStepId) {
             const idx = stepBuffer.findIndex(s => s.id === pendingModelStepId);
@@ -203,6 +215,8 @@ export async function runAgentAction(
                 status: 'success',
                 content,
                 tokens: stepTokens || undefined,
+                inputTokens: inputTokens || undefined,
+                outputTokens: outputTokens || undefined,
               };
             }
             pendingModelStepId = null;
@@ -255,7 +269,11 @@ export async function runAgentAction(
       status: 'succeeded',
       started_at,
       ended_at,
-      usage_json: JSON.stringify({ totalTokens }),
+      usage_json: JSON.stringify({
+        totalTokens,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+      }),
     };
     await updateExecution(executionId, finalExecution);
 

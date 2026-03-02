@@ -5,7 +5,8 @@ export interface ExecutionState {
   status: AgentExecutionStatus;
   elapsedSeconds?: number;
   tokens?: number;
-  cost?: number;
+  provider?: string;
+  model?: string;
   steps: ExecutionStep[];
   executionId?: string;
 }
