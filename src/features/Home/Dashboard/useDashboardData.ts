@@ -55,7 +55,7 @@ export interface DashboardData {
 function getModelFromSnapshot(snapshotJson: string | null | undefined): string {
   try {
     const snap = snapshotJson ? JSON.parse(snapshotJson) : {};
-    return snap.configuration?.model ?? snap.model ?? "—";
+    return snap.configuration?.model ?? "—";
   } catch {
     return "—";
   }
@@ -66,7 +66,7 @@ function getProviderFromSnapshot(
 ): string {
   try {
     const snap = snapshotJson ? JSON.parse(snapshotJson) : {};
-    return snap.configuration?.provider ?? snap.provider ?? "";
+    return snap.configuration?.provider ?? "";
   } catch {
     return "";
   }

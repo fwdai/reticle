@@ -72,19 +72,19 @@ export async function loadAttachmentsAsContentParts(
 export function toolConfigToAiSdkTools(tools: Tool[]): ToolSet {
   const result: ToolSet = {};
   for (const t of tools) {
-    const properties: Record<
-      string,
-      {
-        type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-        description?: string;
-      }
-    > = {};
+    const properties: Record<string, Record<string, unknown>> = {};
     const required: string[] = [];
     for (const p of t.parameters) {
-      properties[p.name] = {
-        type: p.type,
-        ...(p.description ? { description: p.description } : {}),
-      };
+      const prop: Record<string, unknown> = { type: p.type };
+      if (p.description) prop.description = p.description;
+      if (p.type === 'array') {
+        prop.items = {};
+      }
+      if (p.type === 'object') {
+        prop.properties = {};
+        prop.additionalProperties = true;
+      }
+      properties[p.name] = prop;
       if (p.required) required.push(p.name);
     }
     const mockResponse = t.mockResponse;

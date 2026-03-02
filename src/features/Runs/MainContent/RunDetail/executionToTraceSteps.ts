@@ -1,5 +1,5 @@
-import { FileText, Cpu, Wrench, Send } from "lucide-react";
-import type { Execution } from "@/types";
+import { FileText, Cpu, Wrench, Send, AlertCircle, Zap, MessageSquare } from "lucide-react";
+import type { Execution, ExecutionStep as AgentExecutionStep } from "@/types";
 import type { TraceStep } from "./Timeline";
 
 /** Format elapsed ms as MM:SS.mmm for timeline timestamps */
@@ -8,6 +8,21 @@ function formatElapsed(ms: number): string {
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
   return `${min.toString().padStart(2, "0")}:${sec.toFixed(3)}`;
+}
+
+const AGENT_STEP_ICON: Record<string, React.ElementType> = {
+  task_input: Zap,
+  model_call: Cpu,
+  model_response: Cpu,
+  tool_call: Wrench,
+  tool_response: Send,
+  output: MessageSquare,
+  error: AlertCircle,
+};
+
+function isAgentSteps(raw: unknown[]): raw is AgentExecutionStep[] {
+  return raw.length > 0 && typeof (raw[0] as Record<string, unknown>).type === 'string'
+    && typeof (raw[0] as Record<string, unknown>).label === 'string';
 }
 
 /**
@@ -100,6 +115,41 @@ export function executionToTraceSteps(
       max_tokens: maxTokens,
     },
   });
+
+  // Agent executions store steps in a different format (ExecutionStep[])
+  if (execution.type === 'agent' && Array.isArray(modelSteps) && modelSteps.length > 0 && isAgentSteps(modelSteps)) {
+    let elapsedMs = 0;
+    for (const agentStep of modelSteps) {
+      const icon = AGENT_STEP_ICON[agentStep.type] ?? FileText;
+      let content: Record<string, unknown>;
+      if (agentStep.type === 'model_call' || agentStep.type === 'model_response') {
+        content = {
+          chunks: agentStep.content ? [agentStep.content] : [],
+          usage: agentStep.tokens ? { total_tokens: agentStep.tokens } : {},
+        };
+      } else if (agentStep.type === 'tool_call') {
+        try {
+          content = JSON.parse(agentStep.content);
+        } catch {
+          content = { raw: agentStep.content };
+        }
+      } else {
+        content = { text: agentStep.content };
+      }
+      steps.push({
+        id: agentStep.id,
+        type: agentStep.type === 'model_call' ? 'model_step' : agentStep.type,
+        label: agentStep.label,
+        icon,
+        status: agentStep.status === 'error' ? 'error' : 'success',
+        duration: agentStep.tokens ? `${agentStep.tokens} tokens` : `${agentStep.duration ?? '0ms'}`,
+        timestamp: formatElapsed(elapsedMs),
+        content,
+      });
+      elapsedMs += 100;
+    }
+    return steps;
+  }
 
   const toolCallsList = Array.isArray(toolCalls) ? toolCalls : [];
   const stepsList = Array.isArray(modelSteps) ? modelSteps : [];

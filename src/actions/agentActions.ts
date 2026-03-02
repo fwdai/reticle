@@ -24,8 +24,40 @@ export async function runAgentAction(
   setExecution(prev => ({ ...prev, status: 'running', steps: [] }));
 
   const started_at = Date.now();
-  const snapshot_json = JSON.stringify(agentRecord);
-  const input_json = JSON.stringify({ taskInput });
+
+  const instructions =
+    [agentRecord.agent_goal, agentRecord.system_instructions]
+      .filter(Boolean)
+      .join('\n\n') || undefined;
+
+  const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
+
+  const snapshot = {
+    name: agentRecord.name,
+    systemPrompt: instructions ?? '',
+    configuration: {
+      provider: agentRecord.provider,
+      model: agentRecord.model,
+      temperature: params.temperature,
+      topP: params.top_p,
+      maxTokens: params.max_tokens,
+    },
+    maxIterations: agentRecord.max_iterations,
+    timeoutSeconds: agentRecord.timeout_seconds,
+  };
+  const snapshot_json = JSON.stringify(snapshot);
+
+  const input_json = JSON.stringify({
+    taskInput,
+    systemPrompt: instructions ?? '',
+    userPrompt: taskInput,
+    configuration: {
+      provider: agentRecord.provider,
+      model: agentRecord.model,
+      temperature: params.temperature,
+      maxTokens: params.max_tokens,
+    },
+  });
 
   const executionId = await insertExecution({
     type: 'agent',
@@ -55,17 +87,10 @@ export async function runAgentAction(
   setExecution(prev => ({ ...prev, steps: [...stepBuffer] }));
 
   try {
-    const instructions =
-      [agentRecord.agent_goal, agentRecord.system_instructions]
-        .filter(Boolean)
-        .join('\n\n') || undefined;
-
     // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
     const aiTools = toolConfigToAiSdkTools(linkedTools);
     const hasTools = Object.keys(aiTools).length > 0;
-
-    const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
 
     const result = streamText({
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
@@ -84,12 +109,16 @@ export async function runAgentAction(
     let pendingModelStepId: string | null = null;
     const pendingToolStepIds = new Map<string, string>(); // toolCallId → stepId
     let stepText = '';
+    let stepReasoning = '';
+    let stepToolCalls: Array<{ tool: string; arguments: unknown }> = [];
 
     for await (const chunk of result.fullStream) {
       switch (chunk.type) {
         case 'start-step': {
           currentLoop++;
           stepText = '';
+          stepReasoning = '';
+          stepToolCalls = [];
           const id = crypto.randomUUID();
           pendingModelStepId = id;
           stepBuffer.push({
@@ -109,7 +138,13 @@ export async function runAgentAction(
           break;
         }
 
+        case 'reasoning-delta': {
+          stepReasoning += chunk.text ?? '';
+          break;
+        }
+
         case 'tool-call': {
+          stepToolCalls.push({ tool: chunk.toolName, arguments: chunk.input });
           const id = crypto.randomUUID();
           pendingToolStepIds.set(chunk.toolCallId, id);
           stepBuffer.push({
@@ -154,16 +189,32 @@ export async function runAgentAction(
           if (pendingModelStepId) {
             const idx = stepBuffer.findIndex(s => s.id === pendingModelStepId);
             if (idx !== -1) {
+              const response: Record<string, unknown> = {};
+              if (stepReasoning) response.reasoning = stepReasoning;
+              if (stepText) response.text = stepText;
+              if (stepToolCalls.length > 0) response.tool_calls = stepToolCalls;
+
+              const content = Object.keys(response).length > 0
+                ? JSON.stringify(response, null, 2)
+                : '';
+
               stepBuffer[idx] = {
                 ...stepBuffer[idx],
                 status: 'success',
-                content: stepText,
+                content,
                 tokens: stepTokens || undefined,
               };
             }
             pendingModelStepId = null;
           }
           break;
+        }
+
+        case 'error': {
+          const errMsg = chunk.error instanceof Error
+            ? chunk.error.message
+            : String(chunk.error);
+          throw new Error(errMsg);
         }
       }
 
@@ -173,8 +224,14 @@ export async function runAgentAction(
     try {
       finalText = await result.text;
     } catch {
-      finalText =
+      const lastModelContent =
         [...stepBuffer].reverse().find(s => s.type === 'model_call' && s.content)?.content ?? '';
+      try {
+        const parsed = JSON.parse(lastModelContent);
+        finalText = parsed.text ?? lastModelContent;
+      } catch {
+        finalText = lastModelContent;
+      }
     }
 
     stepBuffer.push({

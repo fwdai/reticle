@@ -126,7 +126,7 @@ function Runs() {
     try {
       setIsLoading(true);
       const offset = (pageNum - 1) * PAGE_SIZE;
-      
+
       let executions: Execution[];
       let scenarios: Scenario[];
       let agents: AgentRecord[];
@@ -139,14 +139,14 @@ function Runs() {
           listAgents(),
           countExecutions(),
         ]);
-        
+
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
         const agentById = new Map(agents.filter((a): a is AgentRecord & { id: string } => !!a.id).map((a) => [a.id, a]));
         const mapped = executions
           .filter((e): e is Execution & { id: string } => !!e.id)
           .map((e) => executionToRun(e, scenarioById, agentById));
 
-        const filtered = mapped.filter(run => 
+        const filtered = mapped.filter(run =>
           run.scenarioName.toLowerCase().includes(query.toLowerCase()) ||
           run.id.toLowerCase().includes(query.toLowerCase()) ||
           run.model.toLowerCase().includes(query.toLowerCase())
