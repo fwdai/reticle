@@ -14,10 +14,15 @@ import {
   deleteTool as deleteToolFromDb,
 } from "@/lib/storage";
 import type { Tool, ToolWithMeta } from "../types";
+import type { ToolFilterId } from "../index";
 
 const DEBOUNCE_MS = 800;
 
-function ToolsMainContent() {
+interface ToolsMainContentProps {
+  filter: ToolFilterId;
+}
+
+function ToolsMainContent({ filter }: ToolsMainContentProps) {
   const [tools, setTools] = useState<ToolWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -37,6 +42,9 @@ function ToolsMainContent() {
   const selectedTool = tools.find((t) => t.id === selectedId) ?? null;
 
   const filtered = tools.filter((t) => {
+    if (filter === "json" && t.mockMode !== "json") return false;
+    if (filter === "code" && t.mockMode !== "code") return false;
+    if (filter === "unused" && t.usedBy > 0) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (

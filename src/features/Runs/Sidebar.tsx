@@ -31,7 +31,7 @@ function RunsSidebar({ activeFilter, onFilterChange }: RunsSidebarProps) {
           onClick={() => onFilterChange("scenarios")}
         />
       </SidebarSection>
-      <SidebarSection title="Status">
+      <SidebarSection title="Quick Access">
         <SidebarItem
           icon={XCircle}
           label="Failed"
