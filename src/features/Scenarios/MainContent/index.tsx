@@ -5,6 +5,7 @@ import { StudioContext } from '@/contexts/StudioContext';
 import Header from '../Header';
 import ListHeader from '../ListHeader';
 import Editor from './Editor';
+import Test from './Test';
 import Visualizer from './Visualizer';
 import { ScenarioList } from './List';
 import { fetchScenarioStats, type ScenarioStats } from './List/scenarioStats';
@@ -164,7 +165,9 @@ function Studio() {
   return (
     <MainContent>
       <Header />
-      {viewMode === 'editor' ? <Editor /> : <Visualizer />}
+      {viewMode === 'editor' && <Editor />}
+      {viewMode === 'test' && <Test />}
+      {viewMode === 'visualizer' && <Visualizer />}
     </MainContent>
   );
 }

@@ -112,7 +112,7 @@ export interface StudioContainerState {
 
 // --- Context Definition ---
 
-export type StudioViewMode = 'editor' | 'visualizer';
+export type StudioViewMode = 'editor' | 'test' | 'visualizer';
 
 /** Tab indices: 0=System, 1=Input, 2=History, 3=Files, 4=Tools */
 export type EditorTabIndex = 0 | 1 | 2 | 3 | 4;

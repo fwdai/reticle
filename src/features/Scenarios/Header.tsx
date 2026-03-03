@@ -1,10 +1,17 @@
 import { useContext } from 'react';
-import { ArrowLeft, Play, Share, Loader2 } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, Play, Loader2, MoreVertical, Download } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 function StudioHeader() {
   const context = useContext(StudioContext);
@@ -46,33 +53,46 @@ function StudioHeader() {
           saveStatus={saveStatus}
         />
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={runScenario}
+          disabled={isLoading}
+          className="bg-primary hover:bg-[#048fa9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm"
+        >
+          {isLoading ? (
+            <Loader2 size={18} className="font-bold animate-spin" />
+          ) : (
+            <Play size={18} className="font-bold" />
+          )}
+          Run
+        </button>
+        <div className="h-6 w-px bg-border-light" />
         <SegmentedSwitch
           options={[
-            { value: "editor", label: "Edit" },
-            { value: "visualizer", label: "Visualizer" },
+            { value: "editor", label: "Edit", icon: <Pencil className="h-3.5 w-3.5" /> },
+            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" /> },
+            { value: "visualizer", label: "Visualize", icon: <Network className="h-3.5 w-3.5" /> },
           ]}
           value={viewMode}
           onChange={(v) => setViewMode(v)}
         />
-        <div className="h-6 w-px bg-border-light" />
-        <div className="flex items-center gap-2">
-          <button
-            onClick={runScenario}
-            disabled={isLoading}
-            className="bg-primary hover:bg-[#048fa9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm"
-          >
-            {isLoading ? (
-              <Loader2 size={18} className="font-bold animate-spin" />
-            ) : (
-              <Play size={18} className="font-bold" />
-            )}
-            Run
-          </button>
-          <button className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">
-            <Share size={18} />
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-text-muted hover:text-text-main hover:bg-gray-100/80 active:bg-gray-100"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem className="gap-2 text-sm" onClick={() => { /* TODO: export scenario */ }}>
+              <Download className="h-4 w-4" />
+              Export
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </Header>
   );
