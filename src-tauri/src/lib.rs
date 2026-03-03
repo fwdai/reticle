@@ -106,6 +106,8 @@ pub fn run() {
             runner::runner_send,
             runner::runner_kill,
             runner::runner_list,
+            runner::write_temp_script,
+            runner::delete_temp_script,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

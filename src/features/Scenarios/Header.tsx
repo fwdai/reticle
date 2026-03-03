@@ -49,7 +49,7 @@ function StudioHeader() {
       <div className="flex items-center gap-4">
         <SegmentedSwitch
           options={[
-            { value: "editor", label: "Editor" },
+            { value: "editor", label: "Edit" },
             { value: "visualizer", label: "Visualizer" },
           ]}
           value={viewMode}

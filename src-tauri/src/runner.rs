@@ -80,7 +80,11 @@ pub async fn runner_spawn(
 
     if let Some(perms) = permissions {
         if let Some(v) = perms.allow_net {
-            deno_args.push(format!("--allow-net={v}"));
+            if v == "*" {
+                deno_args.push("--allow-net".to_string());
+            } else {
+                deno_args.push(format!("--allow-net={v}"));
+            }
         }
         if let Some(v) = perms.allow_read {
             deno_args.push(format!("--allow-read={v}"));
@@ -104,7 +108,7 @@ pub async fn runner_spawn(
 
     let (mut rx, child) = app
         .shell()
-        .sidecar("binaries/deno")
+        .sidecar("deno")
         .map_err(|e| e.to_string())?
         .args(&deno_args)
         .spawn()
@@ -194,4 +198,23 @@ pub fn runner_kill(
 #[tauri::command]
 pub fn runner_list(state: tauri::State<'_, RunnerState>) -> Vec<String> {
     state.lock().unwrap().runs.keys().cloned().collect()
+}
+
+/// Write a tool code block to a temp .ts file and return its path.
+/// The caller is responsible for deleting it after use.
+#[tauri::command]
+pub fn write_temp_script(id: String, code: String) -> Result<String, String> {
+    let path = std::env::temp_dir().join(format!("reticle_tool_{}.ts", id));
+    std::fs::write(&path, &code).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Delete a temp script file written by write_temp_script.
+#[tauri::command]
+pub fn delete_temp_script(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if p.exists() {
+        std::fs::remove_file(p).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }

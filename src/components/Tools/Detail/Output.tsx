@@ -61,7 +61,12 @@ export function Output({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onUpdate({ mockMode: "code" });
+              onUpdate({
+                mockMode: "code",
+                ...(!tool.code?.trim() && {
+                  code: `async function handler(args) {\n  // args contains the tool call arguments\n  // return any value — it will be passed back to the agent as JSON\n  return {};\n}`,
+                }),
+              });
             }}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide transition-all",
@@ -98,7 +103,7 @@ export function Output({
                 value={tool.code ?? ""}
                 onChange={(val) => onUpdate({ code: val })}
                 language="javascript"
-                placeholder={`// Tool implementation\nasync function execute(params) {\n  // your code here\n  return { result: "..." };\n}`}
+                placeholder={`async function handler(args) {\n  // args contains the tool call arguments\n  // return any value — it will be passed back to the agent as JSON\n  return {};\n}`}
               />
               <p className="mt-2 text-[10px] tracking-wide text-text-muted">
                 ACTIVE — THIS CODE WILL BE EXECUTED WHEN THE LLM CALLS THIS TOOL

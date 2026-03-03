@@ -61,6 +61,16 @@ export async function runnerList(): Promise<string[]> {
   return invoke('runner_list');
 }
 
+/** Write a code string to a temp .ts file; returns the file path. */
+export async function writeTempScript(id: string, code: string): Promise<string> {
+  return invoke('write_temp_script', { id, code });
+}
+
+/** Delete a temp script file previously written by writeTempScript. */
+export async function deleteTempScript(path: string): Promise<void> {
+  return invoke('delete_temp_script', { path });
+}
+
 // ── Event listeners ───────────────────────────────────────────────────────────
 
 /** Listen to stdout lines from any runner. Returns an unlisten function. */
