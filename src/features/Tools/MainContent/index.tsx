@@ -39,6 +39,10 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
     refreshTools();
   }, [refreshTools]);
 
+  useEffect(() => {
+    setSelectedId(null);
+  }, [filter]);
+
   const selectedTool = tools.find((t) => t.id === selectedId) ?? null;
 
   const filtered = tools.filter((t) => {

@@ -130,6 +130,10 @@ function Runs({ filter }: RunsProps) {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+
+  useEffect(() => {
+    setSelectedRun(null);
+  }, [filter]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 

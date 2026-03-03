@@ -70,6 +70,10 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
 
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
+  useEffect(() => {
+    setSelectedAgent(null);
+  }, [filter]);
+
   const handleCreateAgent = () => {
     const newAgent: Agent = {
       id: "new",

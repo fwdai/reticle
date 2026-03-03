@@ -68,6 +68,10 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
     loadTemplates();
   }, [loadTemplates]);
 
+  useEffect(() => {
+    setSelectedTemplate(null);
+  }, [filter]);
+
   const value: TemplatesContextType = {
     templates,
     loading,
