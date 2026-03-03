@@ -1,12 +1,11 @@
-import { useState } from "react";
-
 import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 export type ToolFilterId = "all" | "json" | "code" | "unused";
 
 function ToolsPage() {
-  const [filter, setFilter] = useState<ToolFilterId>("all");
+  const [filter, setFilter] = usePersistedState<ToolFilterId>("tools:filter", "all");
 
   return (
     <>

@@ -1,12 +1,11 @@
-import { useState } from "react";
-
 import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 export type AgentFilterId = "all" | "ready" | "needs-config" | "recently-run";
 
 function AgentsPage() {
-  const [filter, setFilter] = useState<AgentFilterId>("all");
+  const [filter, setFilter] = usePersistedState<AgentFilterId>("agents:filter", "all");
 
   return (
     <>

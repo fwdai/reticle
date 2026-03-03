@@ -1,12 +1,11 @@
-import { useState } from "react";
-
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 export type RunFilterId = "all" | "agents" | "scenarios" | "failed";
 
 function RunsPage() {
-  const [activeFilter, setActiveFilter] = useState<RunFilterId>("all");
+  const [activeFilter, setActiveFilter] = usePersistedState<RunFilterId>("runs:filter", "all");
 
   return (
     <>

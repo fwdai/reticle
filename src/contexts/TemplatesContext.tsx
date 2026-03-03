@@ -1,6 +1,7 @@
-import React, { createContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import React, { createContext, useCallback, useEffect, type ReactNode } from "react";
 import { listPromptTemplates } from "@/lib/storage";
 import type { PromptTemplate } from "@/types";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 const NEW_TEMPLATE: PromptTemplate = {
   type: "user",
@@ -39,11 +40,11 @@ interface TemplatesProviderProps {
 }
 
 export function TemplatesProvider({ children }: TemplatesProviderProps) {
-  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<TemplateFilter>("all");
-  const [activeCollection, setActiveCollection] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
+  const [templates, setTemplates] = React.useState<PromptTemplate[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = usePersistedState<TemplateFilter>("templates:filter", "all");
+  const [activeCollection, setActiveCollection] = React.useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = React.useState<PromptTemplate | null>(null);
 
   const loadTemplates = useCallback(async (): Promise<PromptTemplate[]> => {
     setLoading(true);
