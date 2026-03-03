@@ -2,8 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import MainContent from "@/components/Layout/MainContent";
 
 import { AgentProvider } from "@/contexts/AgentContext";
-import { Header } from "./Header";
+import { Header, type AgentViewMode } from "./Header";
 import { SpecLayout as Spec } from "./Spec";
+import { TestView } from "./Test";
+import { VisualizerView } from "./Visualizer";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 import { runAgentAction } from "@/actions/agentActions";
@@ -42,7 +44,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const [memoryEnabled, setMemoryEnabled] = useState(agent.memoryEnabled);
   const [memorySource, setMemorySource] = useState("local");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [viewMode, setViewMode] = useState("editor");
+  const [viewMode, setViewMode] = useState<AgentViewMode>("editor");
   const [isLoading, setIsLoading] = useState(!isNew);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
   const skipNextAutoSaveRef = useRef(!isNew);
@@ -180,6 +182,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           onViewModeChange={setViewMode}
         />
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+          {viewMode === "editor" && (
           <Spec
             agentId={effectiveId}
             provider={provider}
@@ -213,6 +216,9 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
             onSeedChange={setSeed}
             onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
           />
+          )}
+          {viewMode === "test" && <TestView agentName={agentName} />}
+          {viewMode === "visualizer" && <VisualizerView agentName={agentName} />}
         </div>
       </AgentProvider>
     </MainContent>

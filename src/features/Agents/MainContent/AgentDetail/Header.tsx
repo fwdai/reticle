@@ -1,16 +1,25 @@
-import { ArrowLeft, Share } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, MoreVertical, Download } from "lucide-react";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { EditableTitle, type SaveStatus } from "@/components/ui/EditableTitle";
 import LayoutHeader from "@/components/Layout/Header";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+export type AgentViewMode = "editor" | "test" | "visualizer";
 
 interface HeaderProps {
   agentName: string;
   isNew: boolean;
-  viewMode: string;
+  viewMode: AgentViewMode;
   saveStatus: SaveStatus;
   onBack: () => void;
   onAgentNameChange: (name: string) => void;
-  onViewModeChange: (mode: string) => void;
+  onViewModeChange: (mode: AgentViewMode) => void;
 }
 
 export function Header({
@@ -44,15 +53,30 @@ export function Header({
       <div className="flex items-center gap-2">
         <SegmentedSwitch
           options={[
-            { value: "editor", label: "Editor" },
-            { value: "visualizer", label: "Visualizer" },
+            { value: "editor", label: "Edit", icon: <Pencil className="h-3.5 w-3.5" /> },
+            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" />, disabled: true },
+            { value: "visualizer", label: "Visualize", icon: <Network className="h-3.5 w-3.5" />, disabled: true },
           ]}
           value={viewMode}
-          onChange={onViewModeChange}
+          onChange={(v) => onViewModeChange(v as AgentViewMode)}
         />
-        <button className="p-2 text-text-muted hover:text-text-main hover:bg-gray-100 rounded-lg transition-colors border border-border-light bg-white">
-          <Share size={18} />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-text-muted hover:text-text-main hover:bg-gray-100/80 active:bg-gray-100"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem className="gap-2 text-sm" onClick={() => { /* TODO: export agent */ }}>
+              <Download className="h-4 w-4" />
+              Export
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </LayoutHeader>
   );

@@ -4,6 +4,7 @@ export interface SegmentedSwitchOption<T extends string> {
   value: T;
   label: string;
   icon?: ReactNode;
+  disabled?: boolean;
 }
 
 interface SegmentedSwitchProps<T extends string> {
@@ -30,14 +31,19 @@ function SegmentedSwitch<T extends string>({
     <div className="flex bg-gray-100 p-1 rounded-xl">
       {options.map((option) => {
         const isActive = value === option.value;
+        const isDisabled = option.disabled;
         return (
           <button
             key={option.value}
-            onClick={() => onChange(option.value)}
+            type="button"
+            disabled={isDisabled}
+            onClick={() => !isDisabled && onChange(option.value)}
             className={`flex items-center gap-1 font-semibold rounded-lg transition-colors ${sizeClasses} ${
-              isActive
-                ? "bg-white shadow-sm text-text-main"
-                : "text-text-muted hover:text-text-main"
+              isDisabled
+                ? "cursor-not-allowed opacity-50"
+                : isActive
+                  ? "bg-white shadow-sm text-text-main"
+                  : "text-text-muted hover:text-text-main"
             }`}
           >
             {option.icon}

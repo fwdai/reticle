@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
-import { MetricsBar } from "../Visualizer/MetricsBar";
 
 export default function Test() {
   const context = useContext(StudioContext);
