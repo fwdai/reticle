@@ -40,7 +40,7 @@ function TemplatesPage() {
     templates,
     loading,
     loadTemplates,
-    typeFilter,
+    filter,
     activeCollection,
     selectedTemplate,
     setSelectedTemplate,
@@ -68,8 +68,12 @@ function TemplatesPage() {
   const filtered = useMemo(() => {
     let result = templates;
 
-    if (typeFilter !== "all") {
-      result = result.filter((t) => t.type === typeFilter);
+    if (filter === "system" || filter === "user") {
+      result = result.filter((t) => t.type === filter);
+    } else if (filter === "starred") {
+      result = result.filter((t) => t.is_pinned);
+    } else if (filter === "recently_used") {
+      result = [...result].sort((a, b) => (b.last_used_at ?? 0) - (a.last_used_at ?? 0));
     }
 
     if (activeCollection) {
@@ -88,7 +92,7 @@ function TemplatesPage() {
     }
 
     return result;
-  }, [templates, typeFilter, activeCollection, search]);
+  }, [templates, filter, activeCollection, search]);
 
   const handleSelectTemplate = (template: PromptTemplate) => {
     setSelectedTemplate(template);

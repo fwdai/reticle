@@ -1,40 +1,35 @@
-import { Filter, FileCode, Star, Clock } from "lucide-react";
+import { List, Terminal, MessageSquare, Star, Clock } from "lucide-react";
 
 import Sidebar, { SidebarSection, SidebarItem } from "@/components/Layout/Sidebar";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
 
 function TemplatesSidebar() {
-  const {
-    templates,
-    typeFilter,
-    setTypeFilter,
-  } = useTemplatesContext();
+  const { templates, filter, setFilter } = useTemplatesContext();
 
   const starredCount = templates.filter((t) => t.is_pinned).length;
-  const recentlyUsedCount = templates.filter((t) => t.last_used_at != null).length;
 
   return (
     <Sidebar title="Templates">
-      <SidebarSection title="Type Filter">
+      <SidebarSection title="Type">
         <SidebarItem
-          icon={Filter}
+          icon={List}
           label="All Templates"
-          active={typeFilter === "all"}
-          onClick={() => setTypeFilter("all")}
+          active={filter === "all"}
+          onClick={() => setFilter("all")}
           count={templates.length}
         />
         <SidebarItem
-          icon={FileCode}
+          icon={Terminal}
           label="System"
-          active={typeFilter === "system"}
-          onClick={() => setTypeFilter("system")}
+          active={filter === "system"}
+          onClick={() => setFilter("system")}
           count={templates.filter((t) => t.type === "system").length}
         />
         <SidebarItem
-          icon={FileCode}
+          icon={MessageSquare}
           label="User"
-          active={typeFilter === "user"}
-          onClick={() => setTypeFilter("user")}
+          active={filter === "user"}
+          onClick={() => setFilter("user")}
           count={templates.filter((t) => t.type === "user").length}
         />
       </SidebarSection>
@@ -42,12 +37,16 @@ function TemplatesSidebar() {
         <SidebarItem
           icon={Star}
           label="Starred"
+          active={filter === "starred"}
+          onClick={() => setFilter("starred")}
           count={starredCount}
         />
         <SidebarItem
           icon={Clock}
           label="Recently Used"
-          count={recentlyUsedCount}
+          active={filter === "recently_used"}
+          onClick={() => setFilter("recently_used")}
+          count={templates.length}
         />
       </SidebarSection>
     </Sidebar>

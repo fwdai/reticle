@@ -9,14 +9,14 @@ const NEW_TEMPLATE: PromptTemplate = {
   variables_json: null,
 };
 
-export type TypeFilter = "all" | "system" | "user";
+export type TemplateFilter = "all" | "system" | "user" | "starred" | "recently_used";
 
 interface TemplatesContextType {
   templates: PromptTemplate[];
   loading: boolean;
   loadTemplates: () => Promise<PromptTemplate[]>;
-  typeFilter: TypeFilter;
-  setTypeFilter: (filter: TypeFilter) => void;
+  filter: TemplateFilter;
+  setFilter: (filter: TemplateFilter) => void;
   activeCollection: string | null;
   setActiveCollection: (name: string | null) => void;
   selectedTemplate: PromptTemplate | null;
@@ -41,7 +41,7 @@ interface TemplatesProviderProps {
 export function TemplatesProvider({ children }: TemplatesProviderProps) {
   const [templates, setTemplates] = useState<PromptTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [filter, setFilter] = useState<TemplateFilter>("all");
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
 
@@ -71,8 +71,8 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
     templates,
     loading,
     loadTemplates,
-    typeFilter,
-    setTypeFilter,
+    filter,
+    setFilter,
     activeCollection,
     setActiveCollection,
     selectedTemplate,

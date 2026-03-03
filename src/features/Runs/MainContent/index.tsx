@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 
-import type { Execution, Scenario, AgentRecord } from "@/types";
+import type { Execution, ExecutionType, ExecutionStatus, Scenario, AgentRecord } from "@/types";
 import MainContent from "@/components/Layout/MainContent";
 import { Pagination } from "@/components/ui/Pagination";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { listExecutions, listScenarios, listAgents, countExecutions } from "@/lib/storage";
 import { formatDuration, formatRelativeTime } from "@/lib/helpers/time";
 import { calculateRequestCost } from "@/lib/modelPricing";
+import type { RunFilterId } from "../index";
 import Header from "../Header";
 import { RunDetail } from "./RunDetail";
 
@@ -109,10 +110,20 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const PAGE_SIZE = 20;
 
-function Runs() {
-  // const [dateRange, setDateRange] = useState("Last 24 Hours");
-  // const [model, setModel] = useState("All Models");
-  // const [environment, setEnvironment] = useState("Staging");
+function filterToQueryOptions(filter: RunFilterId): { type?: ExecutionType; status?: ExecutionStatus } {
+  switch (filter) {
+    case "agents": return { type: "agent" };
+    case "scenarios": return { type: "scenario" };
+    case "failed": return { status: "failed" };
+    default: return {};
+  }
+}
+
+interface RunsProps {
+  filter: RunFilterId;
+}
+
+function Runs({ filter }: RunsProps) {
   const [runs, setRuns] = useState<Run[]>([]);
   const [totalRuns, setTotalRuns] = useState(0);
   const [totalExecutions, setTotalExecutions] = useState(0);
@@ -122,10 +133,16 @@ function Runs() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const loadPage = useCallback(async (pageNum: number, query: string) => {
+  // Reset to page 1 whenever the filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
+
+  const loadPage = useCallback(async (pageNum: number, query: string, currentFilter: RunFilterId) => {
     try {
       setIsLoading(true);
       const offset = (pageNum - 1) * PAGE_SIZE;
+      const filterOptions = filterToQueryOptions(currentFilter);
 
       let executions: Execution[];
       let scenarios: Scenario[];
@@ -134,10 +151,10 @@ function Runs() {
 
       if (query) {
         [executions, scenarios, agents, total] = await Promise.all([
-          listExecutions({ limit: 1000 }),
+          listExecutions({ limit: 1000, ...filterOptions }),
           listScenarios(),
           listAgents(),
-          countExecutions(),
+          countExecutions(filterOptions),
         ]);
 
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
@@ -157,10 +174,10 @@ function Runs() {
         setTotalRuns(filtered.length);
       } else {
         [executions, scenarios, agents, total] = await Promise.all([
-          listExecutions({ offset, limit: PAGE_SIZE }),
+          listExecutions({ offset, limit: PAGE_SIZE, ...filterOptions }),
           listScenarios(),
           listAgents(),
-          countExecutions(),
+          countExecutions(filterOptions),
         ]);
         const scenarioById = new Map(scenarios.filter((s): s is Scenario & { id: string } => !!s.id).map((s) => [s.id!, s]));
         const agentById = new Map(agents.filter((a): a is AgentRecord & { id: string } => !!a.id).map((a) => [a.id, a]));
@@ -182,8 +199,9 @@ function Runs() {
   }, []);
 
   useEffect(() => {
-    loadPage(page, debouncedSearchQuery);
-  }, [page, debouncedSearchQuery, loadPage]);
+    loadPage(page, debouncedSearchQuery, filter);
+  }, [page, debouncedSearchQuery, filter, loadPage]);
+
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
     setPage(1);

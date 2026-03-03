@@ -4,6 +4,8 @@ import {
   AgentRecord,
   Collection,
   Execution,
+  ExecutionStatus,
+  ExecutionType,
   PromptTemplate,
   Scenario,
   TelemetryEvent,
@@ -36,18 +38,25 @@ export async function updateExecution(
 export interface ListExecutionsOptions {
   offset?: number;
   limit?: number;
+  type?: ExecutionType;
+  status?: ExecutionStatus;
 }
 
 export async function listExecutions(
   options?: ListExecutionsOptions
 ): Promise<Execution[]> {
-  const { offset = 0, limit } = options ?? {};
+  const { offset = 0, limit, type, status } = options ?? {};
   const query: Record<string, unknown> = {
     orderBy: 'started_at',
     orderDirection: 'desc',
   };
   if (offset > 0) query.offset = offset;
   if (limit != null && limit > 0) query.limit = limit;
+
+  const where: Record<string, unknown> = {};
+  if (type) where.type = type;
+  if (status) where.status = status;
+  if (Object.keys(where).length > 0) query.where = where;
 
   const rows = await invoke<Execution[]>('db_select_cmd', {
     table: 'executions',
@@ -65,10 +74,21 @@ export async function hasApiKeys(): Promise<boolean> {
   return Array.isArray(rows) && rows.length > 0;
 }
 
-export async function countExecutions(): Promise<number> {
+export interface CountExecutionsOptions {
+  type?: ExecutionType;
+  status?: ExecutionStatus;
+}
+
+export async function countExecutions(options?: CountExecutionsOptions): Promise<number> {
+  const query: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {};
+  if (options?.type) where.type = options.type;
+  if (options?.status) where.status = options.status;
+  if (Object.keys(where).length > 0) query.where = where;
+
   const count = await invoke<number>('db_count_cmd', {
     table: 'executions',
-    query: {},
+    query,
   });
   return typeof count === 'number' ? count : 0;
 }
