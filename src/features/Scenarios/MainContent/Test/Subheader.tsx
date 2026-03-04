@@ -5,12 +5,13 @@ import {
   FlaskConical,
   Code,
   AlignLeft,
+  Columns2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface SubheaderProps {
-  innerMode: "edit" | "run";
+  innerMode: "edit" | "run" | "compare";
   viewMode: "table" | "json";
   casesCount: number;
   running: boolean;
@@ -18,6 +19,7 @@ interface SubheaderProps {
   onRunSuite: () => void;
   onSwitchToTable: () => void;
   onSwitchToJson: () => void;
+  onCompareModels: () => void;
 }
 
 export function Subheader({
@@ -29,11 +31,12 @@ export function Subheader({
   onRunSuite,
   onSwitchToTable,
   onSwitchToJson,
+  onCompareModels,
 }: SubheaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-border-light px-6 h-12 bg-slate-50">
       <div className="flex items-center gap-3">
-        {innerMode === "run" && (
+        {(innerMode === "run" || innerMode === "compare") && (
           <button
             onClick={onBackToEdit}
             className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-main transition-colors"
@@ -50,6 +53,14 @@ export function Subheader({
             </span>
             <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-text-muted">
               {casesCount} CASE{casesCount !== 1 ? "S" : ""}
+            </span>
+          </div>
+        )}
+        {innerMode === "compare" && (
+          <div className="flex items-center gap-2">
+            <Columns2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-text-main">
+              Compare Models
             </span>
           </div>
         )}
@@ -85,6 +96,15 @@ export function Subheader({
               </button>
             </div>
 
+            {/* <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-2 border-border-light font-semibold px-5"
+              onClick={onCompareModels}
+            >
+              <Columns2 className="h-3.5 w-3.5" />
+              Compare Models
+            </Button> */}
             <Button
               size="sm"
               disabled={casesCount === 0}

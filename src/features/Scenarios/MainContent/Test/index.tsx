@@ -13,6 +13,7 @@ import { streamText } from "@/lib/gateway";
 import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
+import { CompareMode } from "./CompareMode";
 import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow } from "./helpers";
 import { type AssertionType, type TestCase, type TestResult } from "./types";
 
@@ -33,7 +34,7 @@ export default function Test() {
   const { studioState } = context;
   const { currentScenario, scenarioId } = studioState;
 
-  const [innerMode, setInnerMode] = useState<"edit" | "run">("edit");
+  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compare">("edit");
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
@@ -268,6 +269,7 @@ export default function Test() {
         onRunSuite={runSuite}
         onSwitchToTable={switchToTable}
         onSwitchToJson={switchToJson}
+        onCompareModels={() => setInnerMode("compare")}
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -286,7 +288,7 @@ export default function Test() {
             onUpdateCase={updateCase}
             onRemoveCase={removeCase}
           />
-        ) : (
+        ) : innerMode === "run" ? (
           <RunMode
             cases={cases}
             results={results}
@@ -295,6 +297,11 @@ export default function Test() {
             passCount={passCount}
             failCount={failCount}
             avgLatency={avgLatency}
+          />
+        ) : (
+          <CompareMode
+            cases={cases}
+            providerModels={studioState.providerModels}
           />
         )}
       </div>
