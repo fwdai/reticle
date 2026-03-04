@@ -1,4 +1,11 @@
-export type AssertionType = "exact" | "contains" | "json_schema" | "llm_judge";
+import type { EvalAssertionType } from "@/types";
+
+// Scenario evals only use single-assertion types. Agent-specific types
+// (tool_called, tool_not_called, loop_count) live in the agent eval UI.
+export type AssertionType = Extract<
+  EvalAssertionType,
+  "contains" | "equals" | "not_contains"
+>;
 
 export interface TestCase {
   id: string;
@@ -12,14 +19,10 @@ export interface TestResult {
   passed: boolean;
   actual: string;
   latency: number; // seconds
-  cost: number;
 }
 
 export const ASSERTION_LABELS: Record<AssertionType, string> = {
-  exact: "Exact Match",
   contains: "Contains",
-  json_schema: "JSON Schema",
-  llm_judge: "LLM Judge",
+  equals: "Exact Match",
+  not_contains: "Does Not Contain",
 };
-
-export const DEFAULT_VARIABLES = ["message", "user_id"];

@@ -7,26 +7,22 @@ import type { TestCase } from "./types";
 interface EditModeProps {
   viewMode: "table" | "json";
   cases: TestCase[];
-  variables: string[];
   jsonValue: string;
   jsonError: string | null;
   onJsonChange: (v: string) => void;
   onAddCase: () => void;
   onUpdateCase: (id: string, u: Partial<TestCase>) => void;
-  onUpdateInput: (id: string, key: string, val: string) => void;
   onRemoveCase: (id: string) => void;
 }
 
 export function EditMode({
   viewMode,
   cases,
-  variables,
   jsonValue,
   jsonError,
   onJsonChange,
   onAddCase,
   onUpdateCase,
-  onUpdateInput,
   onRemoveCase,
 }: EditModeProps) {
   if (viewMode === "json") {
@@ -42,7 +38,7 @@ export function EditMode({
               ? "border-red-500/50 focus:border-red-500"
               : "border-border-light focus:border-primary/50"
           )}
-          placeholder={`[\n  { "inputs": { "message": "..." }, "expected": "billing", "assertion": "contains" }\n]`}
+          placeholder={`[\n  { "inputs": { "input": "Give me the weather in London" }, "expected": "sunny", "assertion": "contains" }\n]`}
         />
         {jsonError && (
           <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-destructive">
@@ -64,17 +60,13 @@ export function EditMode({
         {/* Header */}
         <div
           className="grid gap-px bg-border-light"
-          style={{
-            gridTemplateColumns: `repeat(${variables.length}, 1fr) 1fr 160px 40px`,
-          }}
+          style={{ gridTemplateColumns: "1fr 180px 160px 40px" }}
         >
-          {variables.map((v) => (
-            <div key={v} className="bg-slate-50 px-4 py-2.5">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-                {`{{${v}}}`}
-              </span>
-            </div>
-          ))}
+          <div className="bg-slate-50 px-4 py-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+              Input
+            </span>
+          </div>
           <div className="bg-slate-50 px-4 py-2.5">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
               Expected Output
@@ -113,21 +105,21 @@ export function EditMode({
               <div
                 key={tc.id}
                 className="group grid gap-px bg-border-light hover:bg-primary/5 transition-colors"
-                style={{
-                  gridTemplateColumns: `repeat(${variables.length}, 1fr) 1fr 160px 40px`,
-                }}
+                style={{ gridTemplateColumns: "1fr 180px 160px 40px" }}
               >
-                {variables.map((v) => (
-                  <div key={v} className="bg-white px-1">
-                    <input
-                      type="text"
-                      value={tc.inputs[v] ?? ""}
-                      onChange={(e) => onUpdateInput(tc.id, v, e.target.value)}
-                      className="w-full border-0 bg-transparent px-3 py-3 text-sm focus:outline-none placeholder:text-text-muted/40 text-text-main"
-                      placeholder={v}
-                    />
-                  </div>
-                ))}
+                <div className="bg-white px-1">
+                  <input
+                    type="text"
+                    value={tc.inputs.input ?? ""}
+                    onChange={(e) =>
+                      onUpdateCase(tc.id, {
+                        inputs: { ...tc.inputs, input: e.target.value },
+                      })
+                    }
+                    className="w-full border-0 bg-transparent px-3 py-3 text-sm focus:outline-none placeholder:text-text-muted/40 text-text-main"
+                    placeholder="Enter the full input that will be sent to the model…"
+                  />
+                </div>
                 <div className="bg-white px-1">
                   <input
                     type="text"

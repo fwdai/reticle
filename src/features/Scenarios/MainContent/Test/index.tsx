@@ -1,62 +1,98 @@
-import { useState, useCallback, useEffect, useRef, useMemo, useContext } from "react";
+import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
+import { listEvalTestCases, replaceEvalTestCases, listToolsForEntity } from "@/lib/storage";
+import { streamText } from "@/lib/gateway";
 import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
-import { createEmptyCase, SEED_CASES } from "./helpers";
-import { DEFAULT_VARIABLES, type AssertionType, type TestCase, type TestResult } from "./types";
+import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow } from "./helpers";
+import { type AssertionType, type TestCase, type TestResult } from "./types";
+
+function evaluateAssertion(assertion: AssertionType, actual: string, expected: string): boolean {
+  const a = actual.toLowerCase();
+  const e = expected.toLowerCase().trim();
+  switch (assertion) {
+    case "equals":      return actual.trim() === expected.trim();
+    case "contains":    return a.includes(e);
+    case "not_contains": return !a.includes(e);
+  }
+}
 
 export default function Test() {
   const context = useContext(StudioContext);
-  if (!context) {
-    throw new Error("Test must be used within a StudioProvider");
-  }
+  if (!context) throw new Error("Test must be used within a StudioProvider");
 
   const { studioState } = context;
-  const { currentScenario } = studioState;
-
-  const variables = useMemo(() => {
-    const keys = currentScenario.userVariables
-      ?.map((v) => v.key?.trim())
-      .filter(Boolean);
-    return keys && keys.length > 0 ? keys : DEFAULT_VARIABLES;
-  }, [currentScenario.userVariables]);
+  const { currentScenario, scenarioId } = studioState;
 
   const [innerMode, setInnerMode] = useState<"edit" | "run">("edit");
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
-  const [cases, setCases] = useState<TestCase[]>(SEED_CASES);
+  const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [results, setResults] = useState<TestResult[]>([]);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const runningRef = useRef(false);
 
-  useEffect(() => {
-    setCases((prev) =>
-      prev.map((c) => ({
-        ...c,
-        inputs: Object.fromEntries(
-          variables.map((v) => [v, c.inputs[v] ?? ""])
-        ),
-      }))
-    );
-  }, [variables.join(",")]);
+  // ── DB load ──────────────────────────────────────────────────────────────────
 
-  const addCase = () => setCases((prev) => [...prev, createEmptyCase(variables)]);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextSaveRef = useRef(false); // true immediately after a DB load
+
+  useEffect(() => {
+    // Cancel any pending save for the previous scenario before switching
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    if (!scenarioId) {
+      setCases([]);
+      return;
+    }
+
+    setIsLoading(true);
+    skipNextSaveRef.current = true;
+    listEvalTestCases(scenarioId, "scenario")
+      .then((dbCases) => setCases(dbCases.map(dbCaseToUiCase)))
+      .finally(() => setIsLoading(false));
+  }, [scenarioId]);
+
+  // ── DB save (debounced, skipped on first render after load) ──────────────────
+
+  useEffect(() => {
+    if (!scenarioId) return;
+
+    // Skip the save that would fire immediately after a DB load
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      replaceEvalTestCases(scenarioId, "scenario", cases.map(uiCaseToDbRow));
+    }, 600);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [cases, scenarioId]);
+
+  // ── Case mutations ────────────────────────────────────────────────────────────
+
+  const addCase = () => setCases((prev) => [...prev, createEmptyCase()]);
 
   const updateCase = (id: string, updates: Partial<TestCase>) =>
     setCases((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
 
-  const updateInput = (id: string, key: string, value: string) =>
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, inputs: { ...c.inputs, [key]: value } } : c
-      )
-    );
+  const removeCase = (id: string) =>
+    setCases((prev) => prev.filter((c) => c.id !== id));
 
-  const removeCase = (id: string) => setCases((prev) => prev.filter((c) => c.id !== id));
+  // ── JSON view ─────────────────────────────────────────────────────────────────
 
   const switchToJson = () => {
     const json = cases.map(({ inputs, expected, assertion }) => ({
@@ -75,7 +111,7 @@ export default function Test() {
       if (!Array.isArray(parsed)) throw new Error("Must be an array");
       const newCases: TestCase[] = parsed.map((c: Record<string, unknown>) => ({
         id: crypto.randomUUID(),
-        inputs: (c.inputs as Record<string, string>) ?? {},
+        inputs: (c.inputs as Record<string, string>) ?? { input: "" },
         expected: String(c.expected ?? ""),
         assertion: (c.assertion as AssertionType) ?? "contains",
       }));
@@ -87,68 +123,74 @@ export default function Test() {
     }
   };
 
-  const runSuite = useCallback(() => {
+  // ── Run suite ─────────────────────────────────────────────────────────────────
+
+  const runSuite = useCallback(async () => {
+    if (!scenarioId) return;
+
     setResults([]);
     setRunning(true);
     setProgress(0);
     setInnerMode("run");
     runningRef.current = true;
 
+    const { systemPrompt, configuration, history, attachments } = currentScenario;
+    const allTools = await listToolsForEntity(scenarioId, "scenario");
     const total = cases.length;
     let completed = 0;
-    const MOCK_OUTPUTS = ["billing", "technical", "account", "general", "feedback"];
 
-    cases.forEach((tc, i) => {
-      setTimeout(() => {
-        if (!runningRef.current) return;
-        const actual = MOCK_OUTPUTS[i % MOCK_OUTPUTS.length];
-        let passed = false;
-        switch (tc.assertion) {
-          case "exact":
-            passed = actual === tc.expected;
-            break;
-          case "contains":
-            passed = actual.includes(tc.expected) || tc.expected.includes(actual);
-            break;
-          case "json_schema":
-          case "llm_judge":
-            passed = Math.random() > 0.3;
-            break;
-        }
+    for (const tc of cases) {
+      if (!runningRef.current) break;
 
-        const result: TestResult = {
-          caseId: tc.id,
-          passed,
-          actual,
-          latency: +(0.4 + Math.random() * 2.2).toFixed(2),
-          cost: +(0.0002 + Math.random() * 0.001).toFixed(4),
-        };
+      const started = Date.now();
+      let actual = "";
+      let latency = 0;
 
-        completed++;
-        setResults((prev) => [...prev, result]);
-        setProgress(Math.round((completed / total) * 100));
+      try {
+        const result = await streamText(
+          tc.inputs.input,
+          systemPrompt,
+          history,
+          {
+            provider: configuration.provider,
+            model: configuration.model,
+            systemPrompt,
+            temperature: configuration.temperature,
+            topP: configuration.topP,
+            maxTokens: configuration.maxTokens,
+          },
+          allTools,
+          attachments,
+        );
 
-        if (completed === total) {
-          setRunning(false);
-          runningRef.current = false;
-        }
-      }, 400 + i * 350);
-    });
-  }, [cases]);
+        actual = await result.text;
+        latency = (Date.now() - started) / 1000;
+      } catch (e) {
+        actual = `Error: ${e instanceof Error ? e.message : "unknown"}`;
+        latency = (Date.now() - started) / 1000;
+      }
 
-  useEffect(() => {
-    return () => {
-      runningRef.current = false;
-    };
-  }, []);
+      const passed = evaluateAssertion(tc.assertion, actual, tc.expected);
+      completed++;
+
+      setResults((prev) => [
+        ...prev,
+        { caseId: tc.id, passed, actual, latency: +latency.toFixed(2) },
+      ]);
+      setProgress(Math.round((completed / total) * 100));
+    }
+
+    setRunning(false);
+    runningRef.current = false;
+  }, [cases, scenarioId, currentScenario]);
+
+  useEffect(() => () => { runningRef.current = false; }, []);
 
   const passCount = results.filter((r) => r.passed).length;
   const failCount = results.filter((r) => !r.passed).length;
-  const totalCost = results.reduce((s, r) => s + r.cost, 0);
-  const avgLatency =
-    results.length
-      ? results.reduce((s, r) => s + r.latency, 0) / results.length
-      : 0;
+  const avgLatency = results.length
+    ? results.reduce((s, r) => s + r.latency, 0) / results.length
+    : 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-100">
@@ -164,20 +206,19 @@ export default function Test() {
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {innerMode === "edit" ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40 text-xs text-text-muted">
+            Loading test cases…
+          </div>
+        ) : innerMode === "edit" ? (
           <EditMode
             viewMode={viewMode}
             cases={cases}
-            variables={variables}
             jsonValue={jsonValue}
             jsonError={jsonError}
-            onJsonChange={(v) => {
-              setJsonValue(v);
-              setJsonError(null);
-            }}
+            onJsonChange={(v) => { setJsonValue(v); setJsonError(null); }}
             onAddCase={addCase}
             onUpdateCase={updateCase}
-            onUpdateInput={updateInput}
             onRemoveCase={removeCase}
           />
         ) : (
@@ -188,7 +229,6 @@ export default function Test() {
             progress={progress}
             passCount={passCount}
             failCount={failCount}
-            totalCost={totalCost}
             avgLatency={avgLatency}
           />
         )}
@@ -198,6 +238,11 @@ export default function Test() {
         <span className="text-[10px] text-text-muted">
           Test mode · {currentScenario.name}
         </span>
+        {!scenarioId && (
+          <span className="text-[10px] text-amber-500">
+            Save the scenario first to persist test cases
+          </span>
+        )}
       </div>
     </div>
   );

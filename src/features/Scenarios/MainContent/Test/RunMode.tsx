@@ -1,4 +1,4 @@
-import { Check, X, Clock, DollarSign, Zap } from "lucide-react";
+import { Check, X, Clock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TestCase, TestResult } from "./types";
 
@@ -9,7 +9,6 @@ interface RunModeProps {
   progress: number;
   passCount: number;
   failCount: number;
-  totalCost: number;
   avgLatency: number;
 }
 
@@ -20,7 +19,6 @@ export function RunMode({
   progress,
   passCount,
   failCount,
-  totalCost,
   avgLatency,
 }: RunModeProps) {
   return (
@@ -38,9 +36,6 @@ export function RunMode({
           <X className="h-3.5 w-3.5" /> {failCount} failed
         </span>
         <div className="h-4 w-px bg-border-light" />
-        <span className="flex items-center gap-1.5 text-xs text-text-muted">
-          <DollarSign className="h-3 w-3" /> ${totalCost.toFixed(4)}
-        </span>
         <span className="flex items-center gap-1.5 text-xs text-text-muted">
           <Clock className="h-3 w-3" /> {avgLatency.toFixed(1)}s avg
         </span>
@@ -70,14 +65,13 @@ export function RunMode({
         {/* Header */}
         <div
           className="grid bg-slate-50 text-[10px] font-semibold uppercase tracking-widest text-text-muted"
-          style={{ gridTemplateColumns: "44px 1fr 1fr 1fr 80px 80px" }}
+          style={{ gridTemplateColumns: "44px 1fr 1fr 1fr 80px" }}
         >
           <div className="px-3 py-2.5" />
-          <div className="px-4 py-2.5">Inputs</div>
+          <div className="px-4 py-2.5">Input</div>
           <div className="px-4 py-2.5">Expected</div>
           <div className="px-4 py-2.5">Actual</div>
           <div className="px-4 py-2.5">Latency</div>
-          <div className="px-4 py-2.5">Cost</div>
         </div>
 
         {/* Rows */}
@@ -95,7 +89,7 @@ export function RunMode({
                     ? "bg-destructive/5 border-l-2 border-l-destructive"
                     : "bg-white border-l-2 border-l-transparent"
                 )}
-                style={{ gridTemplateColumns: "44px 1fr 1fr 1fr 80px 80px" }}
+                style={{ gridTemplateColumns: "44px 1fr 1fr 1fr 80px" }}
               >
                 {/* Status icon */}
                 <div className="flex items-center justify-center px-3 py-3">
@@ -114,12 +108,10 @@ export function RunMode({
                   )}
                 </div>
 
-                {/* Inputs (truncated) */}
+                {/* Input (truncated) */}
                 <div className="px-4 py-3">
                   <span className="text-xs text-text-muted truncate block max-w-[280px]">
-                    {Object.entries(tc.inputs)
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(" · ")}
+                    {tc.inputs.input || "—"}
                   </span>
                 </div>
 
@@ -151,17 +143,6 @@ export function RunMode({
                   {result ? (
                     <span className="font-mono text-xs text-text-muted">
                       {result.latency}s
-                    </span>
-                  ) : (
-                    <span className="text-xs text-text-muted/50">—</span>
-                  )}
-                </div>
-
-                {/* Cost */}
-                <div className="px-4 py-3">
-                  {result ? (
-                    <span className="font-mono text-xs text-text-muted">
-                      ${result.cost}
                     </span>
                   ) : (
                     <span className="text-xs text-text-muted/50">—</span>
