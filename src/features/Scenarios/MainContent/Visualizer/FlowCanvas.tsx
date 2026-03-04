@@ -12,9 +12,7 @@ import {
   Play,
   Loader2,
 } from "lucide-react";
-import { FlowNode, FlowConnector } from "./FlowNode";
-import { MiniTag } from "./MiniTag";
-import { ConfigChip } from "./ConfigChip";
+import { FlowNode, FlowConnector, MiniTag, ConfigChip } from "@/components/Visualizer";
 import { PROVIDERS_LIST } from "@/constants/providers";
 import { cn } from "@/lib/utils";
 import type { ConfigurationState, HistoryItem, AttachedFile, ResponseState } from "@/contexts/StudioContext";

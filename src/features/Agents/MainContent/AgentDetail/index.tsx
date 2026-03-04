@@ -218,7 +218,21 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           />
           )}
           {viewMode === "test" && <TestView agentName={agentName} />}
-          {viewMode === "visualizer" && <VisualizerView agentName={agentName} />}
+          {viewMode === "visualizer" && (
+            <VisualizerView
+              agentName={agentName}
+              provider={provider}
+              model={model}
+              agentGoal={agentGoal}
+              systemInstructions={systemInstructions}
+              maxIterations={maxIterations[0]}
+              memoryEnabled={memoryEnabled}
+              memorySource={memorySource}
+              temperature={temperature[0]}
+              topP={topP[0]}
+              maxTokens={maxTokens[0]}
+            />
+          )}
         </div>
       </AgentProvider>
     </MainContent>

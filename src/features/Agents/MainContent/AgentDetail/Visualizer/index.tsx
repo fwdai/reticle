@@ -1,23 +1,57 @@
-interface VisualizerViewProps {
+import { AgentFlowCanvas } from "./AgentFlowCanvas";
+import { AgentMetricsBar } from "./AgentMetricsBar";
+import { BottomBar } from "@/components/Visualizer";
+
+export interface VisualizerViewProps {
   agentName: string;
+  provider: string;
+  model: string;
+  agentGoal: string;
+  systemInstructions: string;
+  maxIterations: number;
+  memoryEnabled: boolean;
+  memorySource: string;
+  temperature: number;
+  topP: number;
+  maxTokens: number;
 }
 
-export function VisualizerView({ agentName }: VisualizerViewProps) {
+export function VisualizerView({
+  agentName: _agentName,
+  provider,
+  model,
+  agentGoal,
+  systemInstructions,
+  maxIterations,
+  memoryEnabled,
+  memorySource,
+  temperature,
+  topP,
+  maxTokens,
+}: VisualizerViewProps) {
+  const nodeStats = {
+    total: 8,
+    active: 0,
+    idle: 8,
+    error: 0,
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-100">
-      <div className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-2xl rounded-xl border border-border-light bg-white p-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-text-main mb-2">Agent flow</h2>
-          <p className="text-sm text-text-muted">
-            Visualize your agent pipeline and execution flow.
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between border-t border-border bg-slate-50 px-6 py-2.5">
-        <span className="text-[10px] text-muted-foreground">
-          Visualize mode · {agentName}
-        </span>
-      </div>
+      <AgentMetricsBar />
+      <AgentFlowCanvas
+        provider={provider}
+        model={model}
+        agentGoal={agentGoal}
+        systemInstructions={systemInstructions}
+        maxIterations={maxIterations}
+        memoryEnabled={memoryEnabled}
+        memorySource={memorySource}
+        temperature={temperature}
+        topP={topP}
+        maxTokens={maxTokens}
+      />
+      <BottomBar {...nodeStats} />
     </div>
   );
 }

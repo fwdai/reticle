@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useContext } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
 import { MetricsBar } from "./MetricsBar";
-import { BottomBar } from "./BottomBar";
+import { BottomBar } from "@/components/Visualizer";
 import { FlowCanvas } from "./FlowCanvas";
 
 export default function Visualizer() {

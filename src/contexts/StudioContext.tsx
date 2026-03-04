@@ -270,9 +270,10 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
       setAppState(prev => ({ ...prev, defaultProvider: provider, defaultModel: model }));
 
       // Don't auto-load last used - show list view first for consistency with other features
+      // Note: don't override scenarioId here — if loadScenario() already ran (fast user click),
+      // we must not reset it back to null.
       setStudioState(prev => ({
         ...prev,
-        scenarioId: null,
         isLoading: false,
       }));
     };

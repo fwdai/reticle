@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { CheckCircle2, Timer, Hash, Coins, XCircle } from "lucide-react";
 import { MetricPill } from "@/components/ui/MetricPill";
-import { MiniTag } from "./MiniTag";
+import { MiniTag } from "@/components/Visualizer";
 import { StudioContext } from "@/contexts/StudioContext";
 import { calculateRequestCost } from "@/lib/modelPricing";
 import { formatTokens, formatCost } from "@/lib/helpers/format";
