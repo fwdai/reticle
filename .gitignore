@@ -26,3 +26,5 @@ dist-ssr
 
 # Deno sidecar binaries (downloaded via scripts/download-deno.sh)
 src-tauri/binaries/
+
+.feedback
