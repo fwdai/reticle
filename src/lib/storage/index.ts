@@ -6,6 +6,10 @@ import {
   Execution,
   ExecutionStatus,
   ExecutionType,
+  EvalTestCase,
+  EvalRun,
+  EvalResult,
+  EvalRunnableType,
   PromptTemplate,
   Scenario,
   TelemetryEvent,
@@ -852,4 +856,124 @@ export async function setSetting(key: string, value: string): Promise<void> {
       data: { key, value },
     });
   }
+}
+
+// ── Eval test cases ────────────────────────────────────────────────────────────
+
+export async function listEvalTestCases(
+  runnableId: string,
+  runnableType: EvalRunnableType
+): Promise<EvalTestCase[]> {
+  const rows = await invoke<EvalTestCase[]>('db_select_cmd', {
+    table: 'eval_test_cases',
+    query: {
+      where: { runnable_id: runnableId, runnable_type: runnableType },
+      orderBy: 'sort_order',
+      orderDirection: 'asc',
+    },
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function insertEvalTestCase(data: EvalTestCase): Promise<string> {
+  return invoke<string>('db_insert_cmd', { table: 'eval_test_cases', data });
+}
+
+export async function updateEvalTestCase(id: string, data: Partial<EvalTestCase>): Promise<void> {
+  await invoke('db_update_cmd', {
+    table: 'eval_test_cases',
+    query: { where: { id } },
+    data,
+  });
+}
+
+export async function deleteEvalTestCase(id: string): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'eval_test_cases',
+    query: { where: { id } },
+  });
+}
+
+/** Replace the full test case list for a runnable (used when saving from the editor). */
+export async function replaceEvalTestCases(
+  runnableId: string,
+  runnableType: EvalRunnableType,
+  cases: Pick<EvalTestCase, 'inputs_json' | 'assertions_json'>[]
+): Promise<void> {
+  await invoke('db_delete_cmd', {
+    table: 'eval_test_cases',
+    query: { where: { runnable_id: runnableId, runnable_type: runnableType } },
+  });
+  for (let i = 0; i < cases.length; i++) {
+    await insertEvalTestCase({
+      runnable_id: runnableId,
+      runnable_type: runnableType,
+      sort_order: i,
+      inputs_json: cases[i].inputs_json,
+      assertions_json: cases[i].assertions_json,
+    });
+  }
+}
+
+// ── Eval runs ──────────────────────────────────────────────────────────────────
+
+export async function insertEvalRun(data: EvalRun): Promise<string> {
+  return invoke<string>('db_insert_cmd', { table: 'eval_runs', data });
+}
+
+export async function updateEvalRun(id: string, data: Partial<EvalRun>): Promise<void> {
+  await invoke('db_update_cmd', {
+    table: 'eval_runs',
+    query: { where: { id } },
+    data,
+  });
+}
+
+export async function listEvalRuns(
+  runnableId: string,
+  runnableType: EvalRunnableType
+): Promise<EvalRun[]> {
+  const rows = await invoke<EvalRun[]>('db_select_cmd', {
+    table: 'eval_runs',
+    query: {
+      where: { runnable_id: runnableId, runnable_type: runnableType },
+      orderBy: 'created_at',
+      orderDirection: 'desc',
+    },
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function getEvalRun(id: string): Promise<EvalRun | null> {
+  const rows = await invoke<EvalRun[]>('db_select_cmd', {
+    table: 'eval_runs',
+    query: { where: { id }, limit: 1 },
+  });
+  return rows.length > 0 ? rows[0] : null;
+}
+
+// ── Eval results ───────────────────────────────────────────────────────────────
+
+export async function insertEvalResult(data: EvalResult): Promise<string> {
+  return invoke<string>('db_insert_cmd', { table: 'eval_results', data });
+}
+
+export async function updateEvalResult(id: string, data: Partial<EvalResult>): Promise<void> {
+  await invoke('db_update_cmd', {
+    table: 'eval_results',
+    query: { where: { id } },
+    data,
+  });
+}
+
+export async function listEvalResults(evalRunId: string): Promise<EvalResult[]> {
+  const rows = await invoke<EvalResult[]>('db_select_cmd', {
+    table: 'eval_results',
+    query: {
+      where: { eval_run_id: evalRunId },
+      orderBy: 'sort_order',
+      orderDirection: 'asc',
+    },
+  });
+  return Array.isArray(rows) ? rows : [];
 }

@@ -180,3 +180,89 @@ export interface ExecutionStep {
 }
 
 export type StepPhase = 'hidden' | 'appearing' | 'processing' | 'done';
+
+// ── Evals ─────────────────────────────────────────────────────────────────────
+
+export type EvalRunnableType = 'scenario' | 'agent';
+
+export type EvalAssertionType =
+  | 'contains'
+  | 'equals'
+  | 'not_contains'
+  | 'tool_called'
+  | 'tool_not_called'
+  | 'loop_count';
+
+/** A single assertion within a test case */
+export interface EvalAssertionItem {
+  type: EvalAssertionType;
+  /** Tool name, expected string, or loop count as string */
+  value: string;
+}
+
+/** An assertion item with its outcome after a run */
+export interface EvalAssertionResult extends EvalAssertionItem {
+  passed: boolean;
+}
+
+export type EvalTestCase = {
+  id?: string;
+  runnable_id: string;
+  runnable_type: EvalRunnableType;
+  sort_order?: number;
+  /**
+   * Scenario: { "variable": "value" }
+   * Agent:    { "task": "..." }  — extensible (files etc.) in the future
+   */
+  inputs_json: string;
+  /** JSON-serialised EvalAssertionItem[] */
+  assertions_json: string;
+  created_at?: number;
+  updated_at?: number;
+};
+
+export type EvalRunStatus = 'running' | 'completed' | 'failed';
+
+export type EvalRun = {
+  id?: string;
+  runnable_id: string;
+  runnable_type: EvalRunnableType;
+  /** Frozen copy of prompt / model / params at time of run */
+  snapshot_json: string;
+  status: EvalRunStatus;
+  started_at?: number | null;
+  ended_at?: number | null;
+  pass_count?: number;
+  fail_count?: number;
+  error_count?: number;
+  total_cost_usd?: number | null;
+  avg_latency_ms?: number | null;
+  created_at?: number;
+  updated_at?: number;
+};
+
+export type EvalResultStatus = 'pending' | 'running' | 'passed' | 'failed' | 'error';
+
+export type EvalResult = {
+  id?: string;
+  eval_run_id: string;
+  /** SET NULL if the source test case is later deleted */
+  test_case_id?: string | null;
+  sort_order?: number;
+  /** Snapshot of inputs at time of run */
+  inputs_json: string;
+  /** Snapshot of EvalAssertionItem[] at time of run */
+  assertions_json: string;
+  status: EvalResultStatus;
+  actual_output?: string | null;
+  /** JSON-serialised EvalAssertionResult[] — per-assertion outcomes */
+  assertions_result_json?: string | null;
+  /** 1 = all assertions passed, 0 = any failed, null = error/pending */
+  passed?: number | null;
+  latency_ms?: number | null;
+  cost_usd?: number | null;
+  usage_json?: string | null;
+  error?: string | null;
+  created_at?: number;
+  updated_at?: number;
+};
