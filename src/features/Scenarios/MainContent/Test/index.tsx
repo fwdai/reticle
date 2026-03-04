@@ -1,6 +1,14 @@
 import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
-import { listEvalTestCases, replaceEvalTestCases, listToolsForEntity } from "@/lib/storage";
+import {
+  listEvalTestCases,
+  replaceEvalTestCases,
+  listToolsForEntity,
+  insertEvalRun,
+  updateEvalRun,
+  insertEvalResult,
+  updateEvalResult,
+} from "@/lib/storage";
 import { streamText } from "@/lib/gateway";
 import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
@@ -138,13 +146,38 @@ export default function Test() {
     const allTools = await listToolsForEntity(scenarioId, "scenario");
     const total = cases.length;
     let completed = 0;
+    let passCount = 0;
+    let failCount = 0;
+    let errorCount = 0;
+    let totalLatencyMs = 0;
+
+    // Create the eval run record
+    const evalRunId = await insertEvalRun({
+      runnable_id: scenarioId,
+      runnable_type: "scenario",
+      snapshot_json: JSON.stringify(currentScenario),
+      status: "running",
+      started_at: Date.now(),
+    });
 
     for (const tc of cases) {
       if (!runningRef.current) break;
 
-      const started = Date.now();
+      // Insert a result row in 'running' state before we start
+      // test_case_id is null because replaceEvalTestCases regenerates IDs on each save
+      const evalResultId = await insertEvalResult({
+        eval_run_id: evalRunId,
+        test_case_id: null,
+        sort_order: completed,
+        inputs_json: JSON.stringify(tc.inputs),
+        assertions_json: JSON.stringify([{ type: tc.assertion, value: tc.expected }]),
+        status: "running",
+      });
+
+      const startedMs = Date.now();
       let actual = "";
-      let latency = 0;
+      let latencyMs = 0;
+      let errorMsg: string | null = null;
 
       try {
         const result = await streamText(
@@ -164,21 +197,53 @@ export default function Test() {
         );
 
         actual = await result.text;
-        latency = (Date.now() - started) / 1000;
+        latencyMs = Date.now() - startedMs;
       } catch (e) {
-        actual = `Error: ${e instanceof Error ? e.message : "unknown"}`;
-        latency = (Date.now() - started) / 1000;
+        errorMsg = e instanceof Error ? e.message : "unknown";
+        actual = `Error: ${errorMsg}`;
+        latencyMs = Date.now() - startedMs;
       }
 
-      const passed = evaluateAssertion(tc.assertion, actual, tc.expected);
-      completed++;
+      if (errorMsg) {
+        errorCount++;
+        await updateEvalResult(evalResultId, {
+          status: "error",
+          actual_output: actual,
+          passed: null,
+          latency_ms: latencyMs,
+          error: errorMsg,
+        });
+      } else {
+        const passed = evaluateAssertion(tc.assertion, actual, tc.expected);
+        passed ? passCount++ : failCount++;
+        await updateEvalResult(evalResultId, {
+          status: passed ? "passed" : "failed",
+          actual_output: actual,
+          assertions_result_json: JSON.stringify([{ type: tc.assertion, value: tc.expected, passed }]),
+          passed: passed ? 1 : 0,
+          latency_ms: latencyMs,
+        });
+      }
 
+      totalLatencyMs += latencyMs;
+      completed++;
+      const uiPassed = !errorMsg && evaluateAssertion(tc.assertion, actual, tc.expected);
       setResults((prev) => [
         ...prev,
-        { caseId: tc.id, passed, actual, latency: +latency.toFixed(2) },
+        { caseId: tc.id, passed: uiPassed, actual, latency: +(latencyMs / 1000).toFixed(2) },
       ]);
       setProgress(Math.round((completed / total) * 100));
     }
+
+    // Finalize the eval run
+    await updateEvalRun(evalRunId, {
+      status: "completed",
+      ended_at: Date.now(),
+      pass_count: passCount,
+      fail_count: failCount,
+      error_count: errorCount,
+      avg_latency_ms: completed > 0 ? Math.round(totalLatencyMs / completed) : null,
+    });
 
     setRunning(false);
     runningRef.current = false;
