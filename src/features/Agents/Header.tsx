@@ -31,11 +31,11 @@ function AgentsHeader({
           placeholder="Search agents..."
         />
         <button
-          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
+          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
           onClick={onCreateAgent}
         >
           <Plus className="h-3.5 w-3.5" />
-          Add Agent
+          New Agent
         </button>
       </div>
     </Header>

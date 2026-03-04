@@ -50,7 +50,7 @@ export function Header({
           autoFocus={isNew}
         />
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <SegmentedSwitch
           options={[
             { value: "editor", label: "Edit", icon: <Pencil className="h-3.5 w-3.5" /> },

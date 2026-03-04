@@ -34,7 +34,7 @@ function ListHeader({
           placeholder="Search scenarios..."
         />
         <button
-          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex-shrink-0"
+          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex-shrink-0"
           onClick={onCreateScenario}
           disabled={!canCreate}
           title={!canCreate ? "Select a collection to create a scenario" : "New Scenario"}

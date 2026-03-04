@@ -53,19 +53,20 @@ function StudioHeader() {
           saveStatus={saveStatus}
         />
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={runScenario}
+      <div className="flex items-center gap-4">
+        <Button
+          size="sm"
           disabled={isLoading}
-          className="bg-primary hover:bg-[#048fa9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm"
+          className="h-9 gap-2 bg-primary text-white hover:bg-primary/90 font-semibold px-5 disabled:opacity-40 disabled:shadow-none"
+          onClick={runScenario}
         >
           {isLoading ? (
-            <Loader2 size={18} className="font-bold animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Play size={18} className="font-bold" />
+            <Play className="h-3.5 w-3.5" />
           )}
           Run
-        </button>
+        </Button>
         <div className="h-6 w-px bg-border-light" />
         <SegmentedSwitch
           options={[

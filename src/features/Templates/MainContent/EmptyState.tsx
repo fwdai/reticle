@@ -25,7 +25,7 @@ export function EmptyState({ hasSearch, onCreateTemplate }: EmptyStateProps) {
           onClick={onCreateTemplate}
         >
           <Plus className="h-3.5 w-3.5" />
-          Add Template
+          New Template
         </button>
       )}
     </div>
