@@ -14,6 +14,7 @@ import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
 import { CompareMode } from "./CompareMode";
+import { CompareRunsMode } from "./CompareRunsMode";
 import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow } from "./helpers";
 import { type AssertionType, type TestCase, type TestResult } from "./types";
 
@@ -34,7 +35,7 @@ export default function Test() {
   const { studioState } = context;
   const { currentScenario, scenarioId } = studioState;
 
-  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compare">("edit");
+  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compare" | "compareRuns">("edit");
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
@@ -269,7 +270,7 @@ export default function Test() {
         onRunSuite={runSuite}
         onSwitchToTable={switchToTable}
         onSwitchToJson={switchToJson}
-        onCompareModels={() => setInnerMode("compare")}
+        onCompareRuns={() => setInnerMode("compareRuns")}
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -298,6 +299,8 @@ export default function Test() {
             failCount={failCount}
             avgLatency={avgLatency}
           />
+        ) : innerMode === "compareRuns" ? (
+          <CompareRunsMode />
         ) : (
           <CompareMode
             cases={cases}

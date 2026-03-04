@@ -6,12 +6,13 @@ import {
   Code,
   AlignLeft,
   Columns2,
+  GitCompare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface SubheaderProps {
-  innerMode: "edit" | "run" | "compare";
+  innerMode: "edit" | "run" | "compare" | "compareRuns";
   viewMode: "table" | "json";
   casesCount: number;
   running: boolean;
@@ -19,7 +20,7 @@ interface SubheaderProps {
   onRunSuite: () => void;
   onSwitchToTable: () => void;
   onSwitchToJson: () => void;
-  onCompareModels: () => void;
+  onCompareRuns: () => void;
 }
 
 export function Subheader({
@@ -31,12 +32,12 @@ export function Subheader({
   onRunSuite,
   onSwitchToTable,
   onSwitchToJson,
-  onCompareModels,
+  onCompareRuns,
 }: SubheaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-border-light px-6 h-12 bg-slate-50">
       <div className="flex items-center gap-3">
-        {(innerMode === "run" || innerMode === "compare") && (
+        {(innerMode === "run" || innerMode === "compare" || innerMode === "compareRuns") && (
           <button
             onClick={onBackToEdit}
             className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-main transition-colors"
@@ -61,6 +62,14 @@ export function Subheader({
             <Columns2 className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-text-main">
               Compare Models
+            </span>
+          </div>
+        )}
+        {innerMode === "compareRuns" && (
+          <div className="flex items-center gap-2">
+            <GitCompare className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-text-main">
+              Compare Runs
             </span>
           </div>
         )}
@@ -96,15 +105,15 @@ export function Subheader({
               </button>
             </div>
 
-            {/* <Button
+            <Button
               size="sm"
               variant="outline"
               className="h-9 gap-2 border-border-light font-semibold px-5"
-              onClick={onCompareModels}
+              onClick={onCompareRuns}
             >
-              <Columns2 className="h-3.5 w-3.5" />
-              Compare Models
-            </Button> */}
+              <GitCompare className="h-3.5 w-3.5" />
+              Compare Runs
+            </Button>
             <Button
               size="sm"
               disabled={casesCount === 0}
