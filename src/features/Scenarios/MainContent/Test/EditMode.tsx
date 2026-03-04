@@ -1,6 +1,6 @@
 import { Plus, Trash2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { AssertionDropdown } from "./AssertionDropdown";
 import type { TestCase } from "./types";
 
@@ -28,27 +28,14 @@ export function EditMode({
   if (viewMode === "json") {
     return (
       <div className="p-5">
-        <textarea
+        <JsonEditorBlock
+          filename="scenario-test-suite.json"
+          metadata={`${cases.length} cases`}
           value={jsonValue}
-          onChange={(e) => onJsonChange(e.target.value)}
-          spellCheck={false}
-          className={cn(
-            "min-h-[420px] w-full resize-none border p-5 font-mono text-[13px] leading-relaxed focus:outline-none transition-all rounded-xl bg-white",
-            jsonError
-              ? "border-red-500/50 focus:border-red-500"
-              : "border-border-light focus:border-primary/50"
-          )}
+          onChange={onJsonChange}
+          error={jsonError}
           placeholder={`[\n  { "inputs": { "input": "Give me the weather in London" }, "expected": "sunny", "assertion": "contains" }\n]`}
         />
-        {jsonError && (
-          <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-destructive">
-            <span className="font-semibold">Parse Error:</span> {jsonError}
-          </div>
-        )}
-        <p className="mt-3 text-[10px] tracking-wide text-text-muted">
-          EDIT THE JSON ARRAY DIRECTLY · CHANGES SYNC WHEN SWITCHING TO TABLE
-          VIEW
-        </p>
       </div>
     );
   }
@@ -153,10 +140,10 @@ export function EditMode({
       {cases.length > 0 && (
         <button
           onClick={onAddCase}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border-light py-3 text-xs font-semibold text-text-muted hover:text-primary hover:border-primary/40 transition-all bg-white"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-xs font-semibold text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all bg-transparent"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add test case
+          Add Test Case
         </button>
       )}
     </div>

@@ -54,7 +54,7 @@ export function Header({
         <SegmentedSwitch
           options={[
             { value: "editor", label: "Edit", icon: <Pencil className="h-3.5 w-3.5" /> },
-            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" />, disabled: true },
+            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" />, },
             { value: "visualizer", label: "Visualize", icon: <Network className="h-3.5 w-3.5" /> },
           ]}
           value={viewMode}
