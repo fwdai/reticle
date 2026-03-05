@@ -44,12 +44,13 @@ export interface ListExecutionsOptions {
   limit?: number;
   type?: ExecutionType;
   status?: ExecutionStatus;
+  runnableId?: string;
 }
 
 export async function listExecutions(
   options?: ListExecutionsOptions
 ): Promise<Execution[]> {
-  const { offset = 0, limit, type, status } = options ?? {};
+  const { offset = 0, limit, type, status, runnableId } = options ?? {};
   const query: Record<string, unknown> = {
     orderBy: 'started_at',
     orderDirection: 'desc',
@@ -60,6 +61,7 @@ export async function listExecutions(
   const where: Record<string, unknown> = {};
   if (type) where.type = type;
   if (status) where.status = status;
+  if (runnableId) where.runnable_id = runnableId;
   if (Object.keys(where).length > 0) query.where = where;
 
   const rows = await invoke<Execution[]>('db_select_cmd', {

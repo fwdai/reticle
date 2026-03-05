@@ -6,6 +6,7 @@ import { Header, type AgentViewMode } from "./Header";
 import { SpecLayout as Spec } from "./Spec";
 import { TestView } from "./Test";
 import { VisualizerView } from "./Visualizer";
+import { RunsPanel } from "./Runs";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 import { runAgentAction } from "@/actions/agentActions";
@@ -218,6 +219,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           />
           )}
           {viewMode === "test" && <TestView agentName={agentName} />}
+          {viewMode === "runs" && <RunsPanel agentId={effectiveId} />}
           {viewMode === "visualizer" && (
             <VisualizerView
               agentName={agentName}

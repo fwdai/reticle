@@ -1,4 +1,4 @@
-import { ArrowLeft, Pencil, FlaskConical, Network, MoreVertical, Download } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, History, MoreVertical, Download } from "lucide-react";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { EditableTitle, type SaveStatus } from "@/components/ui/EditableTitle";
 import LayoutHeader from "@/components/Layout/Header";
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-export type AgentViewMode = "editor" | "test" | "visualizer";
+export type AgentViewMode = "editor" | "test" | "visualizer" | "runs";
 
 interface HeaderProps {
   agentName: string;
@@ -54,8 +54,9 @@ export function Header({
         <SegmentedSwitch
           options={[
             { value: "editor", label: "Edit", icon: <Pencil className="h-3.5 w-3.5" /> },
-            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" />, },
+            { value: "test", label: "Test", icon: <FlaskConical className="h-3.5 w-3.5" /> },
             { value: "visualizer", label: "Visualize", icon: <Network className="h-3.5 w-3.5" /> },
+            { value: "runs", label: "Runs", icon: <History className="h-3.5 w-3.5" /> },
           ]}
           value={viewMode}
           onChange={(v) => onViewModeChange(v as AgentViewMode)}

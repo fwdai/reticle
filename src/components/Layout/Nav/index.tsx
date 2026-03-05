@@ -42,7 +42,6 @@ function Navigation() {
     { id: "agents" as Page, icon: Zap, label: "Agents" },
     { id: "tools" as Page, icon: Wrench, label: "Tools" },
     { id: "templates" as Page, icon: Layers, label: "Templates" },
-    // { id: "environments" as Page, icon: Layers, label: "Environments" },
     { id: "runs" as Page, icon: Activity, label: "Runs" },
   ];
 
