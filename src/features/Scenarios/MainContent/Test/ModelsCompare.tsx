@@ -111,7 +111,7 @@ function generateId() {
   return Math.random().toString(36).slice(2, 8);
 }
 
-interface CompareModeProps {
+interface ModelsCompareProps {
   cases: TestCase[];
   providerModels: Record<string, Array<{ id?: string; name?: string }>>;
 }
@@ -128,7 +128,7 @@ function EmptyCompareState() {
   );
 }
 
-export function CompareMode({ cases, providerModels }: CompareModeProps) {
+export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
   if (cases.length === 0) {
     return <EmptyCompareState />;
   }

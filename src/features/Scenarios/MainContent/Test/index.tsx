@@ -13,8 +13,8 @@ import { streamText } from "@/lib/gateway";
 import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
-import { CompareMode } from "./CompareMode";
-import { CompareRunsMode } from "./CompareRunsMode";
+import { ModelsCompare } from "./ModelsCompare";
+import { EvalsCompare } from "./EvalsCompare";
 import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow } from "./helpers";
 import { type AssertionType, type TestCase, type TestResult } from "./types";
 
@@ -300,9 +300,9 @@ export default function Test() {
             avgLatency={avgLatency}
           />
         ) : innerMode === "compareRuns" ? (
-          <CompareRunsMode />
+          <EvalsCompare scenarioId={scenarioId!} />
         ) : (
-          <CompareMode
+          <ModelsCompare
             cases={cases}
             providerModels={studioState.providerModels}
           />
