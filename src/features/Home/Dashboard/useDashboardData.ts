@@ -79,7 +79,7 @@ function parseUsage(usageJson: string | null | undefined): {
 } {
   try {
     const u = usageJson ? JSON.parse(usageJson) : {};
-    const inputTokens = u.input_tokents ?? u.inputTokens ?? 0;
+    const inputTokens = u.input_tokens ?? u.inputTokens ?? 0;
     const outputTokens = u.output_tokens ?? u.outputTokens ?? 0;
     const tokens = (inputTokens + outputTokens) || (u.total_tokens ?? u.totalTokens ?? 0);
     return { tokens, inputTokens, outputTokens };

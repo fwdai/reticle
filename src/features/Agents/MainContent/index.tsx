@@ -33,7 +33,7 @@ function buildLastRun(exec: Execution): AgentLastRun {
         : null);
     duration = latencyMs != null ? formatDuration(latencyMs) : "—";
 
-    const prompt = usage.input_tokents ?? usage.inputTokens ?? 0;
+    const prompt = usage.input_tokens ?? usage.inputTokens ?? 0;
     const completion = usage.output_tokens ?? usage.outputTokens ?? 0;
     const totalTokens =
       (prompt + completion) || (usage.total_tokens ?? usage.totalTokens ?? 0);

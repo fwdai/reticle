@@ -32,7 +32,7 @@ function parseLastExecution(exec: Execution): ScenarioLastRun | null {
     const usage = exec.usage_json ? JSON.parse(exec.usage_json) : {};
     const latencyMs = usage.latency_ms ?? (exec.ended_at != null && exec.started_at != null ? exec.ended_at - exec.started_at : null);
     latency = latencyMs != null ? formatDuration(latencyMs) : "—";
-    const prompt = usage.input_tokents ?? usage.inputTokens ?? 0;
+    const prompt = usage.input_tokens ?? usage.inputTokens ?? 0;
     const completion = usage.output_tokens ?? usage.outputTokens ?? 0;
     tokens = (prompt + completion) || (usage.total_tokens ?? usage.totalTokens ?? 0);
     if (provider && model && model !== "—" && (prompt > 0 || completion > 0)) {
