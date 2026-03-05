@@ -70,6 +70,7 @@ interface TemplateDetailProps {
   onBack: () => void;
   onSaved: () => void;
   onCreated?: (template: PromptTemplate) => void;
+  onDeleted?: () => void | Promise<void>;
 }
 
 const TEMPLATE_TYPES = [
@@ -79,7 +80,7 @@ const TEMPLATE_TYPES = [
 
 const DEBOUNCE_MS = 800;
 
-export function TemplateDetail({ template, onBack, onSaved, onCreated }: TemplateDetailProps) {
+export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted }: TemplateDetailProps) {
   const isNew = !template.id;
   const [name, setName] = useState(template.name || "");
   const [content, setContent] = useState(template.content || "");
@@ -87,6 +88,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const skipNextAutoSaveRef = useRef(!isNew);
 
   useEffect(() => {
@@ -212,15 +214,21 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
 
   const isArchived = template.archived_at != null;
 
-  const handleDelete = useCallback(async () => {
-    if (!template.id || !window.confirm("Are you sure you want to delete this template?")) return;
+  const handleDelete = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!template.id) return;
     try {
       await deletePromptTemplate(template.id);
+      setShowDeleteConfirm(false);
+      await onDeleted?.();
       onBack();
     } catch (err) {
       console.error("Failed to delete template:", err);
     }
-  }, [template.id, onBack]);
+  }, [template.id, onBack, onDeleted]);
 
   const handleDuplicate = useCallback(async () => {
     try {
@@ -465,6 +473,28 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
               Cancel
             </Button>
             <Button onClick={handleConfirmArchive}>Archive</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(false)}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{template.name}&quot;? This cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

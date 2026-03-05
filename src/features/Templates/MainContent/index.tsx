@@ -138,6 +138,10 @@ function TemplatesPage() {
     setSelectedTemplate(null);
   };
 
+  const handleTemplateDeleted = useCallback(async () => {
+    await loadTemplates();
+  }, [loadTemplates]);
+
   // Show template detail view when a template is selected (including new)
   if (selectedTemplate) {
     return (
@@ -147,6 +151,7 @@ function TemplatesPage() {
           onBack={handleBackFromDetail}
           onSaved={handleTemplateSaved}
           onCreated={handleTemplateCreated}
+          onDeleted={handleTemplateDeleted}
         />
       </MainContent>
     );
