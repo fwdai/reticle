@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { ArrowLeft, Pencil, FlaskConical, Network, Play, Loader2, MoreVertical, Download } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
+import { exportScenarioAsJSON, downloadFile } from "@/lib/evalIO";
 import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
@@ -88,7 +89,21 @@ function StudioHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2 text-sm" onClick={() => { /* TODO: export scenario */ }}>
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              onClick={() => {
+                const json = exportScenarioAsJSON({
+                  name: currentScenario.name,
+                  configuration: currentScenario.configuration,
+                  systemPrompt: currentScenario.systemPrompt,
+                  userPrompt: currentScenario.userPrompt,
+                  systemVariables: currentScenario.systemVariables.map(({ key, value }) => ({ key, value })),
+                  userVariables: currentScenario.userVariables.map(({ key, value }) => ({ key, value })),
+                });
+                const slug = currentScenario.name.trim().toLowerCase().replace(/\s+/g, "-") || "scenario";
+                downloadFile(`${slug}.json`, json, "application/json");
+              }}
+            >
               <Download className="h-4 w-4" />
               Export
             </DropdownMenuItem>

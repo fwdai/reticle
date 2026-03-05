@@ -211,6 +211,29 @@ export function exportAgentTestCasesAsCSV(cases: AgentTestCase[]): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Scenario config export                                             */
+/* ------------------------------------------------------------------ */
+
+export interface ScenarioConfigExport {
+  name: string;
+  configuration: {
+    provider: string;
+    model: string;
+    temperature: number;
+    topP: number;
+    maxTokens: number;
+  };
+  systemPrompt: string;
+  userPrompt: string;
+  systemVariables: { key: string; value: string }[];
+  userVariables: { key: string; value: string }[];
+}
+
+export function exportScenarioAsJSON(scenario: ScenarioConfigExport): string {
+  return JSON.stringify(scenario, null, 2);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Download helper                                                    */
 /* ------------------------------------------------------------------ */
 
