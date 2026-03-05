@@ -1,10 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
-import { Clock, Variable } from "lucide-react";
+import { FileCode, Variable, Copy, Download, Trash2 } from "lucide-react";
 
 import MainContent from "@/components/Layout/MainContent";
 import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
+import { updatePromptTemplate } from "@/lib/storage";
+import { formatRelativeTime } from "@/lib/helpers/time";
 import type { PromptTemplate } from "@/types";
+import { EntityCard, type EntityStatus } from "@/components/ui/EntityCard";
 import { TemplateDetail } from "./TemplateDetail";
 import { EmptyState } from "./EmptyState";
 
@@ -25,13 +28,13 @@ function getVarCount(content: string): number {
   return matches ? matches.length : 0;
 }
 
-function formatLastUsed(lastUsedAt: number | null | undefined): string {
-  if (!lastUsedAt) return "Never";
-  const diff = Date.now() - lastUsedAt;
-  if (diff < 60_000) return "Just now";
-  if (diff < 3600_000) return `${Math.floor(diff / 60_000)} mins ago`;
-  if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} hours ago`;
-  return `${Math.floor(diff / 86400_000)} days ago`;
+
+function getTemplateStatus(template: PromptTemplate): EntityStatus {
+  if (!template.name || !template.content) return "draft";
+  const varCount = getVarCount(template.content);
+  const variableKeys = parseVariableKeys(template.variables_json);
+  if (varCount > 0 && variableKeys.length === 0) return "needs-config";
+  return "ready";
 }
 
 function TemplatesPage() {
@@ -94,6 +97,16 @@ function TemplatesPage() {
     return result;
   }, [templates, filter, activeCollection, search]);
 
+  const handleToggleStar = useCallback(
+    async (template: PromptTemplate) => {
+      if (!template.id) return;
+      const newPinned = template.is_pinned ? 0 : 1;
+      await updatePromptTemplate(template.id, { is_pinned: newPinned });
+      await loadTemplates();
+    },
+    [loadTemplates]
+  );
+
   const handleSelectTemplate = (template: PromptTemplate) => {
     setSelectedTemplate(template);
   };
@@ -132,7 +145,7 @@ function TemplatesPage() {
         ) : filtered.length === 0 ? (
           <EmptyState hasSearch={!!search} onCreateTemplate={onCreateTemplate} />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {filtered.map((template) => {
               const variableKeys = parseVariableKeys(template.variables_json);
               const varCount =
@@ -143,71 +156,30 @@ function TemplatesPage() {
                 .slice(0, 2)
                 .join(" ")
                 .slice(0, 120);
-              const tags = variableKeys.filter(Boolean).slice(0, 3);
 
               return (
-                <button
+                <EntityCard
                   key={template.id ?? template.name}
+                  icon={FileCode}
+                  status={getTemplateStatus(template)}
+                  name={template.name}
+                  description={preview}
                   onClick={() => handleSelectTemplate(template)}
-                  className="group flex w-full items-start gap-4 rounded-xl border px-5 py-4 text-left transition-all duration-200 border-border-light bg-white shadow-sm"
-                >
-                  {/* Type badge */}
-                  <span
-                    className={`mt-0.5 inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] shrink-0 ${
-                      template.type === "system"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
-                    title={
-                      template.type === "system"
-                        ? "System template"
-                        : "User template"
-                    }
-                  >
-                    {template.type === "system" ? "SYS" : "USR"}
-                  </span>
-
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-text-main group-hover:text-primary transition-colors truncate">
-                        {template.name}
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-muted truncate leading-relaxed mb-2">
-                      {preview}
-                      {template.content.length > 120 ? "…" : ""}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      {tags.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          {tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-text-muted"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right meta */}
-                  <div className="flex items-center gap-3 shrink-0 text-[11px] text-text-muted">
-                    {varCount > 0 && (
-                      <span className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-primary">
-                        <Variable className="h-3 w-3" />
-                        {varCount} var{varCount !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatLastUsed(template.last_used_at)}
-                    </span>
-                  </div>
-                </button>
+                  starred={!!template.is_pinned}
+                  onToggleStar={() => handleToggleStar(template)}
+                  tags={[
+                    { label: template.type === "system" ? "System" : "User" },
+                    { label: `${varCount} vars`, icon: Variable },
+                  ]}
+                  metrics={[
+                    { label: "Last used", value: template.last_used_at ? formatRelativeTime(template.last_used_at) : "Never" },
+                  ]}
+                  menuItems={[
+                    { label: "Duplicate", icon: Copy, destructive: false, onClick: () => { } },
+                    { label: "Export", icon: Download, destructive: false, onClick: () => { } },
+                    { label: "Delete", icon: Trash2, destructive: true, onClick: () => { } },
+                  ]}
+                />
               );
             })}
           </div>

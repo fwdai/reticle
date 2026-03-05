@@ -1,4 +1,7 @@
-import { ToolCard } from "./ToolCard";
+import { Wrench, Braces, Zap, Copy, Trash2 } from "lucide-react";
+
+import { EntityCard } from "@/components/ui/EntityCard";
+import { formatRelativeTime } from "@/lib/helpers/time";
 import { EmptyState } from "./EmptyState";
 import type { ToolWithMeta } from "../../types";
 
@@ -24,20 +27,27 @@ export function ToolList({
       {tools.length === 0 ? (
         <EmptyState hasSearch={!!searchQuery} onCreateTool={onCreateTool} />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {tools.map((tool) => (
-            <ToolCard
+            <EntityCard
               key={tool.id}
-              tool={tool}
-              onSelect={() => onSelectTool(tool.id)}
-              onDelete={(e) => {
-                e.stopPropagation();
-                onDeleteTool(tool.id);
-              }}
-              onCopySchema={(e) => {
-                e.stopPropagation();
-                onCopySchema(tool);
-              }}
+              icon={Wrench}
+              status="ready"
+              name={tool.name || "untitled"}
+              description={tool.description || "No description"}
+              onClick={() => onSelectTool(tool.id)}
+              tags={[
+                { label: `${tool.parameters.length} params`, icon: Braces },
+                { label: `${tool.usedBy} linked`, icon: Zap },
+              ]}
+              metrics={[
+                { label: "Updated", value: tool.updatedAt ? formatRelativeTime(tool.updatedAt * 1000) : "—" },
+              ]}
+              menuItems={[
+                { label: "Copy Schema", icon: Copy, destructive: false, onClick: () => onCopySchema(tool) },
+                { label: "Duplicate", icon: Copy, destructive: false, onClick: () => { } },
+                { label: "Delete", icon: Trash2, destructive: true, onClick: () => onDeleteTool(tool.id) },
+              ]}
             />
           ))}
         </div>

@@ -353,7 +353,7 @@ export function agentRecordToListAgent(record: AgentRecord): {
   return {
     id: record.id,
     name: record.name,
-    description: record.description ?? '',
+    description: record.agent_goal?.trim() || record.description || '',
     status,
     model: record.model,
     toolsCount: tools.length,
