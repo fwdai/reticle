@@ -89,6 +89,9 @@ export function TestView({ agentName }: TestViewProps) {
   const removeCase = (id: string) =>
     setCases((prev) => prev.filter((c) => c.id !== id));
 
+  const importCases = (newCases: TestCase[]) =>
+    setCases((prev) => [...prev, ...newCases]);
+
   const addAssertion = (caseId: string) => {
     setCases((prev) =>
       prev.map((c) =>
@@ -269,6 +272,7 @@ export function TestView({ agentName }: TestViewProps) {
             onUpdateAssertion={updateAssertion}
             onRemoveCase={removeCase}
             onRemoveAssertion={removeAssertion}
+            onImportCases={importCases}
           />
         ) : (
           <RunMode

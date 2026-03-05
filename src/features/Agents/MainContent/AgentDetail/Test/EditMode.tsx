@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Plus, Trash2, ChevronDown, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
+import { ImportButton } from "@/components/ui/ImportButton";
 import { cn } from "@/lib/utils";
+import { parseAgentImport } from "./helpers";
 import { AssertionTypeSelect } from "./AssertionTypeSelect";
 import { ASSERTION_CONFIG } from "./constants";
 import type { Assertion, AssertionType, TestCase } from "./types";
@@ -19,6 +21,7 @@ interface EditModeProps {
   onUpdateAssertion: (caseId: string, assertionId: string, updates: Partial<Assertion>) => void;
   onRemoveCase: (id: string) => void;
   onRemoveAssertion: (caseId: string, assertionId: string) => void;
+  onImportCases: (cases: TestCase[]) => void;
 }
 
 export function EditMode({
@@ -33,6 +36,7 @@ export function EditMode({
   onUpdateAssertion,
   onRemoveCase,
   onRemoveAssertion,
+  onImportCases,
 }: EditModeProps) {
   if (viewMode === "json") {
     return (
@@ -51,6 +55,10 @@ export function EditMode({
 
   return (
     <div className="p-5 space-y-4">
+      <div className="flex items-center justify-end">
+        <ImportButton parse={parseAgentImport} onImport={onImportCases} />
+      </div>
+
       {cases.map((tc, idx) => (
         <TestCaseCard
           key={tc.id}

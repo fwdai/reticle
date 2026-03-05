@@ -1,6 +1,8 @@
 import { Plus, Trash2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
+import { ImportButton } from "@/components/ui/ImportButton";
+import { parseScenarioImport } from "./helpers";
 import { AssertionDropdown } from "./AssertionDropdown";
 import type { TestCase } from "./types";
 
@@ -13,6 +15,7 @@ interface EditModeProps {
   onAddCase: () => void;
   onUpdateCase: (id: string, u: Partial<TestCase>) => void;
   onRemoveCase: (id: string) => void;
+  onImportCases: (cases: TestCase[]) => void;
 }
 
 export function EditMode({
@@ -24,6 +27,7 @@ export function EditMode({
   onAddCase,
   onUpdateCase,
   onRemoveCase,
+  onImportCases,
 }: EditModeProps) {
   if (viewMode === "json") {
     return (
@@ -42,6 +46,11 @@ export function EditMode({
 
   return (
     <div className="p-5 space-y-4">
+      {/* Toolbar above table */}
+      <div className="flex items-center justify-end">
+        <ImportButton parse={parseScenarioImport} onImport={onImportCases} />
+      </div>
+
       {/* Table */}
       <div className="rounded-xl border border-border-light overflow-hidden bg-white">
         {/* Header */}

@@ -279,6 +279,7 @@ export default function Test() {
             onAddCase={addCase}
             onUpdateCase={updateCase}
             onRemoveCase={removeCase}
+            onImportCases={(newCases) => setCases((prev) => [...prev, ...newCases])}
           />
         ) : innerMode === "run" ? (
           <RunMode
