@@ -16,6 +16,7 @@ import { calculateRequestCost } from "@/lib/modelPricing";
 import { Subheader } from "./Subheader";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
+import { AgentEvalsCompare } from "./AgentEvalsCompare";
 import { createEmptyCase, createEmptyAssertion, evaluateAgentAssertion, dbCaseToAgentCase, agentCaseToDbRow } from "./helpers";
 import type { Assertion, AssertionType, TestCase, TestResult } from "./types";
 
@@ -25,7 +26,7 @@ interface TestViewProps {
 }
 
 export function TestView({ agentId, agentName }: TestViewProps) {
-  const [innerMode, setInnerMode] = useState<"edit" | "run">("edit");
+  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compareRuns">("edit");
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
@@ -400,35 +401,42 @@ export function TestView({ agentId, agentName }: TestViewProps) {
         onRunSuite={runSuite}
         onSwitchToTable={switchToTable}
         onSwitchToJson={switchToJson}
+        onCompareRuns={() => setInnerMode("compareRuns")}
       />
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {innerMode === "edit" ? (
-          <EditMode
-            viewMode={viewMode}
-            cases={cases}
-            jsonValue={jsonValue}
-            jsonError={jsonError}
-            onJsonChange={handleJsonChange}
-            onAddCase={addCase}
-            onUpdateCase={updateCase}
-            onAddAssertion={addAssertion}
-            onUpdateAssertion={updateAssertion}
-            onRemoveCase={removeCase}
-            onRemoveAssertion={removeAssertion}
-            onImportCases={importCases}
-          />
+      <div className="flex-1 overflow-hidden">
+        {innerMode === "compareRuns" && agentId ? (
+          <AgentEvalsCompare agentId={agentId} />
+        ) : innerMode === "edit" ? (
+          <div className="h-full overflow-y-auto custom-scrollbar">
+            <EditMode
+              viewMode={viewMode}
+              cases={cases}
+              jsonValue={jsonValue}
+              jsonError={jsonError}
+              onJsonChange={handleJsonChange}
+              onAddCase={addCase}
+              onUpdateCase={updateCase}
+              onAddAssertion={addAssertion}
+              onUpdateAssertion={updateAssertion}
+              onRemoveCase={removeCase}
+              onRemoveAssertion={removeAssertion}
+              onImportCases={importCases}
+            />
+          </div>
         ) : (
-          <RunMode
-            results={results}
-            running={running}
-            progress={progress}
-            validCount={validCount}
-            passCount={passCount}
-            failCount={failCount}
-            totalCost={totalCost}
-            avgLatency={avgLatency}
-          />
+          <div className="h-full overflow-y-auto custom-scrollbar">
+            <RunMode
+              results={results}
+              running={running}
+              progress={progress}
+              validCount={validCount}
+              passCount={passCount}
+              failCount={failCount}
+              totalCost={totalCost}
+              avgLatency={avgLatency}
+            />
+          </div>
         )}
       </div>
 
