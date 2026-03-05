@@ -30,6 +30,7 @@ interface ScenarioListProps {
   scenarioStats: Record<string, ScenarioStats>;
   scenarioStatusMap: Record<string, ScenarioStatus>;
   onSelectScenario: (id: string) => void;
+  onRunScenario: (id: string) => void;
   onDeleteScenario: (scenario: Scenario) => void;
   hasCollectionSelected: boolean;
 }
@@ -39,6 +40,7 @@ export function ScenarioList({
   scenarioStats,
   scenarioStatusMap,
   onSelectScenario,
+  onRunScenario,
   onDeleteScenario,
   hasCollectionSelected,
 }: ScenarioListProps) {
@@ -69,7 +71,7 @@ export function ScenarioList({
                 description={description}
                 onClick={() => onSelectScenario(scenario.id!)}
                 runnable
-                onRun={() => { }}
+                onRun={() => onRunScenario(scenario.id!)}
                 tags={[
                   { label: scenario.model },
                   { label: `${stats?.toolsCount ?? 0} tools`, icon: Wrench },

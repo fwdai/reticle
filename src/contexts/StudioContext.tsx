@@ -140,6 +140,7 @@ interface StudioContextType {
   createScenario: (collectionId: string) => Promise<void>;
   deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
+  runScenarioById: (id: string) => Promise<void>;
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -484,12 +485,70 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   );
 
   const runScenario = useCallback(async () => {
-
     await runScenarioAction(studioState, setStudioState);
-
   }, [studioState, setStudioState]);
 
+  const runScenarioById = useCallback(async (id: string) => {
+    if (studioState.isLoading) return;
 
+    try {
+      const result: Scenario[] = await invoke('db_select_cmd', {
+        table: 'scenarios',
+        query: { where: { id } },
+      });
+      if (result.length === 0) {
+        console.error(`Scenario ${id} not found`);
+        return;
+      }
+
+      const dbScenario = result[0];
+      const configParams = JSON.parse(dbScenario.params_json || '{}');
+      const toolsFromTable = await listToolsByScenarioId(dbScenario.id!);
+      const tools = toolsFromTable.length > 0
+        ? toolsFromTable
+        : JSON.parse(dbScenario.tools_json || '[]');
+      const attachments = await listAttachmentsByScenarioId(dbScenario.id!);
+      const { system: systemVariables, user: userVariables } = parseScenarioVariables(
+        dbScenario.variables_json
+      );
+
+      const loadedScenario: CurrentScenario = {
+        id: dbScenario.id!,
+        name: dbScenario.title,
+        collection_id: dbScenario.collection_id,
+        configuration: {
+          provider: dbScenario.provider,
+          model: dbScenario.model,
+          temperature: configParams.temperature ?? 0.7,
+          topP: configParams.topP ?? 1.0,
+          maxTokens: configParams.maxTokens ?? 2048,
+        },
+        systemPrompt: dbScenario.system_prompt,
+        userPrompt: dbScenario.user_prompt,
+        systemVariables,
+        userVariables,
+        tools,
+        enabledSharedToolIds: [],
+        history: JSON.parse(dbScenario.history_json || '[]'),
+        attachments,
+      };
+
+      const runState: StudioContainerState = {
+        ...studioState,
+        currentScenario: loadedScenario,
+      };
+
+      setStudioState(prev => ({
+        ...prev,
+        currentScenario: loadedScenario,
+      }));
+
+      await runScenarioAction(runState, setStudioState);
+    } catch (error) {
+      console.error(`Failed to run scenario ${id}:`, error);
+      setStudioState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [studioState, setStudioState]);
 
   const createCollection = useCallback(async (name: string) => {
     console.log(`Creating collection '${name}'`);
@@ -543,7 +602,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario, runScenarioById }}>
 
       {children}
 

@@ -32,6 +32,7 @@ function Studio() {
     loadScenario,
     createScenario,
     deleteScenario,
+    runScenarioById,
   } = context ?? {};
 
   const { savedScenarios, collections, scenarioId, currentScenario, isLoading, currentExecutionId } = studioState ?? {
@@ -103,7 +104,7 @@ function Studio() {
     };
     load();
     return () => { cancelled = true; };
-  }, [filteredScenarios]);
+  }, [filteredScenarios, isLoading]);
 
   const handleCreateScenario = () => {
     if (selectedCollectionId) {
@@ -137,6 +138,7 @@ function Studio() {
           scenarioStats={scenarioStats}
           scenarioStatusMap={scenarioStatusMap}
           onSelectScenario={(id) => loadScenario?.(id)}
+          onRunScenario={(id) => runScenarioById?.(id)}
           onDeleteScenario={handleDeleteClick}
           hasCollectionSelected={selectedCollectionId !== null}
         />
