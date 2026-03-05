@@ -194,8 +194,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
             timeout={timeoutValue}
             retryPolicy={retryPolicy}
             toolCallStrategy={toolCallStrategy}
-            memoryEnabled={memoryEnabled}
-            memorySource={memorySource}
             temperature={temperature}
             topP={topP}
             maxTokens={maxTokens}
@@ -209,8 +207,6 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
             onTimeoutChange={setTimeoutValue}
             onRetryPolicyChange={setRetryPolicy}
             onToolCallStrategyChange={setToolCallStrategy}
-            onMemoryEnabledChange={setMemoryEnabled}
-            onMemorySourceChange={setMemorySource}
             onTemperatureChange={setTemperature}
             onTopPChange={setTopP}
             onMaxTokensChange={setMaxTokens}

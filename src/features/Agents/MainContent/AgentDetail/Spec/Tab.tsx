@@ -1,7 +1,7 @@
 import { GoalPanel } from "./GoalPanel";
 import { SystemInstructionsPanel } from "./SystemInstructionsPanel";
 import { LoopControlsPanel } from "./LoopControlsPanel";
-import { MemoryPanel } from "./MemoryPanel";
+// MemoryPanel hidden until memory reads/writes are implemented in agent execution loop
 
 interface TabProps {
   agentGoal: string;
@@ -10,16 +10,12 @@ interface TabProps {
   timeout: number[];
   retryPolicy: string;
   toolCallStrategy: string;
-  memoryEnabled: boolean;
-  memorySource: string;
   onAgentGoalChange: (value: string) => void;
   onSystemInstructionsChange: (value: string) => void;
   onMaxIterationsChange: (value: number[]) => void;
   onTimeoutChange: (value: number[]) => void;
   onRetryPolicyChange: (value: string) => void;
   onToolCallStrategyChange: (value: string) => void;
-  onMemoryEnabledChange: (enabled: boolean) => void;
-  onMemorySourceChange: (source: string) => void;
 }
 
 export function Tab({
@@ -29,16 +25,12 @@ export function Tab({
   timeout,
   retryPolicy,
   toolCallStrategy,
-  memoryEnabled,
-  memorySource,
   onAgentGoalChange,
   onSystemInstructionsChange,
   onMaxIterationsChange,
   onTimeoutChange,
   onRetryPolicyChange,
   onToolCallStrategyChange,
-  onMemoryEnabledChange,
-  onMemorySourceChange,
 }: TabProps) {
   return (
     <div className="space-y-5">
@@ -53,12 +45,6 @@ export function Tab({
         onTimeoutChange={onTimeoutChange}
         onRetryPolicyChange={onRetryPolicyChange}
         onToolCallStrategyChange={onToolCallStrategyChange}
-      />
-      <MemoryPanel
-        enabled={memoryEnabled}
-        source={memorySource}
-        onEnabledChange={onMemoryEnabledChange}
-        onSourceChange={onMemorySourceChange}
       />
     </div>
   );

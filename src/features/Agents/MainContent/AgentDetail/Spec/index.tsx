@@ -21,8 +21,6 @@ interface LayoutProps {
   timeout: number[];
   retryPolicy: string;
   toolCallStrategy: string;
-  memoryEnabled: boolean;
-  memorySource: string;
   temperature: number[];
   topP: number[];
   maxTokens: number[];
@@ -36,8 +34,6 @@ interface LayoutProps {
   onTimeoutChange: (value: number[]) => void;
   onRetryPolicyChange: (value: string) => void;
   onToolCallStrategyChange: (value: string) => void;
-  onMemoryEnabledChange: (enabled: boolean) => void;
-  onMemorySourceChange: (source: string) => void;
   onTemperatureChange: (value: number[]) => void;
   onTopPChange: (value: number[]) => void;
   onMaxTokensChange: (value: number[]) => void;
@@ -55,8 +51,6 @@ export function SpecLayout({
   timeout,
   retryPolicy,
   toolCallStrategy,
-  memoryEnabled,
-  memorySource,
   temperature,
   topP,
   maxTokens,
@@ -70,8 +64,6 @@ export function SpecLayout({
   onTimeoutChange,
   onRetryPolicyChange,
   onToolCallStrategyChange,
-  onMemoryEnabledChange,
-  onMemorySourceChange,
   onTemperatureChange,
   onTopPChange,
   onMaxTokensChange,
@@ -128,16 +120,12 @@ export function SpecLayout({
                 timeout={timeout}
                 retryPolicy={retryPolicy}
                 toolCallStrategy={toolCallStrategy}
-                memoryEnabled={memoryEnabled}
-                memorySource={memorySource}
                 onAgentGoalChange={onAgentGoalChange}
                 onSystemInstructionsChange={onSystemInstructionsChange}
                 onMaxIterationsChange={onMaxIterationsChange}
                 onTimeoutChange={onTimeoutChange}
                 onRetryPolicyChange={onRetryPolicyChange}
                 onToolCallStrategyChange={onToolCallStrategyChange}
-                onMemoryEnabledChange={onMemoryEnabledChange}
-                onMemorySourceChange={onMemorySourceChange}
               />
             </div>
           </TabPanel>
