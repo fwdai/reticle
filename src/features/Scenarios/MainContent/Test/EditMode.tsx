@@ -2,7 +2,9 @@ import { Plus, Trash2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { ImportButton } from "@/components/ui/ImportButton";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { parseScenarioImport } from "./helpers";
+import { exportScenarioTestCasesAsJSON, exportScenarioTestCasesAsCSV } from "@/lib/evalIO";
 import { AssertionDropdown } from "./AssertionDropdown";
 import type { TestCase } from "./types";
 
@@ -47,7 +49,15 @@ export function EditMode({
   return (
     <div className="p-5 space-y-4">
       {/* Toolbar above table */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-4">
+        <ExportButton
+          filename="scenario-test-suite"
+          disabled={cases.length === 0}
+          formats={[
+            { label: "Export as JSON", extension: "json", mimeType: "application/json", serialize: () => exportScenarioTestCasesAsJSON(cases) },
+            { label: "Export as CSV", extension: "csv", mimeType: "text/csv", serialize: () => exportScenarioTestCasesAsCSV(cases) },
+          ]}
+        />
         <ImportButton parse={parseScenarioImport} onImport={onImportCases} />
       </div>
 

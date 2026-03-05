@@ -3,8 +3,10 @@ import { Plus, Trash2, ChevronDown, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { ImportButton } from "@/components/ui/ImportButton";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { cn } from "@/lib/utils";
 import { parseAgentImport } from "./helpers";
+import { exportAgentTestCasesAsJSON, exportAgentTestCasesAsCSV } from "@/lib/evalIO";
 import { AssertionTypeSelect } from "./AssertionTypeSelect";
 import { ASSERTION_CONFIG } from "./constants";
 import type { Assertion, AssertionType, TestCase } from "./types";
@@ -55,7 +57,15 @@ export function EditMode({
 
   return (
     <div className="p-5 space-y-4">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-4">
+        <ExportButton
+          filename="agent-test-suite"
+          disabled={cases.length === 0}
+          formats={[
+            { label: "Export as JSON", extension: "json", mimeType: "application/json", serialize: () => exportAgentTestCasesAsJSON(cases) },
+            { label: "Export as CSV", extension: "csv", mimeType: "text/csv", serialize: () => exportAgentTestCasesAsCSV(cases) },
+          ]}
+        />
         <ImportButton parse={parseAgentImport} onImport={onImportCases} />
       </div>
 
