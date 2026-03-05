@@ -79,5 +79,4 @@ export function AgentList({
   );
 }
 
-export { mockAgents } from "./constants";
 export type { Agent, AgentStatus } from "./types";
