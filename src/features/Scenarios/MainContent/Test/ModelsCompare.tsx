@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { PROVIDERS_LIST } from "@/constants/providers";
 import { StudioContext } from "@/contexts/StudioContext";
 import { streamText } from "@/lib/gateway";
+import { calculateRequestCost } from "@/lib/modelPricing";
 import { insertExecution, updateExecution, listToolsForEntity } from "@/lib/storage";
 import { evaluateAssertion } from "./helpers";
 import type { Execution } from "@/types";
@@ -258,6 +259,16 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
           ? evaluateAssertion(selectedCase.assertion, finalText, selectedCase.expected)
           : undefined;
 
+        const usageWithCached = usage as
+          | { inputTokens?: number; outputTokens?: number; cachedTokens?: number }
+          | undefined;
+        const cost =
+          calculateRequestCost(slot.provider, slot.model, {
+            inputTokens: usageWithCached?.inputTokens ?? 0,
+            outputTokens: usageWithCached?.outputTokens ?? 0,
+            cachedTokens: usageWithCached?.cachedTokens,
+          }) ?? 0;
+
         setResults((prev) => ({
           ...prev,
           [slot.id]: {
@@ -265,7 +276,7 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
             displayedText: finalText,
             latency: +(latencyMs / 1000).toFixed(2),
             tokens,
-            cost: 0,
+            cost,
             status: "done",
             pass,
           },
