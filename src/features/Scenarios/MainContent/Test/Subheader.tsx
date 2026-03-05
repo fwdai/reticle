@@ -21,6 +21,7 @@ interface SubheaderProps {
   onSwitchToTable: () => void;
   onSwitchToJson: () => void;
   onCompareRuns: () => void;
+  onCompareModels: () => void;
 }
 
 export function Subheader({
@@ -33,6 +34,7 @@ export function Subheader({
   onSwitchToTable,
   onSwitchToJson,
   onCompareRuns,
+  onCompareModels,
 }: SubheaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-border-light px-6 h-12 bg-slate-50">
@@ -105,6 +107,15 @@ export function Subheader({
               </button>
             </div>
 
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-2 border-border-light font-semibold px-5"
+              onClick={onCompareModels}
+            >
+              <Columns2 className="h-3.5 w-3.5" />
+              Compare Models
+            </Button>
             <Button
               size="sm"
               variant="outline"

@@ -1,6 +1,16 @@
 import type { EvalTestCase } from "@/types";
 import type { AssertionType, TestCase } from "./types";
 
+export function evaluateAssertion(assertion: AssertionType, actual: string, expected: string): boolean {
+  const a = actual.toLowerCase();
+  const e = expected.toLowerCase().trim();
+  switch (assertion) {
+    case "equals":      return actual.trim() === expected.trim();
+    case "contains":    return a.includes(e);
+    case "not_contains": return !a.includes(e);
+  }
+}
+
 export function createEmptyCase(): TestCase {
   return {
     id: crypto.randomUUID(),

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useContext } from "react";
 import {
   Plus,
   X,
@@ -22,6 +22,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PROVIDERS_LIST } from "@/constants/providers";
+import { StudioContext } from "@/contexts/StudioContext";
+import { streamText } from "@/lib/gateway";
+import { insertExecution, updateExecution, listToolsForEntity } from "@/lib/storage";
+import { evaluateAssertion } from "./helpers";
+import type { Execution } from "@/types";
 import type { TestCase } from "./types";
 
 interface ModelSlot {
@@ -100,12 +105,6 @@ const COLUMN_COLORS = [
   { border: "border-l-[hsl(340,65%,55%)]", dot: "bg-[hsl(340,65%,55%)]", text: "text-[hsl(340,65%,55%)]" },
 ];
 
-const MOCK_RESPONSES = [
-  `To build a clean UI with Tailwind CSS, follow the utility-first principle. Use semantic class names and component extraction to keep your templates readable.\n\nHere's an example approach:\n1. Define your design tokens in tailwind.config\n2. Create reusable component classes\n3. Use responsive utilities for adaptive layouts\n4. Leverage the @apply directive sparingly\n\nThis gives you maximum flexibility while maintaining consistency across your application.`,
-  `Building modern UIs requires a thoughtful approach to component architecture. I recommend starting with a design system that defines your color palette, typography scale, and spacing units.\n\nKey principles:\n- **Composition over inheritance**: Build small, focused components\n- **Consistent spacing**: Use a 4px or 8px base grid\n- **Accessible by default**: Ensure proper contrast ratios and ARIA attributes\n- **Performance-minded**: Lazy load components and optimize bundle size`,
-  `Here's my recommended approach for building production-ready interfaces:\n\n\`\`\`tsx\nconst Card = ({ title, children }) => (\n  <div className="rounded-xl border bg-card p-6 shadow-sm">\n    <h3 className="text-lg font-semibold">{title}</h3>\n    <div className="mt-4">{children}</div>\n  </div>\n);\n\`\`\`\n\nThis pattern ensures consistency while remaining flexible. The key is to abstract common patterns without over-engineering.`,
-  `The most effective UI development workflow combines atomic design principles with modern tooling:\n\n1. **Atoms**: Buttons, inputs, labels\n2. **Molecules**: Form fields, search bars\n3. **Organisms**: Navigation, hero sections\n4. **Templates**: Page layouts\n5. **Pages**: Final implementations\n\nEach level builds on the previous, creating a scalable and maintainable design system.`,
-];
 
 function generateId() {
   return Math.random().toString(36).slice(2, 8);
@@ -116,22 +115,9 @@ interface ModelsCompareProps {
   providerModels: Record<string, Array<{ id?: string; name?: string }>>;
 }
 
-function EmptyCompareState() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <Columns2 className="h-12 w-12 text-text-muted/40" />
-      <p className="text-sm font-medium text-text-main">No test cases yet</p>
-      <p className="max-w-[280px] text-xs text-text-muted">
-        Add test cases in the Test Suite, then use Compare Models to run them against multiple models side by side.
-      </p>
-    </div>
-  );
-}
-
 export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
-  if (cases.length === 0) {
-    return <EmptyCompareState />;
-  }
+  const context = useContext(StudioContext);
+  const { currentScenario, scenarioId } = context?.studioState ?? {};
 
   const PROVIDERS = buildProviderModelOptions(providerModels);
   const providerIds = Object.keys(PROVIDERS);
@@ -151,7 +137,13 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
   const [results, setResults] = useState<Record<string, SlotResult>>({});
   const [isRunning, setIsRunning] = useState(false);
 
-  const selectedCase = cases.find((c) => c.id === selectedCaseId) ?? cases[0];
+  // Fall back to scenario's current user prompt when no test cases exist
+  const selectedCase = cases.find((c) => c.id === selectedCaseId) ?? cases[0] ?? {
+    id: "current",
+    inputs: { input: currentScenario?.userPrompt ?? "" },
+    expected: "",
+    assertion: "contains" as const,
+  };
 
   const addSlot = () => {
     if (slots.length >= 4) return;
@@ -196,59 +188,132 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
     );
   };
 
-  const simulateStream = useCallback(
-    (slotId: string, text: string, latency: number, tokens: number, cost: number) => {
-      let i = 0;
-      const chunkSize = 3;
-      setResults((prev) => ({
-        ...prev,
-        [slotId]: { text, displayedText: "", latency, tokens, cost, status: "running" },
-      }));
+  const runAll = useCallback(async () => {
+    if (!scenarioId || !currentScenario) return;
 
-      const interval = setInterval(() => {
-        i += chunkSize;
-        if (i >= text.length) {
-          clearInterval(interval);
+    setIsRunning(true);
+    // Reset all slots to running state immediately
+    setResults(Object.fromEntries(
+      slots.map((s) => [s.id, { text: "", displayedText: "", latency: 0, tokens: 0, cost: 0, status: "running" as SlotStatus }])
+    ));
+
+    const allTools = await listToolsForEntity(scenarioId, "scenario");
+
+    await Promise.all(slots.map(async (slot) => {
+      const startedMs = Date.now();
+      const config = {
+        ...currentScenario.configuration,
+        provider: slot.provider,
+        model: slot.model,
+      };
+      const snapshot_json = JSON.stringify({
+        name: currentScenario.name,
+        systemPrompt: currentScenario.systemPrompt,
+        userPrompt: selectedCase.inputs.input,
+        configuration: config,
+        tools: allTools,
+        attachments: currentScenario.attachments,
+      });
+
+      const executionId = await insertExecution({
+        type: "scenario",
+        runnable_id: scenarioId,
+        snapshot_json,
+        input_json: JSON.stringify(selectedCase.inputs),
+        status: "running",
+        started_at: startedMs,
+      });
+
+      try {
+        const result = await streamText(
+          selectedCase.inputs.input,
+          currentScenario.systemPrompt,
+          currentScenario.history,
+          {
+            provider: slot.provider,
+            model: slot.model,
+            systemPrompt: currentScenario.systemPrompt,
+            temperature: currentScenario.configuration.temperature,
+            topP: currentScenario.configuration.topP,
+            maxTokens: currentScenario.configuration.maxTokens,
+          },
+          allTools,
+          currentScenario.attachments,
+        );
+
+        let accumulatedText = "";
+        for await (const chunk of result.textStream) {
+          accumulatedText += chunk;
           setResults((prev) => ({
             ...prev,
-            [slotId]: {
-              ...prev[slotId],
-              displayedText: text,
-              status: "done",
-              pass: Math.random() > 0.25,
-            },
+            [slot.id]: { ...prev[slot.id], displayedText: accumulatedText },
           }));
-          return;
         }
+
+        const [finalText, usage] = await Promise.all([result.text, result.totalUsage]);
+        const endedMs = Date.now();
+        const latencyMs = result.latency ?? (endedMs - startedMs);
+        const tokens = usage?.totalTokens ?? 0;
+        const pass = selectedCase.expected
+          ? evaluateAssertion(selectedCase.assertion, finalText, selectedCase.expected)
+          : undefined;
+
         setResults((prev) => ({
           ...prev,
-          [slotId]: { ...prev[slotId], displayedText: text.slice(0, i) },
+          [slot.id]: {
+            text: finalText,
+            displayedText: finalText,
+            latency: +(latencyMs / 1000).toFixed(2),
+            tokens,
+            cost: 0,
+            status: "done",
+            pass,
+          },
         }));
-      }, 15 + Math.random() * 20);
-    },
-    []
-  );
 
-  const runAll = () => {
-    setIsRunning(true);
-    slots.forEach((slot, i) => {
-      const delay = 200 + Math.random() * 600;
-      const latency = +(1 + Math.random() * 4).toFixed(2);
-      const tokens = Math.floor(200 + Math.random() * 500);
-      const cost = +(tokens * (0.003 + Math.random() * 0.02)) / 1000;
-      const costStr = cost.toFixed(4);
-      setTimeout(() => {
-        simulateStream(
-          slot.id,
-          MOCK_RESPONSES[i % MOCK_RESPONSES.length],
-          latency,
-          tokens,
-          parseFloat(costStr)
-        );
-      }, delay);
-    });
-    setTimeout(() => setIsRunning(false), 2000 + slots.length * 500);
-  };
+        const finalExecution: Execution = {
+          type: "scenario",
+          runnable_id: scenarioId,
+          snapshot_json,
+          input_json: JSON.stringify(selectedCase.inputs),
+          result_json: JSON.stringify({ text: finalText, usage }),
+          status: "succeeded",
+          started_at: startedMs,
+          ended_at: endedMs,
+          usage_json: JSON.stringify({ ...usage, latency_ms: latencyMs }),
+        };
+        await updateExecution(executionId, finalExecution);
+
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : "unknown";
+        const endedMs = Date.now();
+
+        setResults((prev) => ({
+          ...prev,
+          [slot.id]: {
+            ...prev[slot.id],
+            text: `Error: ${errorMsg}`,
+            displayedText: `Error: ${errorMsg}`,
+            status: "error",
+          },
+        }));
+
+        const failedExecution: Execution = {
+          type: "scenario",
+          runnable_id: scenarioId,
+          snapshot_json,
+          input_json: JSON.stringify(selectedCase.inputs),
+          status: "failed",
+          started_at: startedMs,
+          ended_at: endedMs,
+          error_json: JSON.stringify({ message: errorMsg }),
+        };
+        await updateExecution(executionId, failedExecution);
+      }
+    }));
+
+    setIsRunning(false);
+  }, [slots, selectedCase, currentScenario, scenarioId]);
 
   const resetAll = () => {
     setResults({});

@@ -15,18 +15,8 @@ import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
 import { ModelsCompare } from "./ModelsCompare";
 import { EvalsCompare } from "./EvalsCompare";
-import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow } from "./helpers";
+import { createEmptyCase, dbCaseToUiCase, uiCaseToDbRow, evaluateAssertion } from "./helpers";
 import { type AssertionType, type TestCase, type TestResult } from "./types";
-
-function evaluateAssertion(assertion: AssertionType, actual: string, expected: string): boolean {
-  const a = actual.toLowerCase();
-  const e = expected.toLowerCase().trim();
-  switch (assertion) {
-    case "equals":      return actual.trim() === expected.trim();
-    case "contains":    return a.includes(e);
-    case "not_contains": return !a.includes(e);
-  }
-}
 
 export default function Test() {
   const context = useContext(StudioContext);
@@ -270,6 +260,7 @@ export default function Test() {
         onRunSuite={runSuite}
         onSwitchToTable={switchToTable}
         onSwitchToJson={switchToJson}
+        onCompareModels={() => setInnerMode("compare")}
         onCompareRuns={() => setInnerMode("compareRuns")}
       />
 
