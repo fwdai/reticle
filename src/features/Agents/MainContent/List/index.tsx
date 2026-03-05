@@ -18,6 +18,7 @@ interface AgentListProps {
   lastRunByAgentId: Map<string, AgentLastRun>;
   onSelectAgent: (agentId: string) => void;
   onToggleStar: (agentId: string, e: React.MouseEvent) => void;
+  onDeleteAgent: (agentId: string) => void;
 }
 
 export function AgentList({
@@ -26,6 +27,7 @@ export function AgentList({
   lastRunByAgentId,
   onSelectAgent,
   onToggleStar,
+  onDeleteAgent,
 }: AgentListProps) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
@@ -66,7 +68,7 @@ export function AgentList({
                 }
                 menuItems={[
                   { label: "Duplicate", icon: Copy, destructive: false, onClick: () => { } },
-                  { label: "Delete", icon: Trash2, destructive: true, onClick: () => { } },
+                  { label: "Delete", icon: Trash2, destructive: true, onClick: () => onDeleteAgent(agent.id) },
                 ]}
               />
             );

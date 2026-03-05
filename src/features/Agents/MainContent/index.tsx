@@ -2,8 +2,17 @@ import { useState, useEffect, useCallback } from "react";
 import { AgentDetail, type AgentDetailAgent } from "./AgentDetail";
 import { AgentList, type Agent, type AgentLastRun } from "./List";
 import MainContent from "@/components/Layout/MainContent";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Header from "../Header";
-import { listAgents, agentRecordToListAgent, listExecutions } from "@/lib/storage";
+import { listAgents, agentRecordToListAgent, listExecutions, updateAgent } from "@/lib/storage";
 import { calculateRequestCost } from "@/lib/modelPricing";
 import { formatDuration } from "@/lib/helpers/time";
 import { formatTokens, formatCost } from "@/lib/helpers/format";
@@ -128,6 +137,23 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
     });
   };
 
+  const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
+
+  const handleDeleteClick = useCallback(
+    (id: string) => {
+      const agent = agents.find((a) => a.id === id);
+      if (agent) setAgentToDelete(agent);
+    },
+    [agents]
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!agentToDelete) return;
+    await updateAgent(agentToDelete.id, { archived_at: Date.now() });
+    setAgentToDelete(null);
+    await refreshAgents();
+  }, [agentToDelete, refreshAgents]);
+
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   useEffect(() => {
@@ -191,7 +217,26 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
         lastRunByAgentId={lastRunByAgentId}
         onSelectAgent={handleSelectAgent}
         onToggleStar={toggleStar}
+        onDeleteAgent={handleDeleteClick}
       />
+      <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete agent</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{agentToDelete?.name}&quot;? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAgentToDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainContent>
   );
 }

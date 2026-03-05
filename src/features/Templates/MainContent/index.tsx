@@ -2,9 +2,18 @@ import { useState, useMemo, useCallback } from "react";
 import { FileCode, Variable, Copy, Download, Trash2 } from "lucide-react";
 
 import MainContent from "@/components/Layout/MainContent";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
-import { updatePromptTemplate } from "@/lib/storage";
+import { updatePromptTemplate, deletePromptTemplate } from "@/lib/storage";
 import { formatRelativeTime } from "@/lib/helpers/time";
 import type { PromptTemplate } from "@/types";
 import { EntityCard, type EntityStatus } from "@/components/ui/EntityCard";
@@ -107,6 +116,15 @@ function TemplatesPage() {
     [loadTemplates]
   );
 
+  const [templateToDelete, setTemplateToDelete] = useState<PromptTemplate | null>(null);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!templateToDelete?.id) return;
+    await deletePromptTemplate(templateToDelete.id);
+    setTemplateToDelete(null);
+    await loadTemplates();
+  }, [templateToDelete, loadTemplates]);
+
   const handleSelectTemplate = (template: PromptTemplate) => {
     setSelectedTemplate(template);
   };
@@ -177,7 +195,7 @@ function TemplatesPage() {
                   menuItems={[
                     { label: "Duplicate", icon: Copy, destructive: false, onClick: () => { } },
                     { label: "Export", icon: Download, destructive: false, onClick: () => { } },
-                    { label: "Delete", icon: Trash2, destructive: true, onClick: () => { } },
+                    { label: "Delete", icon: Trash2, destructive: true, onClick: () => setTemplateToDelete(template) },
                   ]}
                 />
               );
@@ -185,6 +203,24 @@ function TemplatesPage() {
           </div>
         )}
       </div>
+      <Dialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{templateToDelete?.name}&quot;? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTemplateToDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainContent>
   );
 }
