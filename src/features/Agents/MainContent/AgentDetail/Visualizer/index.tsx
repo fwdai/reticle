@@ -1,6 +1,7 @@
 import { AgentFlowCanvas } from "./AgentFlowCanvas";
 import { AgentMetricsBar } from "./AgentMetricsBar";
 import { BottomBar } from "@/components/Visualizer";
+import { useAgentContext } from "@/contexts/AgentContext";
 
 export interface VisualizerViewProps {
   agentName: string;
@@ -16,6 +17,42 @@ export interface VisualizerViewProps {
   maxTokens: number;
 }
 
+function computeNodeStats(
+  execution: { status: string; steps: { type: string }[] } | undefined
+) {
+  const hasExecution = execution && execution.steps.length > 0;
+  const isRunning = execution?.status === "running";
+  const isSuccess = execution?.status === "success";
+  const isError = execution?.status === "error";
+  const status: "active" | "idle" | "success" | "error" =
+    isRunning ? "active" : isSuccess ? "success" : isError ? "error" : "idle";
+
+  const memoryStep = hasExecution ? execution.steps.find((s) => s.type === "memory_read") : null;
+  const toolCalls = hasExecution
+    ? execution.steps.filter((s) => s.type === "tool_call" || s.type === "tool_response")
+    : [];
+  const outputStep = hasExecution ? execution.steps.find((s) => s.type === "output") : null;
+
+  type NodeStatus = "active" | "idle" | "success" | "error";
+  const nodeStatuses: NodeStatus[] = [
+    hasExecution ? status : "idle",
+    hasExecution ? status : "idle",
+    hasExecution ? status : "idle",
+    memoryStep ? status : "idle",
+    ...(toolCalls.length > 0
+      ? (toolCalls.slice(0, 6).map(() => status) as NodeStatus[])
+      : (["idle"] as NodeStatus[])),
+    outputStep ? status : "idle",
+  ];
+
+  const total = nodeStatuses.length;
+  const active = nodeStatuses.filter((s) => s === "active").length;
+  const error = nodeStatuses.filter((s) => s === "error").length;
+  const idle = total - active - error;
+
+  return { total, active, idle, error };
+}
+
 export function VisualizerView({
   agentName: _agentName,
   provider,
@@ -29,12 +66,8 @@ export function VisualizerView({
   topP,
   maxTokens,
 }: VisualizerViewProps) {
-  const nodeStats = {
-    total: 8,
-    active: 0,
-    idle: 8,
-    error: 0,
-  };
+  const { execution } = useAgentContext();
+  const nodeStats = computeNodeStats(execution);
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-100">
