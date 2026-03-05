@@ -214,7 +214,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
             onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
           />
           )}
-          {viewMode === "test" && <TestView agentName={agentName} />}
+          {viewMode === "test" && <TestView agentId={effectiveId} agentName={agentName} />}
           {viewMode === "runs" && <RunsPanel agentId={effectiveId} />}
           {viewMode === "visualizer" && (
             <VisualizerView
