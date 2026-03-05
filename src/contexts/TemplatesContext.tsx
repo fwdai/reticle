@@ -10,7 +10,7 @@ const NEW_TEMPLATE: PromptTemplate = {
   variables_json: null,
 };
 
-export type TemplateFilter = "all" | "system" | "user" | "starred" | "recently_used";
+export type TemplateFilter = "all" | "system" | "user" | "starred" | "recently_used" | "archived";
 
 interface TemplatesContextType {
   templates: PromptTemplate[];
@@ -49,7 +49,7 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
   const loadTemplates = useCallback(async (): Promise<PromptTemplate[]> => {
     setLoading(true);
     try {
-      const rows = await listPromptTemplates();
+      const rows = await listPromptTemplates({ archived: "all" });
       setTemplates(rows);
       return rows;
     } catch (err) {

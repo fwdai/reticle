@@ -265,12 +265,27 @@ export async function updateScenario(
 }
 
 // --- Prompt Templates ---
-export async function listPromptTemplates(): Promise<PromptTemplate[]> {
+export type ListPromptTemplatesOptions = {
+  /** 'exclude' (default): only non-archived; 'only': only archived; 'all': no filter */
+  archived?: 'exclude' | 'only' | 'all';
+};
+
+export async function listPromptTemplates(
+  options?: ListPromptTemplatesOptions
+): Promise<PromptTemplate[]> {
   const rows = await invoke<PromptTemplate[]>('db_select_cmd', {
     table: 'prompt_templates',
     query: { orderBy: 'updated_at', orderDirection: 'desc' },
   });
-  return Array.isArray(rows) ? rows : [];
+  const arr = Array.isArray(rows) ? rows : [];
+  const archived = options?.archived ?? 'exclude';
+  if (archived === 'exclude') {
+    return arr.filter((r) => r.archived_at == null);
+  }
+  if (archived === 'only') {
+    return arr.filter((r) => r.archived_at != null);
+  }
+  return arr;
 }
 
 export async function insertPromptTemplate(
@@ -481,16 +496,16 @@ function dbRowToTool(row: Record<string, unknown>): Tool {
   const paramsRaw = JSON.parse((row.parameters_json as string) ?? '[]');
   const parameters = Array.isArray(paramsRaw)
     ? paramsRaw.map((p: Record<string, unknown>) => ({
-        id: typeof p.id === 'string' ? p.id : crypto.randomUUID(),
-        name: typeof p.name === 'string' ? p.name : '',
-        type: ['string', 'number', 'boolean', 'object', 'array'].includes(
-          String(p.type)
-        )
-          ? (p.type as ToolParameter['type'])
-          : 'string',
-        description: typeof p.description === 'string' ? p.description : '',
-        required: p.required === true,
-      }))
+      id: typeof p.id === 'string' ? p.id : crypto.randomUUID(),
+      name: typeof p.name === 'string' ? p.name : '',
+      type: ['string', 'number', 'boolean', 'object', 'array'].includes(
+        String(p.type)
+      )
+        ? (p.type as ToolParameter['type'])
+        : 'string',
+      description: typeof p.description === 'string' ? p.description : '',
+      required: p.required === true,
+    }))
     : [];
   return {
     id: (row.id as string) ?? crypto.randomUUID(),
@@ -618,8 +633,8 @@ export async function listToolsByScenarioId(
   });
   return Array.isArray(allRows)
     ? allRows
-        .filter(r => toolIds.includes(r.id as string) && r.is_global === 0)
-        .map(dbRowToTool)
+      .filter(r => toolIds.includes(r.id as string) && r.is_global === 0)
+      .map(dbRowToTool)
     : [];
 }
 

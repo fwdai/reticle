@@ -80,12 +80,17 @@ function TemplatesPage() {
   const filtered = useMemo(() => {
     let result = templates;
 
-    if (filter === "system" || filter === "user") {
-      result = result.filter((t) => t.type === filter);
-    } else if (filter === "starred") {
-      result = result.filter((t) => t.is_pinned);
-    } else if (filter === "recently_used") {
-      result = [...result].sort((a, b) => (b.last_used_at ?? 0) - (a.last_used_at ?? 0));
+    if (filter === "archived") {
+      result = result.filter((t) => t.archived_at != null);
+    } else {
+      result = result.filter((t) => t.archived_at == null);
+      if (filter === "system" || filter === "user") {
+        result = result.filter((t) => t.type === filter);
+      } else if (filter === "starred") {
+        result = result.filter((t) => t.is_pinned);
+      } else if (filter === "recently_used") {
+        result = [...result].sort((a, b) => (b.last_used_at ?? 0) - (a.last_used_at ?? 0));
+      }
     }
 
     if (activeCollection) {

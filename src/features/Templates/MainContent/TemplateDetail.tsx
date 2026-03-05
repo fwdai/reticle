@@ -15,6 +15,14 @@ import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -78,6 +86,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
   const [type, setType] = useState<"system" | "user">(template.type || "user");
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const skipNextAutoSaveRef = useRef(!isNew);
 
   useEffect(() => {
@@ -185,6 +194,24 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
     return () => clearTimeout(timer);
   }, [hasChanges, saving, isNew, name, performSave]);
 
+  const handleArchive = useCallback(() => {
+    setShowArchiveConfirm(true);
+  }, []);
+
+  const handleConfirmArchive = useCallback(async () => {
+    if (!template.id) return;
+    try {
+      await updatePromptTemplate(template.id, { archived_at: Date.now() });
+      setShowArchiveConfirm(false);
+      onSaved();
+      onBack();
+    } catch (err) {
+      console.error("Failed to archive template:", err);
+    }
+  }, [template.id, onSaved, onBack]);
+
+  const isArchived = template.archived_at != null;
+
   const handleDelete = useCallback(async () => {
     if (!template.id || !window.confirm("Are you sure you want to delete this template?")) return;
     try {
@@ -242,10 +269,17 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
                 <Copy className="h-3.5 w-3.5" />
                 Duplicate
               </Button>
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-text-muted">
-                <Archive className="h-3.5 w-3.5" />
-                Archive
-              </Button>
+              {!isArchived && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs text-text-muted"
+                  onClick={handleArchive}
+                >
+                  <Archive className="h-3.5 w-3.5" />
+                  Archive
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -414,6 +448,26 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated }: Templat
           </div>
         </div>
       </div>
+      <Dialog
+        open={showArchiveConfirm}
+        onOpenChange={(open) => !open && setShowArchiveConfirm(false)}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Archive template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to archive &quot;{template.name}&quot;? You can
+              find it later in the Archived section.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowArchiveConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmArchive}>Archive</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
