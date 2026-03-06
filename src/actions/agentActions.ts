@@ -1,7 +1,8 @@
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, tool } from 'ai';
+import { jsonSchema } from 'ai';
 import { createModel } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
-import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables } from '@/lib/storage';
+import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables, listAgentMemories, saveAgentMemory } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import type { ExecutionState } from '@/contexts/AgentContext';
 import type { AgentRecord, Execution, ExecutionStep } from '@/types';
@@ -41,9 +42,19 @@ export async function runAgentAction(
     [agentRecord.agent_goal, agentRecord.system_instructions]
       .filter(Boolean)
       .join('\n\n') || undefined;
-  const instructions = rawInstructions
+  const substitutedInstructions = rawInstructions
     ? substituteVariables(rawInstructions, envVars) || undefined
     : undefined;
+
+  const memoryEnabled = agentRecord.memory_enabled === 1 && agentRecord.memory_source === 'local';
+  const memories = memoryEnabled ? await listAgentMemories(agentRecord.id) : [];
+  const memoryBlock = memories.length > 0
+    ? `## Persistent Memory\nFacts stored from previous runs:\n${memories.map(m => `- ${m.key}: ${m.value}`).join('\n')}`
+    : '';
+  const memoryInstructions = memoryEnabled
+    ? `## Memory\nYou have a \`memory_write\` tool. Use it to persist facts that would be useful in future runs — user preferences, discovered values, key decisions, API endpoints, or any context worth recalling. Call it whenever you learn something worth remembering.`
+    : '';
+  const instructions = [substitutedInstructions, memoryBlock, memoryInstructions].filter(Boolean).join('\n\n') || undefined;
 
   const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
 
@@ -107,6 +118,25 @@ export async function runAgentAction(
     // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
     const aiTools = toolConfigToAiSdkTools(linkedTools, envVarsMap);
+
+    if (memoryEnabled) {
+      aiTools['memory_write'] = tool({
+        description: 'Persist a key-value fact to memory for future runs. Use to store important findings, preferences, or context.',
+        inputSchema: jsonSchema<{ key: string; value: string }>({
+          type: 'object',
+          properties: {
+            key: { type: 'string', description: 'Short identifier for this memory (e.g. "user_preference", "api_endpoint")' },
+            value: { type: 'string', description: 'The value to store' },
+          },
+          required: ['key', 'value'],
+          additionalProperties: false,
+        }),
+        execute: async ({ key, value }) => {
+          await saveAgentMemory(agentRecord.id, key, value);
+          return { stored: key };
+        },
+      });
+    }
     const hasTools = Object.keys(aiTools).length > 0;
 
     const toolChoice =
@@ -188,10 +218,11 @@ export async function runAgentAction(
           stepToolCalls.push({ tool: chunk.toolName, arguments: chunk.input });
           const id = crypto.randomUUID();
           pendingToolStepIds.set(chunk.toolCallId, id);
+          const isMemoryWrite = chunk.toolName === 'memory_write';
           stepBuffer.push({
             id,
-            type: 'tool_call',
-            label: chunk.toolName,
+            type: isMemoryWrite ? 'memory_write' : 'tool_call',
+            label: isMemoryWrite ? 'Memory Write' : chunk.toolName,
             status: 'running',
             loop: currentLoop,
             timestamp: ts(),

@@ -1,7 +1,6 @@
 import { GoalPanel } from "./GoalPanel";
 import { SystemInstructionsPanel } from "./SystemInstructionsPanel";
 import { LoopControlsPanel } from "./LoopControlsPanel";
-// MemoryPanel hidden until memory reads/writes are implemented in agent execution loop
 
 interface TabProps {
   agentGoal: string;

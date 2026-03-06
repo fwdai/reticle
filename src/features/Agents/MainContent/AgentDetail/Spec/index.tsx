@@ -6,6 +6,8 @@ import { useAgentContext } from "@/contexts/AgentContext";
 import { ToolsContainer } from "@/components/Tools/ToolsContainer";
 
 import { Tab } from "./Tab";
+import { MemoryPanel } from "../Memory/MemoryPanel";
+import { MemoryStorePanel } from "../Memory/MemoryStorePanel";
 import { ModelParamsSidebar } from "./ModelParamsSidebar";
 import { RuntimePanel } from "./RuntimePanel";
 
@@ -21,6 +23,8 @@ interface LayoutProps {
   timeout: number[];
   retryPolicy: string;
   toolCallStrategy: string;
+  memoryEnabled: boolean;
+  memorySource: string;
   temperature: number[];
   topP: number[];
   maxTokens: number[];
@@ -34,6 +38,8 @@ interface LayoutProps {
   onTimeoutChange: (value: number[]) => void;
   onRetryPolicyChange: (value: string) => void;
   onToolCallStrategyChange: (value: string) => void;
+  onMemoryEnabledChange: (enabled: boolean) => void;
+  onMemorySourceChange: (source: string) => void;
   onTemperatureChange: (value: number[]) => void;
   onTopPChange: (value: number[]) => void;
   onMaxTokensChange: (value: number[]) => void;
@@ -51,6 +57,8 @@ export function SpecLayout({
   timeout,
   retryPolicy,
   toolCallStrategy,
+  memoryEnabled,
+  memorySource,
   temperature,
   topP,
   maxTokens,
@@ -64,6 +72,8 @@ export function SpecLayout({
   onTimeoutChange,
   onRetryPolicyChange,
   onToolCallStrategyChange,
+  onMemoryEnabledChange,
+  onMemorySourceChange,
   onTemperatureChange,
   onTopPChange,
   onMaxTokensChange,
@@ -132,6 +142,21 @@ export function SpecLayout({
           <TabPanel title="Tools">
             <div className={panelContentClass}>
               <ToolsContainer entityId={agentId} entityType="agent" />
+            </div>
+          </TabPanel>
+          <TabPanel title="Memory">
+            <div className={panelContentClass}>
+              <div className="space-y-5">
+                <MemoryPanel
+                  enabled={memoryEnabled}
+                  source={memorySource}
+                  onEnabledChange={onMemoryEnabledChange}
+                  onSourceChange={onMemorySourceChange}
+                />
+                {memoryEnabled && agentId && (
+                  <MemoryStorePanel agentId={agentId} />
+                )}
+              </div>
             </div>
           </TabPanel>
         </Tabs>

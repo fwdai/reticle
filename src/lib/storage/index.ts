@@ -80,6 +80,43 @@ export async function listEnvVariables(): Promise<EnvVariable[]> {
   });
 }
 
+export interface AgentMemory { id: string; agent_id: string; key: string; value: string; created_at: number; updated_at: number; }
+
+export async function listAgentMemories(agentId: string): Promise<AgentMemory[]> {
+  return invoke<AgentMemory[]>('db_select_cmd', {
+    table: 'agent_memories',
+    query: { where: { agent_id: agentId }, orderBy: 'created_at', orderDirection: 'asc' },
+  });
+}
+
+export async function saveAgentMemory(agentId: string, key: string, value: string): Promise<void> {
+  const existing = await invoke<AgentMemory[]>('db_select_cmd', {
+    table: 'agent_memories',
+    query: { where: { agent_id: agentId, key } },
+  });
+  const now = Date.now();
+  if (existing?.length > 0) {
+    await invoke('db_update_cmd', {
+      table: 'agent_memories',
+      query: { where: { id: existing[0].id } },
+      data: { value, updated_at: now },
+    });
+  } else {
+    await invoke('db_insert_cmd', {
+      table: 'agent_memories',
+      data: { agent_id: agentId, key, value, created_at: now, updated_at: now },
+    });
+  }
+}
+
+export async function deleteAgentMemory(id: string): Promise<void> {
+  await invoke('db_delete_cmd', { table: 'agent_memories', query: { where: { id } } });
+}
+
+export async function clearAgentMemories(agentId: string): Promise<void> {
+  await invoke('db_delete_cmd', { table: 'agent_memories', query: { where: { agent_id: agentId } } });
+}
+
 /** Check if user has configured at least one API key */
 export async function hasApiKeys(): Promise<boolean> {
   const rows = await invoke<{ provider: string }[]>('db_select_cmd', {
