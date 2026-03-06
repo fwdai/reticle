@@ -1,8 +1,16 @@
+import Ajv from "ajv";
 import { generateText } from "ai";
 import { createModel } from "@/lib/gateway";
 import type { EvalTestCase } from "@/types";
 import type { Assertion, AssertionType, AssertionResult, TestCase } from "./types";
 import { parseAgentTestCases } from "@/lib/evalIO";
+
+/** Extract JSON from a string that may be plain JSON or wrapped in a markdown code fence. */
+function extractJson(text: string): unknown | null {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenced ? fenced[1].trim() : text.trim();
+  try { return JSON.parse(candidate); } catch { return null; }
+}
 
 /** Default judge model when user hasn't selected one. */
 const DEFAULT_JUDGE_PROVIDER = "openai" as const;
@@ -174,10 +182,24 @@ export async function evaluateAgentAssertion(
     case "llm_judge":
       return evaluateLlmJudgeAssertion(assertion, task ?? "", finalText);
 
+    case "json_schema": {
+      let schema: unknown;
+      try { schema = JSON.parse(target); }
+      catch { return { assertion, passed: false, actual: "Invalid JSON Schema in target field" }; }
+
+      const json = extractJson(finalText);
+      if (json === null) return { assertion, passed: false, actual: "Agent output contains no valid JSON" };
+
+      const ajv = new Ajv({ allErrors: true });
+      const valid = ajv.validate(schema as object, json);
+      passed = valid;
+      actual = passed ? "Output matches schema" : (ajv.errorsText() ?? "Schema validation failed");
+      break;
+    }
+
     case "guardrail":
-    case "json_schema":
       passed = false;
-      actual = `${assertion.type} evaluation not yet implemented — skipped`;
+      actual = "guardrail evaluation not yet implemented — skipped";
       break;
 
     default:
