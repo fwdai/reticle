@@ -217,8 +217,6 @@ export const fetchAndNormalizeModels = async (): Promise<Record<string, { id: st
     return {};
   }
 
-  console.log(allNormalizedModels);
-
   return allNormalizedModels;
 }
 
