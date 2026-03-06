@@ -32,14 +32,23 @@ export function AgentMetricsBar() {
   const statusValue =
     execution?.status === "error"
       ? "Error"
-      : execution?.status === "success"
-        ? "Resolved"
-        : execution?.status === "running"
-          ? "Running..."
-          : "—";
+      : execution?.status === "cancelled"
+        ? "Cancelled"
+        : execution?.status === "success"
+          ? "Resolved"
+          : execution?.status === "running"
+            ? "Running..."
+            : "—";
   const statusVariant =
-    execution?.status === "error" ? "warning" : execution?.status === "success" ? "success" : "default";
-  const statusIcon = execution?.status === "error" ? XCircle : CheckCircle2;
+    execution?.status === "error"
+      ? "warning"
+      : execution?.status === "cancelled"
+        ? "default"
+        : execution?.status === "success"
+          ? "success"
+          : "default";
+  const statusIcon =
+    execution?.status === "error" ? XCircle : execution?.status === "cancelled" ? XCircle : CheckCircle2;
 
   return (
     <div className="flex items-center gap-3 border-b border-border-light bg-slate-50 px-6 py-3">
@@ -72,6 +81,7 @@ export function AgentMetricsBar() {
         )}
         {execution?.status === "running" && <MiniTag variant="accent">RUNNING</MiniTag>}
         {execution?.status === "error" && <MiniTag variant="muted">FAILED</MiniTag>}
+        {execution?.status === "cancelled" && <MiniTag variant="muted">CANCELLED</MiniTag>}
       </div>
     </div>
   );

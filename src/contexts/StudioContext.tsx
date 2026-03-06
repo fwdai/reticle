@@ -1,4 +1,4 @@
-import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useRef, ReactNode, useEffect, useCallback } from 'react';
 import type { Tool } from '@/components/Tools/types';
 import type { Variable } from '@/components/ui/PromptBox/types';
 import { invoke } from '@tauri-apps/api/core';
@@ -141,6 +141,7 @@ interface StudioContextType {
   deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
   runScenarioById: (id: string) => Promise<void>;
+  stopScenario: () => void;
 }
 
 export const StudioContext = createContext<StudioContextType | undefined>(undefined);
@@ -484,9 +485,16 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     [appState.defaultProvider, appState.defaultModel, fetchScenarios, loadScenario]
   );
 
+  const scenarioAbortRef = useRef<AbortController | null>(null);
+
   const runScenario = useCallback(async () => {
-    await runScenarioAction(studioState, setStudioState);
+    scenarioAbortRef.current = new AbortController();
+    await runScenarioAction(studioState, setStudioState, scenarioAbortRef.current.signal);
   }, [studioState, setStudioState]);
+
+  const stopScenario = useCallback(() => {
+    scenarioAbortRef.current?.abort();
+  }, []);
 
   const runScenarioById = useCallback(async (id: string) => {
     if (studioState.isLoading) return;
@@ -543,7 +551,8 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         currentScenario: loadedScenario,
       }));
 
-      await runScenarioAction(runState, setStudioState);
+      scenarioAbortRef.current = new AbortController();
+      await runScenarioAction(runState, setStudioState, scenarioAbortRef.current.signal);
     } catch (error) {
       console.error(`Failed to run scenario ${id}:`, error);
       setStudioState(prev => ({ ...prev, isLoading: false }));
@@ -602,7 +611,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario, runScenarioById }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario, runScenarioById, stopScenario }}>
 
       {children}
 

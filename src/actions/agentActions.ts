@@ -14,6 +14,7 @@ export async function runAgentAction(
   agentRecord: AgentRecord,
   taskInput: string,
   setExecution: (updater: (prev: ExecutionState) => ExecutionState) => void,
+  abortSignal?: AbortSignal,
 ): Promise<void> {
   trackEvent(TELEMETRY_EVENTS.AGENT_RUN_STARTED, {
     agent_id: agentRecord.id,
@@ -116,6 +117,14 @@ export async function runAgentAction(
           ? 3
           : 2; // fallback to SDK default
 
+    const timeoutSignal = agentRecord.timeout_seconds
+      ? AbortSignal.timeout(agentRecord.timeout_seconds * 1000)
+      : null;
+    const effectiveAbortSignal =
+      abortSignal && timeoutSignal
+        ? AbortSignal.any([abortSignal, timeoutSignal])
+        : abortSignal ?? timeoutSignal ?? undefined;
+
     const result = streamText({
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
       ...(instructions ? { system: instructions } : {}),
@@ -127,9 +136,7 @@ export async function runAgentAction(
       temperature: params.temperature,
       topP: params.top_p,
       maxOutputTokens: params.max_tokens,
-      ...(agentRecord.timeout_seconds
-        ? { abortSignal: AbortSignal.timeout(agentRecord.timeout_seconds * 1000) }
-        : {}),
+      ...(effectiveAbortSignal ? { abortSignal: effectiveAbortSignal } : {}),
     });
 
     let pendingModelStepId: string | null = null;
@@ -255,7 +262,8 @@ export async function runAgentAction(
 
     try {
       finalText = await result.text;
-    } catch {
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError') throw err;
       const lastModelContent =
         [...stepBuffer].reverse().find(s => s.type === 'model_call' && s.content)?.content ?? '';
       try {
@@ -306,7 +314,11 @@ export async function runAgentAction(
     });
   } catch (error) {
     const ended_at = Date.now();
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isAborted =
+      (error as { name?: string })?.name === 'AbortError' || abortSignal?.aborted === true;
+    const errorMessage = isAborted
+      ? 'Cancelled by user'
+      : error instanceof Error ? error.message : 'Unknown error';
 
     const stepsWithError: ExecutionStep[] = stepBuffer.map(s =>
       s.status === 'running' ? { ...s, status: 'error' as const } : s,
@@ -332,7 +344,11 @@ export async function runAgentAction(
       error_json: JSON.stringify({ message: errorMessage }),
     });
 
-    setExecution(prev => ({ ...prev, status: 'error', steps: stepsWithError }));
+    setExecution(prev => ({
+      ...prev,
+      status: isAborted ? 'cancelled' : 'error',
+      steps: stepsWithError,
+    }));
 
     trackEvent(TELEMETRY_EVENTS.AGENT_RUN_FAILED, {
       agent_id: agentRecord.id,

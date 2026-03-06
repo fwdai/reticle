@@ -14,6 +14,8 @@ export interface ExecutionState {
 interface AgentContextType {
   /** Run the agent with the given task input. */
   runAgent: (taskInput?: string) => void;
+  /** Stop the currently running agent. */
+  stopAgent: () => void;
   execution: ExecutionState;
   isRunning: boolean;
 }

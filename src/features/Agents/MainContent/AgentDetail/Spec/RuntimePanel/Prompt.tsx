@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { Zap, Loader2, Play } from "lucide-react";
+import { Zap, Play, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAgentContext } from "@/contexts/AgentContext";
 
 export function Prompt() {
   const [taskInput, setTaskInput] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
-  const { runAgent, isRunning } = useAgentContext();
+  const { runAgent, stopAgent, isRunning } = useAgentContext();
 
   const handleRun = () => {
     runAgent(taskInput.trim());
+  };
+
+  const handleStop = () => {
+    stopAgent();
   };
 
   return (
@@ -52,17 +56,17 @@ export function Prompt() {
             </span>
           )}
           <button
-            disabled={!taskInput.trim() || isRunning}
-            onClick={handleRun}
+            disabled={!taskInput.trim() && !isRunning}
+            onClick={isRunning ? handleStop : handleRun}
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-300",
-              taskInput.trim() && !isRunning
+              (taskInput.trim() || isRunning)
                 ? "bg-primary text-white hover:bg-primary/90 cursor-pointer"
                 : "bg-primary/40 text-white cursor-not-allowed"
             )}
           >
             {isRunning ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Square className="h-3.5 w-3.5" />
             ) : (
               <Play className="h-3.5 w-3.5" />
             )}

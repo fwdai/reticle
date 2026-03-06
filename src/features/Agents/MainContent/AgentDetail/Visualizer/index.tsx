@@ -24,8 +24,9 @@ function computeNodeStats(
   const isRunning = execution?.status === "running";
   const isSuccess = execution?.status === "success";
   const isError = execution?.status === "error";
+  const isCancelled = execution?.status === "cancelled";
   const status: "active" | "idle" | "success" | "error" =
-    isRunning ? "active" : isSuccess ? "success" : isError ? "error" : "idle";
+    isRunning ? "active" : isSuccess ? "success" : isError || isCancelled ? "error" : "idle";
 
   const memoryStep = hasExecution ? execution.steps.find((s) => s.type === "memory_read") : null;
   const toolCalls = hasExecution

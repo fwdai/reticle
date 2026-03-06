@@ -10,7 +10,7 @@ import {
   History,
   Paperclip,
   Play,
-  Loader2,
+  Square,
 } from "lucide-react";
 import { FlowNode, FlowConnector, MiniTag, ConfigChip } from "@/components/Visualizer";
 import { PROVIDERS_LIST } from "@/constants/providers";
@@ -49,6 +49,8 @@ export interface FlowCanvasProps {
   executionToolCalls?: PersistedToolCall[];
   /** When provided, enables Run scenario button and navigation. Omit for read-only (e.g. Runs view). */
   runScenario?: () => Promise<void>;
+  /** When provided, enables Stop button during run. Omit for read-only. */
+  stopScenario?: () => void;
   /** When provided, nodes are clickable and navigate to editor. Omit for read-only. */
   navigateToEditor?: (tab?: EditorTabIndex) => void;
 }
@@ -65,6 +67,7 @@ export function FlowCanvas({
   isLoading = false,
   executionToolCalls,
   runScenario,
+  stopScenario,
   navigateToEditor,
 }: FlowCanvasProps) {
   const hasSystemPrompt = systemPrompt.trim().length > 0;
@@ -376,16 +379,20 @@ export function FlowCanvas({
                 </p>
                 <button
                   type="button"
-                  onClick={runScenario}
-                  disabled={isLoading}
-                  className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors"
+                  onClick={isLoading ? stopScenario : runScenario}
+                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors"
                 >
                   {isLoading ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <>
+                      <Square size={14} />
+                      Stop
+                    </>
                   ) : (
-                    <Play size={14} />
+                    <>
+                      <Play size={14} />
+                      Run scenario
+                    </>
                   )}
-                  Run scenario
                 </button>
               </div>
             ) : (

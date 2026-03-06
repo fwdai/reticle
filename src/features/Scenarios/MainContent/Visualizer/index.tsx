@@ -11,7 +11,7 @@ export default function Visualizer() {
     throw new Error("Visualizer must be used within a StudioProvider");
   }
 
-  const { studioState, runScenario, navigateToEditor } = context;
+  const { studioState, runScenario, stopScenario, navigateToEditor } = context;
   const { currentScenario, response, providerModels, isLoading } = studioState;
   const { systemPrompt, userPrompt, attachments, tools, configuration, history } = currentScenario;
 
@@ -51,6 +51,7 @@ export default function Visualizer() {
         providerModels={providerModels}
         isLoading={isLoading}
         runScenario={runScenario}
+        stopScenario={stopScenario}
         navigateToEditor={navigateToEditor}
       />
       <BottomBar {...nodeStats} />

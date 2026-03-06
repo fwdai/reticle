@@ -206,7 +206,8 @@ export async function saveScenarioAction(
 
 export async function runScenarioAction(
   studioState: StudioContainerState,
-  setStudioState: SetStudioState
+  setStudioState: SetStudioState,
+  abortSignal?: AbortSignal
 ) {
   const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
@@ -274,7 +275,8 @@ export async function runScenarioAction(
         maxTokens: configuration.maxTokens,
       },
       allTools,
-      currentScenario.attachments
+      currentScenario.attachments,
+      abortSignal
     );
 
     // Stream text chunks to the frontend as they arrive
@@ -360,8 +362,10 @@ export async function runScenarioAction(
   } catch (error) {
     console.error('Error generating text:', error);
     const ended_at = Date.now();
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unknown error occurred';
+    const isAborted = (error as { name?: string })?.name === 'AbortError';
+    const errorMessage = isAborted
+      ? 'Cancelled by user'
+      : error instanceof Error ? error.message : 'An unknown error occurred';
 
     const failedExecution: Execution = {
       type: 'scenario',

@@ -35,6 +35,11 @@ const statusConfig = {
     label: "Error",
     pulse: false,
   },
+  cancelled: {
+    color: "bg-amber-500",
+    label: "Cancelled",
+    pulse: false,
+  },
 } satisfies Record<AgentExecutionStatus, { color: string; label: string; pulse: boolean }>;
 
 export function Header({
@@ -79,6 +84,7 @@ export function Header({
               className={cn(
                 "text-[11px] font-bold leading-none uppercase",
                 status === "error" && "text-red-600",
+                status === "cancelled" && "text-amber-600",
                 status === "idle" && "text-text-muted",
                 status === "running" && "text-primary",
                 status === "success" && "text-green-600"

@@ -108,7 +108,8 @@ export const streamText = async (
   history: ModelMessage[],
   config: LLMCallConfig,
   tools?: Tool[],
-  attachments?: AttachedFile[]
+  attachments?: AttachedFile[],
+  abortSignal?: AbortSignal
 ) => {
   const gateway = new GatewayFetch();
 
@@ -143,6 +144,7 @@ export const streamText = async (
     maxOutputTokens: config.maxTokens,
     ...(aiTools ? { tools: aiTools } : {}),
     ...(aiTools ? { stopWhen: stepCountIs(STEPS_COUNT) } : {}),
+    ...(abortSignal ? { abortSignal } : {}),
   });
 
   const latency = gateway.getLatency();

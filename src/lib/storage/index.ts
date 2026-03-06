@@ -71,6 +71,15 @@ export async function listExecutions(
   return Array.isArray(rows) ? rows : [];
 }
 
+export interface EnvVariable { id: string; key: string; value: string; is_secret: number; }
+
+export async function listEnvVariables(): Promise<EnvVariable[]> {
+  return invoke<EnvVariable[]>('db_select_cmd', {
+    table: 'env_variables',
+    query: { orderBy: 'created_at', orderDirection: 'asc' },
+  });
+}
+
 /** Check if user has configured at least one API key */
 export async function hasApiKeys(): Promise<boolean> {
   const rows = await invoke<{ provider: string }[]>('db_select_cmd', {

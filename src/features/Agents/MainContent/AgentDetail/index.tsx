@@ -142,14 +142,20 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   }, [isLoading, buildPayload, effectiveId, agentName, performSave]);
 
   const runStartRef = useRef<number | null>(null);
+  const agentAbortRef = useRef<AbortController | null>(null);
 
   const handleRun = useCallback(async (taskInput?: string) => {
     if (!taskInput?.trim() || !effectiveId) return;
     runStartRef.current = Date.now();
+    agentAbortRef.current = new AbortController();
     const record = await getAgentById(effectiveId);
     if (!record) return;
-    await runAgentAction(record, taskInput.trim(), setExecution);
+    await runAgentAction(record, taskInput.trim(), setExecution, agentAbortRef.current.signal);
   }, [effectiveId]);
+
+  const handleStop = useCallback(() => {
+    agentAbortRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     if (execution.status !== "running") return;
@@ -166,6 +172,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
 
   const agentContextValue = {
     runAgent: handleRun,
+    stopAgent: handleStop,
     execution,
     isRunning: execution.status === "running",
   };

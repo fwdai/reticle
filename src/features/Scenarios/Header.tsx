@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ArrowLeft, Pencil, FlaskConical, Network, Play, Loader2, MoreVertical, Download } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, Play, Square, MoreVertical, Download } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import { exportScenarioAsJSON, downloadFile } from "@/lib/evalIO";
@@ -22,7 +22,7 @@ function StudioHeader() {
     return null;
   }
 
-  const { studioState, viewMode, setViewMode, runScenario, backToList, setStudioState } = context;
+  const { studioState, viewMode, setViewMode, runScenario, stopScenario, backToList, setStudioState } = context;
   const { currentScenario, savedScenarios, isLoading, isSaved, isSaving } = studioState;
 
   const savedScenario = savedScenarios.find((s) => s.id === currentScenario.id);
@@ -57,16 +57,20 @@ function StudioHeader() {
       <div className="flex items-center gap-4">
         <Button
           size="sm"
-          disabled={isLoading}
           className="h-9 gap-2 bg-primary text-white hover:bg-primary/90 font-semibold px-5 disabled:opacity-40 disabled:shadow-none"
-          onClick={runScenario}
+          onClick={isLoading ? stopScenario : runScenario}
         >
           {isLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <>
+              <Square className="h-3.5 w-3.5" />
+              Stop
+            </>
           ) : (
-            <Play className="h-3.5 w-3.5" />
+            <>
+              <Play className="h-3.5 w-3.5" />
+              Run
+            </>
           )}
-          Run
         </Button>
         <div className="h-6 w-px bg-border-light" />
         <SegmentedSwitch

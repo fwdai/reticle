@@ -145,7 +145,7 @@ export type TelemetryEvent = {
 };
 
 /** Agent runtime UI state (distinct from Execution DB status) */
-export type AgentExecutionStatus = 'idle' | 'running' | 'success' | 'error';
+export type AgentExecutionStatus = 'idle' | 'running' | 'success' | 'error' | 'cancelled';
 
 export type StepStatus = 'success' | 'error' | 'running' | 'pending';
 

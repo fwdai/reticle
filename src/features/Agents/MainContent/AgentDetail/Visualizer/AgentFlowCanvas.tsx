@@ -44,6 +44,7 @@ export function AgentFlowCanvas({
   const isRunning = execution?.status === "running";
   const isSuccess = execution?.status === "success";
   const isError = execution?.status === "error";
+  const isCancelled = execution?.status === "cancelled";
 
   const taskInput = hasExecution
     ? execution.steps.find((s) => s.type === "task_input")?.content
@@ -88,7 +89,15 @@ export function AgentFlowCanvas({
               : "Planning next step"
       : null;
 
-  const status = isRunning ? "active" : isSuccess ? "success" : isError ? "error" : "idle";
+  const status = isRunning
+    ? "active"
+    : isSuccess
+      ? "success"
+      : isError
+        ? "error"
+        : isCancelled
+          ? "error"
+          : "idle";
   const connectorStatus = status === "error" ? "idle" : status;
   const totalTokens = execution?.tokens ?? 0;
 
