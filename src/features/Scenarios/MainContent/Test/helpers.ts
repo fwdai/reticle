@@ -46,9 +46,10 @@ export function dbCaseToUiCase(dbCase: EvalTestCase): TestCase {
   return { id: dbCase.id!, inputs, expected, assertion };
 }
 
-/** Convert a UI TestCase into the shape expected by replaceEvalTestCases. */
-export function uiCaseToDbRow(tc: TestCase): Pick<EvalTestCase, "inputs_json" | "assertions_json"> {
+/** Convert a UI TestCase into the shape expected by syncEvalTestCases. */
+export function uiCaseToDbRow(tc: TestCase): { id: string } & Pick<EvalTestCase, "inputs_json" | "assertions_json"> {
   return {
+    id: tc.id,
     inputs_json: JSON.stringify(tc.inputs),
     assertions_json: JSON.stringify([{ type: tc.assertion, value: tc.expected }]),
   };

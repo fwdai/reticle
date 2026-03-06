@@ -6,7 +6,7 @@ import {
   getAgentById,
   listToolsForEntity,
   listEvalTestCases,
-  replaceEvalTestCases,
+  syncEvalTestCases,
   insertEvalRun,
   updateEvalRun,
   insertEvalResult,
@@ -65,7 +65,7 @@ export function TestView({ agentId, agentName }: TestViewProps) {
     }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      replaceEvalTestCases(agentId, "agent", cases.map(agentCaseToDbRow));
+      syncEvalTestCases(agentId, "agent", cases.map(agentCaseToDbRow));
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -239,7 +239,7 @@ export function TestView({ agentId, agentName }: TestViewProps) {
 
       const evalResultId = await insertEvalResult({
         eval_run_id: evalRunId,
-        test_case_id: null,
+        test_case_id: tc.id,
         sort_order: completed,
         inputs_json: JSON.stringify({ task: tc.task }),
         assertions_json: JSON.stringify(tc.assertions.map((a) => ({ type: a.type, target: a.target }))),

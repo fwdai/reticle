@@ -31,8 +31,9 @@ export function dbCaseToAgentCase(dbCase: EvalTestCase): TestCase {
   return { id: dbCase.id!, task, assertions };
 }
 
-export function agentCaseToDbRow(tc: TestCase): Pick<EvalTestCase, "inputs_json" | "assertions_json"> {
+export function agentCaseToDbRow(tc: TestCase): { id: string } & Pick<EvalTestCase, "inputs_json" | "assertions_json"> {
   return {
+    id: tc.id,
     inputs_json: JSON.stringify({ task: tc.task }),
     assertions_json: JSON.stringify(tc.assertions),
   };

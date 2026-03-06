@@ -957,24 +957,28 @@ export async function deleteEvalTestCase(id: string): Promise<void> {
   });
 }
 
-/** Replace the full test case list for a runnable (used when saving from the editor). */
-export async function replaceEvalTestCases(
+/** Sync the test case list for a runnable: update existing, insert new, delete removed.
+ *  IDs are stable across saves so eval_results.test_case_id foreign keys stay intact. */
+export async function syncEvalTestCases(
   runnableId: string,
   runnableType: EvalRunnableType,
-  cases: Pick<EvalTestCase, 'inputs_json' | 'assertions_json'>[]
+  cases: Array<{ id: string } & Pick<EvalTestCase, 'inputs_json' | 'assertions_json'>>
 ): Promise<void> {
-  await invoke('db_delete_cmd', {
-    table: 'eval_test_cases',
-    query: { where: { runnable_id: runnableId, runnable_type: runnableType } },
-  });
+  const existing = await listEvalTestCases(runnableId, runnableType);
+  const existingIds = new Set(existing.map(c => c.id!));
+  const incomingIds = new Set(cases.map(c => c.id));
+
+  for (const id of existingIds) {
+    if (!incomingIds.has(id)) await deleteEvalTestCase(id);
+  }
+
   for (let i = 0; i < cases.length; i++) {
-    await insertEvalTestCase({
-      runnable_id: runnableId,
-      runnable_type: runnableType,
-      sort_order: i,
-      inputs_json: cases[i].inputs_json,
-      assertions_json: cases[i].assertions_json,
-    });
+    const c = cases[i];
+    if (existingIds.has(c.id)) {
+      await updateEvalTestCase(c.id, { inputs_json: c.inputs_json, assertions_json: c.assertions_json, sort_order: i });
+    } else {
+      await insertEvalTestCase({ id: c.id, runnable_id: runnableId, runnable_type: runnableType, sort_order: i, inputs_json: c.inputs_json, assertions_json: c.assertions_json });
+    }
   }
 }
 

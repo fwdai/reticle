@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import { StudioContext } from "@/contexts/StudioContext";
 import {
   listEvalTestCases,
-  replaceEvalTestCases,
+  syncEvalTestCases,
   listToolsForEntity,
   insertEvalRun,
   updateEvalRun,
@@ -74,7 +74,7 @@ export default function Test() {
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      replaceEvalTestCases(scenarioId, "scenario", cases.map(uiCaseToDbRow));
+      syncEvalTestCases(scenarioId, "scenario", cases.map(uiCaseToDbRow));
     }, 600);
 
     return () => {
@@ -155,11 +155,9 @@ export default function Test() {
     for (const tc of cases) {
       if (!runningRef.current) break;
 
-      // Insert a result row in 'running' state before we start
-      // test_case_id is null because replaceEvalTestCases regenerates IDs on each save
       const evalResultId = await insertEvalResult({
         eval_run_id: evalRunId,
-        test_case_id: null,
+        test_case_id: tc.id,
         sort_order: completed,
         inputs_json: JSON.stringify(tc.inputs),
         assertions_json: JSON.stringify([{ type: tc.assertion, value: tc.expected }]),
