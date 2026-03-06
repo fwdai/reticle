@@ -26,6 +26,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0015_create_telemetry_events_table.sql")),
         M::up(include_str!("../migrations/0016_restructure_tools.sql")),
         M::up(include_str!("../migrations/0017_create_eval_tables.sql")),
+        M::up(include_str!("../migrations/0018_create_env_variables_table.sql")),
     ])
 }
 
