@@ -31,7 +31,12 @@ function toolToDbRow(tool: Tool, sortOrder = 0): ToolDbRow {
 }
 
 function dbRowToTool(row: Record<string, unknown>): Tool {
-  const paramsRaw = JSON.parse((row.parameters_json as string) ?? '[]');
+  let paramsRaw: unknown;
+  try {
+    paramsRaw = JSON.parse((row.parameters_json as string) ?? '[]');
+  } catch {
+    paramsRaw = [];
+  }
   const parameters = Array.isArray(paramsRaw)
     ? paramsRaw.map((p: Record<string, unknown>) => ({
       id: typeof p.id === 'string' ? p.id : crypto.randomUUID(),

@@ -31,7 +31,7 @@ export async function listTelemetryEvents(options?: ListTelemetryEventsOptions):
 }
 
 export async function countTelemetryEvents(
-  where?: Pick<TelemetryEvent, 'name' | 'trace_id'>
+  where?: Partial<Pick<TelemetryEvent, 'name' | 'trace_id'>>
 ): Promise<number> {
   return dbCount('telemetry_events', where as Record<string, unknown> | undefined);
 }
