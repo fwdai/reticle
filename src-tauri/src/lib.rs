@@ -53,6 +53,11 @@ async fn db_delete_cmd(
 }
 
 #[tauri::command]
+async fn write_export_file(path: String, content: String) -> Result<(), String> {
+    std::fs::write(&path, content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn db_count_cmd(
     table: String,
     query: Value,
@@ -91,9 +96,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             greet,
+            write_export_file,
             blobs::store_attachment_blob,
             blobs::read_attachment_blob,
             blobs::delete_attachment_blob,

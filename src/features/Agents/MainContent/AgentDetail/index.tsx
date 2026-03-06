@@ -9,6 +9,7 @@ import { VisualizerView } from "./Visualizer";
 import { RunsPanel } from "./Runs";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
+import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evalIO";
 import { runAgentAction } from "@/actions/agentActions";
 import type { ExecutionState } from "@/contexts/AgentContext";
 
@@ -170,6 +171,48 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     return () => clearInterval(interval);
   }, [execution.status]);
 
+  const handleExport = useCallback(async () => {
+    const json = exportAgentAsJSON({
+      name: agentName.trim() || "Untitled Agent",
+      description: description.trim() || null,
+      configuration: {
+        provider,
+        model,
+        temperature: temperature[0],
+        topP: topP[0],
+        maxTokens: maxTokens[0],
+        ...(seed.trim() ? { seed: seed.trim() } : {}),
+      },
+      agentGoal: agentGoal.trim() || null,
+      systemInstructions: systemInstructions.trim() || null,
+      maxIterations: maxIterations[0],
+      timeoutSeconds: timeoutValue[0],
+      retryPolicy,
+      toolCallStrategy,
+      memoryEnabled,
+      memorySource,
+    });
+    const slug = (agentName.trim() || "agent").toLowerCase().replace(/\s+/g, "-");
+    await saveFileWithDialog(`${slug}.json`, json, "application/json");
+  }, [
+    agentName,
+    description,
+    provider,
+    model,
+    temperature,
+    topP,
+    maxTokens,
+    seed,
+    agentGoal,
+    systemInstructions,
+    maxIterations,
+    timeoutValue,
+    retryPolicy,
+    toolCallStrategy,
+    memoryEnabled,
+    memorySource,
+  ]);
+
   const agentContextValue = {
     runAgent: handleRun,
     stopAgent: handleStop,
@@ -188,6 +231,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           onBack={onBack}
           onAgentNameChange={setAgentName}
           onViewModeChange={setViewMode}
+          onExport={handleExport}
         />
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           {viewMode === "editor" && (

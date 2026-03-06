@@ -234,10 +234,39 @@ export function exportScenarioAsJSON(scenario: ScenarioConfigExport): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Agent config export                                                */
+/* ------------------------------------------------------------------ */
+
+export interface AgentConfigExport {
+  name: string;
+  description: string | null;
+  configuration: {
+    provider: string;
+    model: string;
+    temperature: number;
+    topP: number;
+    maxTokens: number;
+    seed?: string;
+  };
+  agentGoal: string | null;
+  systemInstructions: string | null;
+  maxIterations: number;
+  timeoutSeconds: number;
+  retryPolicy: string;
+  toolCallStrategy: string;
+  memoryEnabled: boolean;
+  memorySource: string;
+}
+
+export function exportAgentAsJSON(agent: AgentConfigExport): string {
+  return JSON.stringify(agent, null, 2);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Download helper                                                    */
 /* ------------------------------------------------------------------ */
 
-export function downloadFile(filename: string, content: string, mimeType = "text/plain"): void {
+function downloadFileBlob(filename: string, content: string, mimeType = "text/plain"): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -245,4 +274,32 @@ export function downloadFile(filename: string, content: string, mimeType = "text
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Saves content to a file. In Tauri: opens native save dialog and writes via backend.
+ * In browser: falls back to blob download.
+ */
+export async function saveFileWithDialog(
+  filename: string,
+  content: string,
+  mimeType = "text/plain"
+): Promise<void> {
+  try {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const { invoke } = await import("@tauri-apps/api/core");
+    const path = await save({
+      defaultPath: filename,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (path) {
+      await invoke("write_export_file", { path, content });
+    }
+  } catch {
+    downloadFileBlob(filename, content, mimeType);
+  }
+}
+
+export function downloadFile(filename: string, content: string, mimeType = "text/plain"): void {
+  downloadFileBlob(filename, content, mimeType);
 }

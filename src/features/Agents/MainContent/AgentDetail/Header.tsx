@@ -20,6 +20,7 @@ interface HeaderProps {
   onBack: () => void;
   onAgentNameChange: (name: string) => void;
   onViewModeChange: (mode: AgentViewMode) => void;
+  onExport?: () => void | Promise<void>;
 }
 
 export function Header({
@@ -30,6 +31,7 @@ export function Header({
   onBack,
   onAgentNameChange,
   onViewModeChange,
+  onExport,
 }: HeaderProps) {
   return (
     <LayoutHeader>
@@ -72,7 +74,10 @@ export function Header({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2 text-sm" onClick={() => { /* TODO: export agent */ }}>
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              onClick={async () => onExport?.()}
+            >
               <Download className="h-4 w-4" />
               Export
             </DropdownMenuItem>
