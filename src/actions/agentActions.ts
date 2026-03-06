@@ -1,10 +1,11 @@
 import { streamText, stepCountIs } from 'ai';
 import { createModel } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
-import { insertExecution, updateExecution, listToolsForEntity } from '@/lib/storage';
+import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import type { ExecutionState } from '@/contexts/AgentContext';
 import type { AgentRecord, Execution, ExecutionStep } from '@/types';
+import { substituteVariables } from '@/lib/helpers/substituteVariables';
 
 function ts(): string {
   return new Date().toISOString();
@@ -32,10 +33,17 @@ export async function runAgentAction(
 
   const started_at = Date.now();
 
-  const instructions =
+  const rawEnvVars = await listEnvVariables();
+  const envVars = rawEnvVars.map(v => ({ id: 0, key: v.key, value: v.value }));
+  const envVarsMap = Object.fromEntries(rawEnvVars.map(v => [v.key, v.value]));
+
+  const rawInstructions =
     [agentRecord.agent_goal, agentRecord.system_instructions]
       .filter(Boolean)
       .join('\n\n') || undefined;
+  const instructions = rawInstructions
+    ? substituteVariables(rawInstructions, envVars) || undefined
+    : undefined;
 
   const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
 
@@ -98,7 +106,7 @@ export async function runAgentAction(
   try {
     // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
-    const aiTools = toolConfigToAiSdkTools(linkedTools);
+    const aiTools = toolConfigToAiSdkTools(linkedTools, envVarsMap);
     const hasTools = Object.keys(aiTools).length > 0;
 
     const toolChoice =

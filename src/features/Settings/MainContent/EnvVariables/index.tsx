@@ -130,9 +130,11 @@ async function deleteVar(id: string) {
   return (
     <div className="space-y-6">
       <p className="text-sm text-slate-500">
-        Define variables you can reference in prompts and tool configurations using{" "}
+        Reference in prompts with{" "}
         <code className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">{"{{VAR_NAME}}"}</code>.
-        Secret values are masked in the UI.
+        {" "}Access in tool code with{" "}
+        <code className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">{"env.VAR_NAME"}</code>.
+        {" "}Secret values are masked in the UI.
       </p>
 
       <div className="bg-white border border-border-light rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[300px]">

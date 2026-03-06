@@ -17,6 +17,7 @@ import {
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/components/Tools/types';
+import { listEnvVariables } from '@/lib/storage';
 import type {
   PersistedToolCall,
   PersistedModelStep,
@@ -134,7 +135,9 @@ export const streamText = async (
   }
   messages.push({ role: 'user', content: userContent });
 
-  const aiTools = tools?.length ? toolConfigToAiSdkTools(tools) : undefined;
+  const rawEnvVars = tools?.length ? await listEnvVariables() : [];
+  const envVarsMap = Object.fromEntries(rawEnvVars.map(v => [v.key, v.value]));
+  const aiTools = tools?.length ? toolConfigToAiSdkTools(tools, envVarsMap) : undefined;
 
   const result = await streamTextAi({
     model: createModel(config, gateway),

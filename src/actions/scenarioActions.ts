@@ -7,21 +7,12 @@ import {
   upsertToolsForScenario,
   upsertAttachmentsForScenario,
   listToolsForEntity,
+  listEnvVariables,
 } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
-import type { Variable } from '@/components/ui/PromptBox/types';
 import { Execution, Scenario } from '@/types';
-
-/** Replaces {{key}} placeholders in template with values from variables. */
-function substituteVariables(template: string, variables: Variable[]): string {
-  const map = Object.fromEntries(
-    variables
-      .filter((v) => v.key.trim() !== '')
-      .map((v) => [v.key.trim(), v.value])
-  );
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => map[key] ?? '');
-}
+import { substituteVariables } from '@/lib/helpers/substituteVariables';
 
 function parseHistoryJson(jsonStr: string): HistoryItem[] | null {
   try {
@@ -213,8 +204,11 @@ export async function runScenarioAction(
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
   const { systemVariables = [], userVariables = [] } = currentScenario;
 
-  const resolvedSystemPrompt = substituteVariables(systemPrompt, systemVariables);
-  const resolvedUserPrompt = substituteVariables(userPrompt, userVariables);
+  const rawEnvVars = await listEnvVariables();
+  const envVars = rawEnvVars.map(v => ({ id: 0, key: v.key, value: v.value }));
+
+  const resolvedSystemPrompt = substituteVariables(systemPrompt, [...envVars, ...systemVariables]);
+  const resolvedUserPrompt = substituteVariables(userPrompt, [...envVars, ...userVariables]);
 
   trackEvent(TELEMETRY_EVENTS.SCENARIO_RUN_STARTED, {
     scenario_id: currentScenario.id,

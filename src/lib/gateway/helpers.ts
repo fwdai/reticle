@@ -4,6 +4,7 @@ import { jsonSchema, tool, type ToolSet } from 'ai';
 import { ANTHROPIC_VERSION, REASONING_MODEL_PREFIXES } from './constants';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/components/Tools/types';
+import { substituteVariables } from '@/lib/helpers/substituteVariables';
 import {
   writeTempScript,
   deleteTempScript,
@@ -102,9 +103,11 @@ async function executeCodeTool(
   toolName: string,
   code: string,
   args: Record<string, unknown>,
+  envVars: Record<string, string> = {},
 ): Promise<unknown> {
   const runnerId = crypto.randomUUID();
-  const scriptPath = await writeTempScript(runnerId, code + HANDLER_BOILERPLATE);
+  const envPreamble = `const env = ${JSON.stringify(envVars)};\n`;
+  const scriptPath = await writeTempScript(runnerId, envPreamble + code + HANDLER_BOILERPLATE);
 
   let stdout = '';
   let stderr = '';
@@ -166,7 +169,7 @@ async function executeCodeTool(
 /** Convert scenario tools to AI SDK tool format.
  *  JSON-mode tools return their mockResponse directly.
  *  Code-mode tools execute their code block in a Deno sandbox. */
-export function toolConfigToAiSdkTools(tools: Tool[]): ToolSet {
+export function toolConfigToAiSdkTools(tools: Tool[], envVars: Record<string, string> = {}): ToolSet {
   const result: ToolSet = {};
   for (const t of tools) {
     const properties: Record<string, Record<string, unknown>> = {};
@@ -195,13 +198,15 @@ export function toolConfigToAiSdkTools(tools: Tool[]): ToolSet {
       }),
       execute: async (args: Record<string, unknown>) => {
         if (mockMode === 'code' && t.code?.trim()) {
-          return executeCodeTool(t.name, t.code, args);
+          return executeCodeTool(t.name, t.code, args, envVars);
         }
-        // JSON mock — return static response
+        // JSON mock — substitute env vars then return static response
+        const envVarsList = Object.entries(envVars).map(([key, value]) => ({ id: 0, key, value }));
+        const resolvedMock = substituteVariables(t.mockResponse ?? '{}', envVarsList);
         try {
-          return JSON.parse(t.mockResponse);
+          return JSON.parse(resolvedMock);
         } catch {
-          return t.mockResponse;
+          return resolvedMock;
         }
       },
     });
