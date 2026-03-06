@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, User, Key, Plug } from "lucide-react";
+import { Settings as SettingsIcon, User, Key, Braces } from "lucide-react";
 
 import Sidebar, { SidebarSection, SidebarItem } from "@/components/Layout/Sidebar";
 import type { SettingsSectionId } from "./index";
@@ -33,10 +33,10 @@ function SettingsSidebar({ activeSection, onSectionChange }: SettingsSidebarProp
       </SidebarSection>
       <SidebarSection title="Advanced">
         <SidebarItem
-          icon={Plug}
-          label="Integrations"
-          active={activeSection === "integrations"}
-          onClick={() => onSectionChange("integrations")}
+          icon={Braces}
+          label="Env Variables"
+          active={activeSection === "env-variables"}
+          onClick={() => onSectionChange("env-variables")}
         />
       </SidebarSection>
     </Sidebar>

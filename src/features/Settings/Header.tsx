@@ -5,7 +5,7 @@ const SECTION_TITLES: Record<SettingsSectionId, string> = {
   account: "Account",
   preferences: "Preferences",
   "api-keys": "API Keys",
-  integrations: "Integrations",
+  "env-variables": "Environment Variables",
 };
 
 interface SettingsHeaderProps {

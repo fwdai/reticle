@@ -3,7 +3,6 @@ export type Page =
   | 'studio'
   | 'agents'
   | 'tools'
-  | 'environments'
   | 'runs'
   | 'settings'
   | 'templates';
@@ -12,7 +11,7 @@ export type SettingsSectionId =
   | 'preferences'
   | 'account'
   | 'api-keys'
-  | 'integrations';
+  | 'env-variables';
 
 export type SidebarItem = Exclude<Page, 'home'>;
 

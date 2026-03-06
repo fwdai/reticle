@@ -4,7 +4,6 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import Home from "./features/Home";
 import Studio from "./features/Scenarios";
 import Agents from "./features/Agents";
-import Environments from "./features/Environments";
 import Runs from "./features/Runs";
 import Settings from "./features/Settings";
 import Templates from "./features/Templates";
@@ -18,7 +17,6 @@ const pages: Partial<Record<Page, ComponentType>> = {
   studio: Studio,
   agents: Agents,
   tools: Tools,
-  environments: Environments,
   runs: Runs,
   settings: Settings,
   templates: Templates,

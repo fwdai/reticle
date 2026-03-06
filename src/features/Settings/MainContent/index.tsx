@@ -2,6 +2,7 @@ import MainContent from "@/components/Layout/MainContent";
 import Header from "../Header";
 import Account from "./Account";
 import ApiKeys from "./ApiKeys";
+import EnvVariables from "./EnvVariables";
 import Footer from "./Footer";
 import Preferences from "./Preferences";
 import type { SettingsSectionId } from "../index";
@@ -17,12 +18,8 @@ function SettingsMainContent({ activeSection }: SettingsMainContentProps) {
         return <ApiKeys />;
       case "account":
         return <Account />;
-      case "integrations":
-        return (
-          <div className="flex items-center justify-center py-48 text-slate-500 text-sm">
-            Coming soon
-          </div>
-        );
+      case "env-variables":
+        return <EnvVariables />;
       case "preferences":
         return <Preferences />;
       default:
