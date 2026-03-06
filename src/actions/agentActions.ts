@@ -100,11 +100,29 @@ export async function runAgentAction(
     const aiTools = toolConfigToAiSdkTools(linkedTools);
     const hasTools = Object.keys(aiTools).length > 0;
 
+    const toolChoice =
+      !hasTools
+        ? undefined
+        : agentRecord.tool_call_strategy === 'forced'
+          ? ('required' as const)
+          : agentRecord.tool_call_strategy === 'restricted'
+            ? ('none' as const)
+            : undefined; // 'auto': use SDK default
+
+    const maxRetries =
+      agentRecord.retry_policy === 'none'
+        ? 0
+        : agentRecord.retry_policy === 'fixed' || agentRecord.retry_policy === 'exponential'
+          ? 3
+          : 2; // fallback to SDK default
+
     const result = streamText({
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
       ...(instructions ? { system: instructions } : {}),
       prompt: taskInput,
       ...(hasTools ? { tools: aiTools } : {}),
+      ...(toolChoice !== undefined ? { toolChoice } : {}),
+      maxRetries,
       stopWhen: stepCountIs(agentRecord.max_iterations ?? 10),
       temperature: params.temperature,
       topP: params.top_p,
