@@ -1,6 +1,12 @@
+import { generateText } from "ai";
+import { createModel } from "@/lib/gateway";
 import type { EvalTestCase } from "@/types";
 import type { Assertion, AssertionType, AssertionResult, TestCase } from "./types";
 import { parseAgentTestCases } from "@/lib/evalIO";
+
+/** Default judge model when user hasn't selected one. */
+const DEFAULT_JUDGE_PROVIDER = "openai" as const;
+const DEFAULT_JUDGE_MODEL = "gpt-4o-mini" as const;
 
 export function dbCaseToAgentCase(dbCase: EvalTestCase): TestCase {
   let task = "";
@@ -18,6 +24,7 @@ export function dbCaseToAgentCase(dbCase: EvalTestCase): TestCase {
       description: a.description ?? "",
       ...(a.expectedParams ? { expectedParams: a.expectedParams } : {}),
       ...(a.expectedReturn ? { expectedReturn: a.expectedReturn } : {}),
+      ...(a.judgeModel ? { judgeModel: a.judgeModel } : {}),
     }));
   } catch { /* leave empty */ }
 
@@ -52,12 +59,65 @@ export function createEmptyAssertion(): Assertion {
   };
 }
 
-export function evaluateAgentAssertion(
+async function evaluateLlmJudgeAssertion(
+  assertion: Assertion,
+  task: string,
+  finalText: string,
+): Promise<AssertionResult> {
+  const criteria = assertion.target.trim() || assertion.description;
+  if (!criteria) {
+    return {
+      assertion,
+      passed: false,
+      actual: "LLM Judge requires criteria in the target field (e.g. 'Output is helpful and concise')",
+    };
+  }
+
+  const systemPrompt = `You are a judge evaluating whether an AI agent's output meets given criteria. Respond with ONLY "PASS" or "FAIL" on the first line, followed by a brief reason on the next line. Be strict but fair.`;
+
+  const userPrompt = `Task given to the agent: ${task}
+
+Agent output:
+${finalText}
+
+Criteria to evaluate: ${criteria}
+
+Respond with PASS or FAIL on the first line, then a brief reason.`;
+
+  const provider = assertion.judgeModel?.provider ?? DEFAULT_JUDGE_PROVIDER;
+  const model = assertion.judgeModel?.model ?? DEFAULT_JUDGE_MODEL;
+
+  try {
+    const { text } = await generateText({
+      model: createModel({ provider, model }),
+      system: systemPrompt,
+      prompt: userPrompt,
+      maxOutputTokens: 150,
+      temperature: 0,
+    });
+
+    const trimmed = text.trim().toUpperCase();
+    const passed = trimmed.startsWith("PASS");
+    const actual = text.trim().slice(0, 200);
+
+    return { assertion, passed, actual };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      assertion,
+      passed: false,
+      actual: `LLM Judge error: ${msg}`,
+    };
+  }
+}
+
+export async function evaluateAgentAssertion(
   assertion: Assertion,
   finalText: string,
   calledToolNames: string[],
   loopCount: number,
-): AssertionResult {
+  task?: string,
+): Promise<AssertionResult> {
   const target = assertion.target.trim();
 
   let passed: boolean;
@@ -111,6 +171,8 @@ export function evaluateAgentAssertion(
     }
 
     case "llm_judge":
+      return evaluateLlmJudgeAssertion(assertion, task ?? "", finalText);
+
     case "guardrail":
     case "json_schema":
       passed = false;

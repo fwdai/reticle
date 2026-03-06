@@ -137,13 +137,14 @@ export function TestView({ agentId, agentName }: TestViewProps) {
     const json = cases.map((c) => ({
       task: c.task,
       assertions: c.assertions.map((a) => {
-        const base: Record<string, string> = {
+        const base: Record<string, string | object> = {
           type: a.type,
           target: a.target,
           description: a.description,
         };
         if (a.expectedParams) base.expectedParams = a.expectedParams;
         if (a.expectedReturn) base.expectedReturn = a.expectedReturn;
+        if (a.judgeModel) base.judgeModel = a.judgeModel;
         return base;
       }),
     }));
@@ -160,14 +161,18 @@ export function TestView({ agentId, agentName }: TestViewProps) {
         id: `tc-${i}-${Date.now()}`,
         task: String(c.task ?? ""),
         assertions: ((c.assertions as Record<string, unknown>[]) ?? []).map(
-          (a: Record<string, unknown>, j: number) => ({
-            id: `a-${i}-${j}-${Date.now()}`,
-            type: (a.type as AssertionType) ?? "contains",
-            target: String(a.target ?? ""),
-            description: String(a.description ?? ""),
-            expectedParams: a.expectedParams ? String(a.expectedParams) : undefined,
-            expectedReturn: a.expectedReturn ? String(a.expectedReturn) : undefined,
-          })
+          (a: Record<string, unknown>, j: number) => {
+            const judgeModel = a.judgeModel as { provider: string; model: string } | undefined;
+            return {
+              id: `a-${i}-${j}-${Date.now()}`,
+              type: (a.type as AssertionType) ?? "contains",
+              target: String(a.target ?? ""),
+              description: String(a.description ?? ""),
+              expectedParams: a.expectedParams ? String(a.expectedParams) : undefined,
+              expectedReturn: a.expectedReturn ? String(a.expectedReturn) : undefined,
+              ...(judgeModel?.provider && judgeModel?.model ? { judgeModel } : {}),
+            };
+          }
         ),
       }));
       setCases(newCases);
@@ -322,8 +327,10 @@ export function TestView({ agentId, agentName }: TestViewProps) {
           },
         ]);
       } else {
-        const assertionResults = tc.assertions.map((a) =>
-          evaluateAgentAssertion(a, finalText, calledToolNames, loopCount)
+        const assertionResults = await Promise.all(
+          tc.assertions.map((a) =>
+            evaluateAgentAssertion(a, finalText, calledToolNames, loopCount, tc.task)
+          )
         );
         const casePassed = assertionResults.every((r) => r.passed);
         casePassed ? passCount++ : failCount++;

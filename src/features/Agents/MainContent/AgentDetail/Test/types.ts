@@ -17,6 +17,8 @@ export interface Assertion {
   description: string;
   expectedParams?: string;
   expectedReturn?: string;
+  /** For llm_judge: which model to use as judge. User selects in UI. */
+  judgeModel?: { provider: string; model: string };
 }
 
 export interface TestCase {

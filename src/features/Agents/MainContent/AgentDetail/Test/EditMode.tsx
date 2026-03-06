@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { parseAgentImport } from "./helpers";
 import { exportAgentTestCasesAsJSON, exportAgentTestCasesAsCSV } from "@/lib/evalIO";
 import { AssertionTypeSelect } from "./AssertionTypeSelect";
+import { JudgeModelSelect } from "./JudgeModelSelect";
 import { ASSERTION_CONFIG } from "./constants";
 import type { Assertion, AssertionType, TestCase } from "./types";
 
@@ -204,8 +205,9 @@ function AssertionRow({
   const isToolAssertion = ["tool_called", "tool_not_called", "tool_sequence"].includes(
     assertion.type
   );
+  const isLlmJudge = assertion.type === "llm_judge";
   const hasDetails = !!(assertion.expectedParams || assertion.expectedReturn);
-  const [showDetails, setShowDetails] = useState(hasDetails);
+  const [showDetails, setShowDetails] = useState(hasDetails || isLlmJudge);
 
   return (
     <div className="group/a rounded-lg border border-slate-200 bg-slate-50 transition-all hover:border-slate-300 overflow-hidden">
@@ -238,16 +240,16 @@ function AssertionRow({
           }
           className="h-8 flex-1 text-xs bg-white/80 border border-slate-200 rounded-md px-2.5 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-text-muted/40"
         />
-        {isToolAssertion && (
+        {(isToolAssertion || isLlmJudge) && (
           <button
             onClick={() => setShowDetails(!showDetails)}
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-md transition-all",
-              showDetails || hasDetails
+              showDetails || hasDetails || (isLlmJudge && assertion.judgeModel)
                 ? "text-primary bg-primary/10 hover:bg-primary/15"
                 : "text-text-muted/40 hover:text-text-muted hover:bg-slate-100"
             )}
-            title="Specify expected params & return"
+            title={isToolAssertion ? "Specify expected params & return" : "Select judge model"}
           >
             <Settings2 className="h-3 w-3" />
           </button>
@@ -259,6 +261,19 @@ function AssertionRow({
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
+      {isLlmJudge && showDetails && (
+        <div className="border-t border-slate-200 bg-slate-100/80 px-3 py-2.5 space-y-2">
+          <div className="flex items-start gap-2">
+            <span className="mt-1.5 text-[10px] font-semibold uppercase tracking-widest text-text-muted w-[70px] flex-shrink-0">
+              Judge Model
+            </span>
+            <JudgeModelSelect
+              value={assertion.judgeModel}
+              onChange={(judgeModel) => onUpdate({ judgeModel })}
+            />
+          </div>
+        </div>
+      )}
       {isToolAssertion && showDetails && (
         <div className="border-t border-slate-200 bg-slate-100/80 px-3 py-2.5 space-y-2">
           <div className="flex items-start gap-2">
