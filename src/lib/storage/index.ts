@@ -22,6 +22,33 @@ import type {
 
 const DEFAULT_COLLECTION_NAME = 'Default Collection';
 
+// --- DB helpers ---
+
+async function dbSelect<T>(table: string, query: Record<string, unknown> = {}): Promise<T[]> {
+  const rows = await invoke<T[]>('db_select_cmd', { table, query });
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function dbSelectOne<T>(table: string, query: Record<string, unknown> = {}): Promise<T | null> {
+  const rows = await dbSelect<T>(table, { ...query, limit: 1 });
+  return rows[0] ?? null;
+}
+
+async function dbUpsert(
+  table: string,
+  where: Record<string, unknown>,
+  insertData: Record<string, unknown>,
+  updateData: Record<string, unknown> = insertData
+): Promise<void> {
+  const existing = await dbSelectOne<{ id?: string }>(table, { where });
+  if (existing) {
+    const updateWhere = existing.id != null ? { id: existing.id } : where;
+    await invoke('db_update_cmd', { table, query: { where: updateWhere }, data: updateData });
+  } else {
+    await invoke('db_insert_cmd', { table, data: insertData });
+  }
+}
+
 export async function insertExecution(data: Execution): Promise<string> {
   // created_at and updated_at are now handled by the backend
   return invoke<string>('db_insert_cmd', { table: 'executions', data: data });
@@ -51,62 +78,42 @@ export async function listExecutions(
   options?: ListExecutionsOptions
 ): Promise<Execution[]> {
   const { offset = 0, limit, type, status, runnableId } = options ?? {};
-  const query: Record<string, unknown> = {
+
+  const where = {
+    ...(type && { type }),
+    ...(status && { status }),
+    ...(runnableId && { runnable_id: runnableId }),
+  };
+
+  return dbSelect<Execution>('executions', {
     orderBy: 'started_at',
     orderDirection: 'desc',
-  };
-  if (offset > 0) query.offset = offset;
-  if (limit != null && limit > 0) query.limit = limit;
-
-  const where: Record<string, unknown> = {};
-  if (type) where.type = type;
-  if (status) where.status = status;
-  if (runnableId) where.runnable_id = runnableId;
-  if (Object.keys(where).length > 0) query.where = where;
-
-  const rows = await invoke<Execution[]>('db_select_cmd', {
-    table: 'executions',
-    query,
+    ...(offset > 0 && { offset }),
+    ...(limit != null && limit > 0 && { limit }),
+    ...(Object.keys(where).length > 0 && { where }),
   });
-  return Array.isArray(rows) ? rows : [];
 }
 
 export interface EnvVariable { id: string; key: string; value: string; is_secret: number; }
 
 export async function listEnvVariables(): Promise<EnvVariable[]> {
-  return invoke<EnvVariable[]>('db_select_cmd', {
-    table: 'env_variables',
-    query: { orderBy: 'created_at', orderDirection: 'asc' },
-  });
+  return dbSelect<EnvVariable>('env_variables', { orderBy: 'created_at', orderDirection: 'asc' });
 }
 
 export interface AgentMemory { id: string; agent_id: string; key: string; value: string; created_at: number; updated_at: number; }
 
 export async function listAgentMemories(agentId: string): Promise<AgentMemory[]> {
-  return invoke<AgentMemory[]>('db_select_cmd', {
-    table: 'agent_memories',
-    query: { where: { agent_id: agentId }, orderBy: 'created_at', orderDirection: 'asc' },
-  });
+  return dbSelect<AgentMemory>('agent_memories', { where: { agent_id: agentId }, orderBy: 'created_at', orderDirection: 'asc' });
 }
 
 export async function saveAgentMemory(agentId: string, key: string, value: string): Promise<void> {
-  const existing = await invoke<AgentMemory[]>('db_select_cmd', {
-    table: 'agent_memories',
-    query: { where: { agent_id: agentId, key } },
-  });
   const now = Date.now();
-  if (existing?.length > 0) {
-    await invoke('db_update_cmd', {
-      table: 'agent_memories',
-      query: { where: { id: existing[0].id } },
-      data: { value, updated_at: now },
-    });
-  } else {
-    await invoke('db_insert_cmd', {
-      table: 'agent_memories',
-      data: { agent_id: agentId, key, value, created_at: now, updated_at: now },
-    });
-  }
+  await dbUpsert(
+    'agent_memories',
+    { agent_id: agentId, key },
+    { agent_id: agentId, key, value, created_at: now, updated_at: now },
+    { value, updated_at: now }
+  );
 }
 
 export async function deleteAgentMemory(id: string): Promise<void> {
@@ -119,11 +126,8 @@ export async function clearAgentMemories(agentId: string): Promise<void> {
 
 /** Check if user has configured at least one API key */
 export async function hasApiKeys(): Promise<boolean> {
-  const rows = await invoke<{ provider: string }[]>('db_select_cmd', {
-    table: 'api_keys',
-    query: {},
-  });
-  return Array.isArray(rows) && rows.length > 0;
+  const rows = await dbSelect<{ provider: string }>('api_keys');
+  return rows.length > 0;
 }
 
 export interface CountExecutionsOptions {
@@ -148,24 +152,15 @@ export async function countExecutions(options?: CountExecutionsOptions): Promise
 export async function getLastExecutionForScenario(
   scenarioId: string
 ): Promise<Execution | null> {
-  const rows = await invoke<Execution[]>('db_select_cmd', {
-    table: 'executions',
-    query: {
-      where: { type: 'scenario', runnable_id: scenarioId },
-      orderBy: 'started_at',
-      orderDirection: 'desc',
-      limit: 1,
-    },
+  return dbSelectOne<Execution>('executions', {
+    where: { type: 'scenario', runnable_id: scenarioId },
+    orderBy: 'started_at',
+    orderDirection: 'desc',
   });
-  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
 export async function getExecutionById(id: string): Promise<Execution | null> {
-  const rows = await invoke<Execution[]>('db_select_cmd', {
-    table: 'executions',
-    query: { where: { id }, limit: 1 },
-  });
-  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  return dbSelectOne<Execution>('executions', { where: { id } });
 }
 
 // --- Telemetry Events ---
@@ -222,12 +217,7 @@ export async function listTelemetryEvents(
     query.limit = limit;
   }
 
-  const rows = await invoke<TelemetryEvent[]>('db_select_cmd', {
-    table: 'telemetry_events',
-    query,
-  });
-
-  return Array.isArray(rows) ? rows : [];
+  return dbSelect<TelemetryEvent>('telemetry_events', query);
 }
 
 export async function countTelemetryEvents(
@@ -253,22 +243,14 @@ export async function deleteTelemetryEvents(
 }
 
 export async function listScenarios(): Promise<Scenario[]> {
-  const rows = await invoke<Scenario[]>('db_select_cmd', {
-    table: 'scenarios',
-    query: {},
-  });
-  return Array.isArray(rows) ? rows : [];
+  return dbSelect<Scenario>('scenarios');
 }
 
 // --- Collections ---
 export async function findCollectionByName(
   name: string
 ): Promise<{ id: string; name: string } | null> {
-  const rows: { id: string; name: string }[] = await invoke('db_select_cmd', {
-    table: 'collections',
-    query: { where: { name } },
-  });
-  return rows.length > 0 ? rows[0] : null;
+  return dbSelectOne<{ id: string; name: string }>('collections', { where: { name } });
 }
 
 export async function insertCollection(data: Collection): Promise<string> {
@@ -319,11 +301,7 @@ export type ListPromptTemplatesOptions = {
 export async function listPromptTemplates(
   options?: ListPromptTemplatesOptions
 ): Promise<PromptTemplate[]> {
-  const rows = await invoke<PromptTemplate[]>('db_select_cmd', {
-    table: 'prompt_templates',
-    query: { orderBy: 'updated_at', orderDirection: 'desc' },
-  });
-  const arr = Array.isArray(rows) ? rows : [];
+  const arr = await dbSelect<PromptTemplate>('prompt_templates', { orderBy: 'updated_at', orderDirection: 'desc' });
   const archived = options?.archived ?? 'exclude';
   if (archived === 'exclude') {
     return arr.filter((r) => r.archived_at == null);
@@ -361,23 +339,12 @@ export async function deletePromptTemplate(id: string): Promise<void> {
 // --- Agents ---
 
 export async function listAgents(): Promise<AgentRecord[]> {
-  const rows = await invoke<AgentRecord[]>('db_select_cmd', {
-    table: 'agents',
-    query: {
-      orderBy: 'updated_at',
-      orderDirection: 'desc',
-    },
-  });
-  const arr = Array.isArray(rows) ? rows : [];
-  return arr.filter(r => r.archived_at == null);
+  const rows = await dbSelect<AgentRecord>('agents', { orderBy: 'updated_at', orderDirection: 'desc' });
+  return rows.filter(r => r.archived_at == null);
 }
 
 export async function getAgentById(id: string): Promise<AgentRecord | null> {
-  const rows = await invoke<AgentRecord[]>('db_select_cmd', {
-    table: 'agents',
-    query: { where: { id }, limit: 1 },
-  });
-  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  return dbSelectOne<AgentRecord>('agents', { where: { id } });
 }
 
 export async function insertAgent(
@@ -437,22 +404,15 @@ function parseJsonArray(json: string): unknown[] {
 // --- Accounts ---
 
 export async function getOrCreateAccount(): Promise<Account> {
-  const rows: Account[] = await invoke('db_select_cmd', {
-    table: 'accounts',
-    query: {},
-  });
-  const existing = rows.length > 0 ? rows[0] : null;
+  const existing = await dbSelectOne<Account>('accounts');
   if (existing) return existing;
 
   const id = await invoke<string>('db_insert_cmd', {
     table: 'accounts',
     data: {},
   });
-  const inserted: Account[] = await invoke('db_select_cmd', {
-    table: 'accounts',
-    query: { where: { id } },
-  });
-  return inserted[0] ?? { id };
+  const inserted = await dbSelectOne<Account>('accounts', { where: { id } });
+  return inserted ?? { id };
 }
 
 /**
@@ -472,11 +432,7 @@ export async function upsertAccount(
     >
   >
 ): Promise<Account> {
-  const rows: Account[] = await invoke('db_select_cmd', {
-    table: 'accounts',
-    query: {},
-  });
-  const existing = rows.length > 0 ? rows[0] : null;
+  const existing = await dbSelectOne<Account>('accounts');
   const payload = {
     first_name: data.first_name ?? null,
     last_name: data.last_name ?? null,
@@ -500,11 +456,8 @@ export async function upsertAccount(
     table: 'accounts',
     data: payload,
   });
-  const inserted: Account[] = await invoke('db_select_cmd', {
-    table: 'accounts',
-    query: { where: { id } },
-  });
-  return inserted[0] ?? { id, ...payload };
+  const inserted = await dbSelectOne<Account>('accounts', { where: { id } });
+  return inserted ?? { id, ...payload };
 }
 
 // --- Tools ---
@@ -598,11 +551,8 @@ export async function getLinkedToolIds(
   toolableId: string,
   toolableType: 'scenario' | 'agent'
 ): Promise<string[]> {
-  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-    table: 'tool_links',
-    query: { where: { toolable_id: toolableId, toolable_type: toolableType } },
-  });
-  return Array.isArray(links) ? links.map(l => l.tool_id) : [];
+  const links = await dbSelect<{ tool_id: string }>('tool_links', { where: { toolable_id: toolableId, toolable_type: toolableType } });
+  return links.map(l => l.tool_id);
 }
 
 export async function insertTool(
@@ -663,25 +613,8 @@ export async function countToolsByScenarioId(
   return typeof count === 'number' ? count : 0;
 }
 
-export async function listToolsByScenarioId(
-  scenarioId: string
-): Promise<Tool[]> {
-  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-    table: 'tool_links',
-    query: { where: { toolable_id: scenarioId, toolable_type: 'scenario' } },
-  });
-  const toolIds = Array.isArray(links) ? links.map(l => l.tool_id) : [];
-  if (toolIds.length === 0) return [];
-
-  const allRows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'tools',
-    query: { orderBy: 'sort_order', orderDirection: 'asc' },
-  });
-  return Array.isArray(allRows)
-    ? allRows
-      .filter(r => toolIds.includes(r.id as string) && r.is_global === 0)
-      .map(dbRowToTool)
-    : [];
+export async function listToolsByScenarioId(scenarioId: string): Promise<Tool[]> {
+  return listToolsForEntity(scenarioId, 'scenario', { excludeShared: true });
 }
 
 export interface ToolMeta {
@@ -690,20 +623,12 @@ export interface ToolMeta {
 }
 
 export async function listSharedToolsWithMeta(): Promise<(Tool & ToolMeta)[]> {
-  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'tools',
-    query: { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' },
-  });
-  const tools = Array.isArray(rows) ? rows : [];
+  const tools = await dbSelect<Record<string, unknown>>('tools', { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' });
   const toolIds = tools.map(r => r.id as string);
 
   let linkCounts: Record<string, number> = {};
   if (toolIds.length > 0) {
-    const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-      table: 'tool_links',
-      query: {},
-    });
-    const allLinks = Array.isArray(links) ? links : [];
+    const allLinks = await dbSelect<{ tool_id: string }>('tool_links');
     const relevantIds = new Set(toolIds);
     for (const link of allLinks) {
       if (relevantIds.has(link.tool_id)) {
@@ -720,18 +645,11 @@ export async function listSharedToolsWithMeta(): Promise<(Tool & ToolMeta)[]> {
 }
 
 export async function getToolMeta(toolId: string): Promise<ToolMeta> {
-  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'tools',
-    query: { where: { id: toolId } },
-  });
-  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  const row = await dbSelectOne<Record<string, unknown>>('tools', { where: { id: toolId } });
   const updatedAt = row && typeof row.updated_at === 'number' ? row.updated_at : null;
 
-  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-    table: 'tool_links',
-    query: { where: { tool_id: toolId } },
-  });
-  const usedBy = Array.isArray(links) ? links.length : 0;
+  const links = await dbSelect<{ tool_id: string }>('tool_links', { where: { tool_id: toolId } });
+  const usedBy = links.length;
 
   return { updatedAt, usedBy };
 }
@@ -742,31 +660,23 @@ export async function insertGlobalTool(tool: Tool): Promise<string> {
 }
 
 export async function listSharedTools(): Promise<Tool[]> {
-  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'tools',
-    query: { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' },
-  });
-  return Array.isArray(rows) ? rows.map(dbRowToTool) : [];
+  const rows = await dbSelect<Record<string, unknown>>('tools', { where: { is_global: 1 }, orderBy: 'name', orderDirection: 'asc' });
+  return rows.map(dbRowToTool);
 }
 
 export async function listToolsForEntity(
   toolableId: string,
-  toolableType: 'scenario' | 'agent'
+  toolableType: 'scenario' | 'agent',
+  options: { excludeShared?: boolean } = {}
 ): Promise<Tool[]> {
-  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-    table: 'tool_links',
-    query: { where: { toolable_id: toolableId, toolable_type: toolableType } },
-  });
-  const toolIds = Array.isArray(links) ? links.map(l => l.tool_id) : [];
+  const links = await dbSelect<{ tool_id: string }>('tool_links', { where: { toolable_id: toolableId, toolable_type: toolableType } });
+  const toolIds = links.map(l => l.tool_id);
   if (toolIds.length === 0) return [];
 
-  const allRows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'tools',
-    query: { orderBy: 'sort_order', orderDirection: 'asc' },
-  });
-  return Array.isArray(allRows)
-    ? allRows.filter(r => toolIds.includes(r.id as string)).map(dbRowToTool)
-    : [];
+  const allRows = await dbSelect<Record<string, unknown>>('tools', { orderBy: 'sort_order', orderDirection: 'asc' });
+  return allRows
+    .filter(r => toolIds.includes(r.id as string) && (!options.excludeShared || r.is_global === 0))
+    .map(dbRowToTool);
 }
 
 export async function deleteTool(id: string): Promise<void> {
@@ -779,13 +689,10 @@ export async function deleteTool(id: string): Promise<void> {
 export async function deleteToolsByScenarioId(
   scenarioId: string
 ): Promise<void> {
-  const links = await invoke<{ tool_id: string }[]>('db_select_cmd', {
-    table: 'tool_links',
-    query: { where: { toolable_id: scenarioId, toolable_type: 'scenario' } },
-  });
+  const links = await dbSelect<{ tool_id: string }>('tool_links', { where: { toolable_id: scenarioId, toolable_type: 'scenario' } });
   // Delete local (non-global) tools only — ON DELETE CASCADE removes their tool_links rows.
   // Global tools (is_global=1) are left intact; their links to this scenario are preserved.
-  for (const link of Array.isArray(links) ? links : []) {
+  for (const link of links) {
     await invoke('db_delete_cmd', {
       table: 'tools',
       query: { where: { id: link.tool_id, is_global: 0 } },
@@ -825,15 +732,11 @@ export async function countAttachmentsByScenarioId(
 export async function listAttachmentsByScenarioId(
   scenarioId: string
 ): Promise<AttachedFile[]> {
-  const rows = await invoke<Record<string, unknown>[]>('db_select_cmd', {
-    table: 'attachments',
-    query: {
-      where: { scenario_id: scenarioId },
-      orderBy: 'sort_order',
-      orderDirection: 'asc',
-    },
+  const rows = await dbSelect<Record<string, unknown>>('attachments', {
+    where: { scenario_id: scenarioId },
+    orderBy: 'sort_order',
+    orderDirection: 'asc',
   });
-  if (!Array.isArray(rows)) return [];
   return rows.map(row => ({
     id: String(row.id ?? ''),
     name: String(row.name ?? ''),
@@ -883,11 +786,8 @@ export async function upsertToolsForScenario(
 ): Promise<void> {
   for (let i = 0; i < tools.length; i++) {
     const tool = tools[i];
-    const existing = await invoke<unknown[]>('db_select_cmd', {
-      table: 'tools',
-      query: { where: { id: tool.id }, limit: 1 },
-    });
-    if (existing.length === 0) {
+    const existing = await dbSelectOne<unknown>('tools', { where: { id: tool.id } });
+    if (!existing) {
       await insertTool(tool, scenarioId, 'scenario', i);
     } else {
       await linkTool(tool.id, scenarioId, 'scenario');
@@ -898,27 +798,12 @@ export async function upsertToolsForScenario(
 // --- Settings (key-value) ---
 
 export async function getSetting(key: string): Promise<string | null> {
-  const rows: { key: string; value: string }[] = await invoke('db_select_cmd', {
-    table: 'settings',
-    query: { where: { key } },
-  });
-  return rows.length > 0 ? rows[0].value : null;
+  const row = await dbSelectOne<{ key: string; value: string }>('settings', { where: { key } });
+  return row?.value ?? null;
 }
 
 export async function setSetting(key: string, value: string): Promise<void> {
-  const existing = await getSetting(key);
-  if (existing !== null) {
-    await invoke('db_update_cmd', {
-      table: 'settings',
-      query: { where: { key } },
-      data: { value },
-    });
-  } else {
-    await invoke('db_insert_cmd', {
-      table: 'settings',
-      data: { key, value },
-    });
-  }
+  await dbUpsert('settings', { key }, { key, value }, { value });
 }
 
 // ── Eval test cases ────────────────────────────────────────────────────────────
@@ -927,15 +812,11 @@ export async function listEvalTestCases(
   runnableId: string,
   runnableType: EvalRunnableType
 ): Promise<EvalTestCase[]> {
-  const rows = await invoke<EvalTestCase[]>('db_select_cmd', {
-    table: 'eval_test_cases',
-    query: {
-      where: { runnable_id: runnableId, runnable_type: runnableType },
-      orderBy: 'sort_order',
-      orderDirection: 'asc',
-    },
+  return dbSelect<EvalTestCase>('eval_test_cases', {
+    where: { runnable_id: runnableId, runnable_type: runnableType },
+    orderBy: 'sort_order',
+    orderDirection: 'asc',
   });
-  return Array.isArray(rows) ? rows : [];
 }
 
 export async function insertEvalTestCase(data: EvalTestCase): Promise<string> {
@@ -1000,23 +881,15 @@ export async function listEvalRuns(
   runnableId: string,
   runnableType: EvalRunnableType
 ): Promise<EvalRun[]> {
-  const rows = await invoke<EvalRun[]>('db_select_cmd', {
-    table: 'eval_runs',
-    query: {
-      where: { runnable_id: runnableId, runnable_type: runnableType },
-      orderBy: 'created_at',
-      orderDirection: 'desc',
-    },
+  return dbSelect<EvalRun>('eval_runs', {
+    where: { runnable_id: runnableId, runnable_type: runnableType },
+    orderBy: 'created_at',
+    orderDirection: 'desc',
   });
-  return Array.isArray(rows) ? rows : [];
 }
 
 export async function getEvalRun(id: string): Promise<EvalRun | null> {
-  const rows = await invoke<EvalRun[]>('db_select_cmd', {
-    table: 'eval_runs',
-    query: { where: { id }, limit: 1 },
-  });
-  return rows.length > 0 ? rows[0] : null;
+  return dbSelectOne<EvalRun>('eval_runs', { where: { id } });
 }
 
 // ── Eval results ───────────────────────────────────────────────────────────────
@@ -1034,13 +907,9 @@ export async function updateEvalResult(id: string, data: Partial<EvalResult>): P
 }
 
 export async function listEvalResults(evalRunId: string): Promise<EvalResult[]> {
-  const rows = await invoke<EvalResult[]>('db_select_cmd', {
-    table: 'eval_results',
-    query: {
-      where: { eval_run_id: evalRunId },
-      orderBy: 'sort_order',
-      orderDirection: 'asc',
-    },
+  return dbSelect<EvalResult>('eval_results', {
+    where: { eval_run_id: evalRunId },
+    orderBy: 'sort_order',
+    orderDirection: 'asc',
   });
-  return Array.isArray(rows) ? rows : [];
 }
