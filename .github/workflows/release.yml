@@ -16,12 +16,16 @@ jobs:
         include:
           - platform: macos-latest
             args: --target aarch64-apple-darwin
+            deno_triple: aarch64-apple-darwin
           - platform: macos-latest
             args: --target x86_64-apple-darwin
+            deno_triple: x86_64-apple-darwin
           - platform: ubuntu-22.04
             args: ""
+            deno_triple: x86_64-unknown-linux-gnu
           - platform: windows-latest
             args: ""
+            deno_triple: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -48,6 +52,23 @@ jobs:
 
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
+
+      - name: Download Deno sidecar
+        shell: bash
+        run: |
+          DENO_VERSION=$(curl -fsSL "https://api.github.com/repos/denoland/deno/releases/latest" | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
+          TRIPLE="${{ matrix.deno_triple }}"
+          DEST="src-tauri/binaries"
+          mkdir -p "$DEST"
+          if [[ "$TRIPLE" == *windows* ]]; then
+            INNER="deno.exe"; OUT="deno-${TRIPLE}.exe"
+          else
+            INNER="deno"; OUT="deno-${TRIPLE}"
+          fi
+          curl -fsSL "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-${TRIPLE}.zip" -o "$RUNNER_TEMP/deno.zip"
+          unzip -q "$RUNNER_TEMP/deno.zip" "$INNER" -d "$RUNNER_TEMP/deno-out"
+          mv "$RUNNER_TEMP/deno-out/$INNER" "${DEST}/${OUT}"
+          chmod +x "${DEST}/${OUT}" 2>/dev/null || true
 
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
