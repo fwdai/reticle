@@ -78,12 +78,21 @@ const getAllModels = async (): Promise<ProviderModels> => {
 
   try {
     const newRawProviderModels = await fetchRawModels();
-    const newAllModelCache: AllModelCache = {
-      data: newRawProviderModels.data,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(newAllModelCache));
-    return newAllModelCache.data;
+
+    // Only persist providers that actually returned models.
+    // Empty results mean "no API key yet" — caching them would lock out a
+    // provider for the full TTL even after the user adds a key.
+    const dataToCache: ProviderModels = {};
+    for (const [providerId, models] of Object.entries(newRawProviderModels.data)) {
+      if (Array.isArray(models) && models.length > 0) {
+        dataToCache[providerId] = models;
+      }
+    }
+    if (Object.keys(dataToCache).length > 0) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: dataToCache, timestamp: Date.now() }));
+    }
+
+    return newRawProviderModels.data;
   } catch (error) {
     console.error(`Failed to fetch and cache all raw models:`, error);
     if (Object.keys(cachedData.data).length > 0) {
@@ -173,6 +182,14 @@ const filterModels = (
   return result.sort(sortDesc);
 }
 
+
+/**
+ * Clears the model cache. Call this whenever API keys change so the next
+ * fetchAndNormalizeModels() call gets a live list for the updated providers.
+ */
+export function clearModelCache(): void {
+  localStorage.removeItem(CACHE_KEY);
+}
 
 /**
  * Fetches and normalizes all models for all providers.

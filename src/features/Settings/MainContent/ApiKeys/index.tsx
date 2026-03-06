@@ -2,7 +2,7 @@ import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
-import { fetchAndNormalizeModels } from "@/lib/modelManager";
+import { fetchAndNormalizeModels, clearModelCache } from "@/lib/modelManager";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -92,6 +92,7 @@ function ApiKeys() {
           table: "api_keys",
           query: { where: { provider } },
         });
+        clearModelCache();
       } catch (error) {
         console.error(`Failed to delete API key for ${provider}:`, error);
         setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
@@ -114,6 +115,7 @@ function ApiKeys() {
           data: { provider, key: apiKey },
         });
       }
+      clearModelCache();
       setApiKeys((prev) => ({ ...prev, [provider]: apiKey }));
       setSaveStatus((prev) => ({ ...prev, [provider]: "saved" }));
 

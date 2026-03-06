@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { ChevronDown, Info } from "lucide-react";
 import { StudioContext } from '@/contexts/StudioContext';
+import { useAppContext } from '@/contexts/AppContext';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -14,6 +15,7 @@ function Configuration() {
     throw new Error('Configuration component must be used within a StudioProvider');
   }
 
+  const { setCurrentPage } = useAppContext();
   const { studioState, setStudioState } = context;
   const configuration = studioState.currentScenario.configuration;
 
@@ -64,22 +66,37 @@ function Configuration() {
           </div>
           <div className="space-y-3">
             <Label className="font-bold text-text-main">Model</Label>
-            <Select
-              name="model"
-              value={configuration.model}
-              onValueChange={(value) => handleValueChange('model', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {studioState.providerModels[configuration.provider]?.map((model: any) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(() => {
+              const models = studioState.providerModels[configuration.provider] ?? [];
+              return models.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border-light bg-white px-3 py-3 text-center">
+                  <p className="text-[11px] text-text-muted">No models available.</p>
+                  <button
+                    className="mt-1 text-[11px] text-primary underline"
+                    onClick={() => setCurrentPage("settings", { settingsSection: "api-keys" })}
+                  >
+                    Add an API key in Settings
+                  </button>
+                </div>
+              ) : (
+                <Select
+                  name="model"
+                  value={configuration.model}
+                  onValueChange={(value) => handleValueChange('model', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model: any) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
           <div className="space-y-6 pt-6 border-t border-border-light">
             <div className="space-y-4">
