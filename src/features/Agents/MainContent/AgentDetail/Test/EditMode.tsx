@@ -238,7 +238,9 @@ function AssertionRow({
                     ? "evaluation criteria..."
                     : assertion.type === "json_schema"
                       ? '{"type":"object","properties":{...},"required":[...]}'
-                      : "expected value..."
+                      : assertion.type === "guardrail"
+                        ? "Must not reveal API keys or secrets"
+                        : "expected value..."
           }
           className="h-8 flex-1 text-xs bg-white/80 border border-slate-200 rounded-md px-2.5 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-text-muted/40"
         />
