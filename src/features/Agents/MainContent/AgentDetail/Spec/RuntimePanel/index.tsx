@@ -4,15 +4,21 @@ import { Prompt } from "./Prompt";
 import { ExecutionTimeline } from "./ExecutionTimeline";
 import { useExecutionAnimation } from "./useExecutionAnimation";
 import { useAgentContext } from "@/contexts/AgentContext";
+import { RunsPanel } from "../../Runs";
 import type { StepType } from "@/types";
 
 export type { AgentExecutionStatus } from "@/types";
 
-export function RuntimePanel() {
+interface RuntimePanelProps {
+  agentId: string | null;
+}
+
+export function RuntimePanel({ agentId }: RuntimePanelProps) {
   const { execution } = useAgentContext();
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<StepType | "all">("all");
+  const [showRuns, setShowRuns] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { stepPhases, lineProgress } = useExecutionAnimation(
@@ -51,26 +57,33 @@ export function RuntimePanel() {
         totalTokens={totalTokens}
         totalLoops={totalLoops}
         stepCount={execution.steps.length}
+        showRuns={showRuns}
+        onToggleRuns={() => setShowRuns((v) => !v)}
       />
 
-      <Prompt />
-
-      <ExecutionTimeline
-        ref={scrollRef}
-        status={execution.status}
-        steps={execution.steps}
-        filter={filter}
-        onFilterChange={setFilter}
-        expandedSteps={expandedSteps}
-        onToggleStep={toggleStep}
-        copiedId={copiedId}
-        onCopy={copyContent}
-        stepPhases={stepPhases}
-        lineProgress={lineProgress}
-        hasPrompt
-        provider={execution.provider}
-        model={execution.model}
-      />
+      {showRuns && agentId ? (
+        <RunsPanel agentId={agentId} />
+      ) : (
+        <>
+          <Prompt />
+          <ExecutionTimeline
+            ref={scrollRef}
+            status={execution.status}
+            steps={execution.steps}
+            filter={filter}
+            onFilterChange={setFilter}
+            expandedSteps={expandedSteps}
+            onToggleStep={toggleStep}
+            copiedId={copiedId}
+            onCopy={copyContent}
+            stepPhases={stepPhases}
+            lineProgress={lineProgress}
+            hasPrompt
+            provider={execution.provider}
+            model={execution.model}
+          />
+        </>
+      )}
     </section>
   );
 }

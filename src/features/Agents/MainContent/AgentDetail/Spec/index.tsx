@@ -188,7 +188,7 @@ export function SpecLayout({
         className="min-h-0 overflow-auto custom-scrollbar flex-shrink-0 bg-slate-50"
         style={{ height: responsePanelHeight }}
       >
-        <RuntimePanel />
+        <RuntimePanel agentId={agentId} />
       </div>
     </div>
   );

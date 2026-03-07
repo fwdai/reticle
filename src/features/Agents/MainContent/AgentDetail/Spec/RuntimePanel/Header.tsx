@@ -1,3 +1,4 @@
+import { History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Cost from "@/components/Cost";
 import { formatDuration } from "@/lib/helpers/time";
@@ -12,6 +13,8 @@ interface HeaderProps {
   totalTokens: number;
   totalLoops: number;
   stepCount: number;
+  showRuns: boolean;
+  onToggleRuns: () => void;
 }
 
 const statusConfig = {
@@ -49,6 +52,8 @@ export function Header({
   totalTokens,
   totalLoops,
   stepCount,
+  showRuns,
+  onToggleRuns,
 }: HeaderProps) {
   const config = statusConfig[status];
   const { execution } = useAgentContext();
@@ -115,9 +120,23 @@ export function Header({
           <Cost provider={execution.provider} model={execution.model} inputTokens={inputTokens} outputTokens={outputTokens} />
         </div>
       </div>
-      <span className="font-mono text-[10px] text-text-muted/60">
-        {totalLoops} loops · {stepCount} steps
-      </span>
+      <div className="flex items-center gap-3">
+        <span className="font-mono text-[10px] text-text-muted/60">
+          {totalLoops} loops · {stepCount} steps
+        </span>
+        <button
+          onClick={onToggleRuns}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest transition-colors",
+            showRuns
+              ? "bg-primary/10 text-primary"
+              : "text-text-muted hover:text-text-main hover:bg-gray-100"
+          )}
+        >
+          <History className="size-3" />
+          Runs
+        </button>
+      </div>
     </div>
   );
 }
