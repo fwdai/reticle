@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Download, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { downloadFile } from "@/lib/evalIO";
+import { downloadFile } from "@/lib/evals";
 
 interface ExportFormat {
   label: string;

@@ -14,7 +14,7 @@ export interface ScenarioTestCase {
   assertion: string;
 }
 
-export interface AgentAssertion {
+interface AgentTestAssertion {
   id: string;
   type: string;
   target: string;
@@ -26,7 +26,7 @@ export interface AgentAssertion {
 export interface AgentTestCase {
   id: string;
   task: string;
-  assertions: AgentAssertion[];
+  assertions: AgentTestAssertion[];
 }
 
 /* ------------------------------------------------------------------ */

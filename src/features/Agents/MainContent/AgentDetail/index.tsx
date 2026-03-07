@@ -9,7 +9,7 @@ import { VisualizerView } from "./Visualizer";
 import { RunsPanel } from "./Runs";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
-import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evalIO";
+import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evals";
 import { runAgentAction } from "@/actions/agentActions";
 import type { ExecutionState } from "@/contexts/AgentContext";
 

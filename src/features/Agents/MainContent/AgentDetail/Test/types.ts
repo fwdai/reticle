@@ -1,36 +1,14 @@
-/** Agent eval assertion types (extends scenario types with agent-specific ones) */
-export type AssertionType =
-  | "exact_match"
-  | "contains"
-  | "json_schema"
-  | "llm_judge"
-  | "tool_called"
-  | "tool_not_called"
-  | "tool_sequence"
-  | "loop_count"
-  | "guardrail";
+import type { AgentAssertionType, AgentAssertion, AgentAssertionResult } from "@/lib/evals";
 
-export interface Assertion {
-  id: string;
-  type: AssertionType;
-  target: string;
-  description: string;
-  expectedParams?: string;
-  expectedReturn?: string;
-  /** For llm_judge: which model to use as judge. User selects in UI. */
-  judgeModel?: { provider: string; model: string };
-}
+/** Re-exported from @/lib/evals under the feature-local names. */
+export type AssertionType = AgentAssertionType;
+export type Assertion = AgentAssertion;
+export type AssertionResult = AgentAssertionResult;
 
 export interface TestCase {
   id: string;
   task: string;
   assertions: Assertion[];
-}
-
-export interface AssertionResult {
-  assertion: Assertion;
-  passed: boolean;
-  actual: string;
 }
 
 export interface TestResult {

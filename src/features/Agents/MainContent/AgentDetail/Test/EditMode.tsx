@@ -6,7 +6,7 @@ import { ImportButton } from "@/components/ui/ImportButton";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { cn } from "@/lib/utils";
 import { parseAgentImport } from "./helpers";
-import { exportAgentTestCasesAsJSON, exportAgentTestCasesAsCSV } from "@/lib/evalIO";
+import { exportAgentTestCasesAsJSON, exportAgentTestCasesAsCSV } from "@/lib/evals";
 import { AssertionTypeSelect } from "./AssertionTypeSelect";
 import { JudgeModelSelect } from "./JudgeModelSelect";
 import { ASSERTION_CONFIG } from "./constants";

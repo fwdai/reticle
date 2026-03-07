@@ -4,7 +4,7 @@ import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { ImportButton } from "@/components/ui/ImportButton";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { parseScenarioImport } from "./helpers";
-import { exportScenarioTestCasesAsJSON, exportScenarioTestCasesAsCSV } from "@/lib/evalIO";
+import { exportScenarioTestCasesAsJSON, exportScenarioTestCasesAsCSV } from "@/lib/evals";
 import { AssertionDropdown } from "./AssertionDropdown";
 import type { TestCase } from "./types";
 

@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { ArrowLeft, Pencil, FlaskConical, Network, Play, Square, MoreVertical, Download } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
-import { exportScenarioAsJSON, saveFileWithDialog } from "@/lib/evalIO";
+import { exportScenarioAsJSON, saveFileWithDialog } from "@/lib/evals";
 import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";

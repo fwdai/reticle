@@ -1,19 +1,15 @@
 import type { EvalTestCase } from "@/types";
 import type { AssertionType, TestCase } from "./types";
-import { parseScenarioTestCases } from "@/lib/evalIO";
+import { parseScenarioTestCases } from "@/lib/evals";
+import { evaluateScenarioAssertion } from "@/lib/evals";
 
 export function parseScenarioImport(content: string, filename: string): TestCase[] {
   return parseScenarioTestCases(content, filename) as TestCase[];
 }
 
+/** @deprecated Import evaluateScenarioAssertion from @/lib/evals directly. */
 export function evaluateAssertion(assertion: AssertionType, actual: string, expected: string): boolean {
-  const a = actual.toLowerCase();
-  const e = expected.toLowerCase().trim();
-  switch (assertion) {
-    case "equals":      return actual.trim() === expected.trim();
-    case "contains":    return a.includes(e);
-    case "not_contains": return !a.includes(e);
-  }
+  return evaluateScenarioAssertion(assertion, actual, expected);
 }
 
 export function createEmptyCase(): TestCase {
