@@ -57,6 +57,6 @@ describe('formatCost', () => {
   });
 
   it('formats larger costs', () => {
-    expect(formatCost(1.5)).toBe('$1.5000');
+    expect(formatCost(1.5)).toBe('$1.50');
   });
 });

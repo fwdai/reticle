@@ -6,5 +6,6 @@ export function formatTokens(tokens?: number | null, units: boolean = true): str
 
 export function formatCost(cost?: number | null): string {
   if (cost == null || cost === 0) return "-";
-  return `$${cost.toFixed(4)}`;
+  const decimals = cost < 0.01 ? 4 : 2;
+  return `$${cost.toFixed(decimals)}`;
 }
