@@ -16,7 +16,7 @@ function dispatchMouseUp() {
 }
 
 afterEach(() => {
-  dispatchMouseUp(); // ensure listeners are cleaned up between tests
+  act(() => dispatchMouseUp()); // ensure listeners are cleaned up between tests
 });
 
 describe('useResizablePanel', () => {
