@@ -9,7 +9,7 @@ import {
   GitCompare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 
 interface SubheaderProps {
   innerMode: "edit" | "run" | "compare" | "compareRuns";
@@ -80,32 +80,15 @@ export function Subheader({
       <div className="flex items-center gap-3">
         {innerMode === "edit" && (
           <>
-            <div className="flex items-center rounded-lg border border-border-light bg-white p-0.5">
-              <button
-                onClick={() => (viewMode === "json" ? onSwitchToTable() : undefined)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-all",
-                  viewMode === "table"
-                    ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-text-muted hover:text-text-main"
-                )}
-              >
-                <AlignLeft className="h-3 w-3" />
-                TABLE
-              </button>
-              <button
-                onClick={() => (viewMode === "table" ? onSwitchToJson() : undefined)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-all",
-                  viewMode === "json"
-                    ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-text-muted hover:text-text-main"
-                )}
-              >
-                <Code className="h-3 w-3" />
-                JSON
-              </button>
-            </div>
+            <SegmentedSwitch<"table" | "json">
+              variant="secondary"
+              options={[
+                { value: "table", label: "TABLE", icon: <AlignLeft className="h-3 w-3" /> },
+                { value: "json", label: "JSON", icon: <Code className="h-3 w-3" /> },
+              ]}
+              value={viewMode}
+              onChange={(v) => (v === "table" ? onSwitchToTable() : onSwitchToJson())}
+            />
 
             <Button
               size="sm"

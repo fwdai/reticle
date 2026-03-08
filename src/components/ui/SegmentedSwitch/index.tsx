@@ -7,11 +7,14 @@ export interface SegmentedSwitchOption<T extends string> {
   disabled?: boolean;
 }
 
+type SegmentedSwitchVariant = "default" | "secondary";
+
 interface SegmentedSwitchProps<T extends string> {
   options: SegmentedSwitchOption<T>[];
   value: T;
   onChange: (value: T) => void;
   size?: "default" | "compact" | "section";
+  variant?: SegmentedSwitchVariant;
 }
 
 function SegmentedSwitch<T extends string>({
@@ -19,6 +22,7 @@ function SegmentedSwitch<T extends string>({
   value,
   onChange,
   size = "default",
+  variant = "default",
 }: SegmentedSwitchProps<T>) {
   const sizeClasses =
     size === "compact"
@@ -27,8 +31,17 @@ function SegmentedSwitch<T extends string>({
         ? "px-3 py-1 text-xs uppercase tracking-widest"
         : "px-4 py-1.5 text-xs";
 
+  const isSecondary = variant === "secondary";
+  const containerClasses = isSecondary
+    ? "flex items-center rounded-lg border border-border-light bg-white p-0.5"
+    : "flex bg-gray-100 p-1 rounded-xl";
+  const buttonSizeClasses = isSecondary ? "gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold tracking-wide" : `gap-1 font-semibold rounded-lg ${sizeClasses}`;
+  const activeClasses = isSecondary
+    ? "bg-primary/15 text-primary shadow-sm"
+    : "bg-white shadow-sm text-text-main";
+
   return (
-    <div className="flex bg-gray-100 p-1 rounded-xl">
+    <div className={containerClasses}>
       {options.map((option) => {
         const isActive = value === option.value;
         const isDisabled = option.disabled;
@@ -38,11 +51,11 @@ function SegmentedSwitch<T extends string>({
             type="button"
             disabled={isDisabled}
             onClick={() => !isDisabled && onChange(option.value)}
-            className={`flex items-center gap-1 font-semibold rounded-lg transition-colors ${sizeClasses} ${
+            className={`flex items-center transition-all ${buttonSizeClasses} ${
               isDisabled
                 ? "cursor-not-allowed opacity-50"
                 : isActive
-                  ? "bg-white shadow-sm text-text-main"
+                  ? activeClasses
                   : "text-text-muted hover:text-text-main"
             }`}
           >
@@ -55,4 +68,5 @@ function SegmentedSwitch<T extends string>({
   );
 }
 
+export type { SegmentedSwitchVariant };
 export { SegmentedSwitch };
