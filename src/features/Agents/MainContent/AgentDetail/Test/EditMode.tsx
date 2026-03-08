@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Plus, Trash2, ChevronDown, Settings2 } from "lucide-react";
+import { Trash2, ChevronDown, Settings2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { ImportButton } from "@/components/ui/ImportButton";
 import { ExportButton } from "@/components/ui/ExportButton";
+import { EvalEditToolbar } from "@/components/evals/EvalEditToolbar";
+import { AddCaseButton } from "@/components/evals/AddCaseButton";
 import { cn } from "@/lib/utils";
 import { parseAgentImport } from "./helpers";
 import { exportAgentTestCasesAsJSON, exportAgentTestCasesAsCSV } from "@/lib/evals";
@@ -25,6 +28,8 @@ interface EditModeProps {
   onRemoveCase: (id: string) => void;
   onRemoveAssertion: (caseId: string, assertionId: string) => void;
   onImportCases: (cases: TestCase[]) => void;
+  onSwitchToTable: () => void;
+  onSwitchToJson: () => void;
 }
 
 export function EditMode({
@@ -40,25 +45,16 @@ export function EditMode({
   onRemoveCase,
   onRemoveAssertion,
   onImportCases,
+  onSwitchToTable,
+  onSwitchToJson,
 }: EditModeProps) {
-  if (viewMode === "json") {
-    return (
-      <div className="p-5">
-        <JsonEditorBlock
-          filename="agent-test-suite.json"
-          metadata={`${cases.length} cases`}
-          value={jsonValue}
-          onChange={onJsonChange}
-          error={jsonError}
-          placeholder={`[\n  { "task": "Describe the task...", "assertions": [{ "type": "contains", "target": "expected", "description": "..." }] }\n]`}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="p-5 space-y-4">
-      <div className="flex items-center justify-end gap-4">
+      <EvalEditToolbar
+        viewMode={viewMode}
+        onSwitchToTable={onSwitchToTable}
+        onSwitchToJson={onSwitchToJson}
+      >
         <ExportButton
           filename="agent-test-suite"
           disabled={cases.length === 0}
@@ -68,28 +64,34 @@ export function EditMode({
           ]}
         />
         <ImportButton parse={parseAgentImport} onImport={onImportCases} />
-      </div>
+      </EvalEditToolbar>
 
-      {cases.map((tc, idx) => (
-        <TestCaseCard
-          key={tc.id}
-          testCase={tc}
-          index={idx}
-          onUpdateTask={(task) => onUpdateCase(tc.id, { task })}
-          onAddAssertion={() => onAddAssertion(tc.id)}
-          onUpdateAssertion={(aId, updates) => onUpdateAssertion(tc.id, aId, updates)}
-          onRemoveAssertion={(aId) => onRemoveAssertion(tc.id, aId)}
-          onRemove={() => onRemoveCase(tc.id)}
+      {viewMode === "json" ? (
+        <JsonEditorBlock
+          filename="agent-test-suite.json"
+          metadata={`${cases.length} cases`}
+          value={jsonValue}
+          onChange={onJsonChange}
+          error={jsonError}
+          placeholder={`[\n  { "task": "Describe the task...", "assertions": [{ "type": "contains", "target": "expected", "description": "..." }] }\n]`}
         />
-      ))}
-
-      <button
-        onClick={onAddCase}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-xs font-semibold text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all bg-transparent"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        Add Test Case
-      </button>
+      ) : (
+        <>
+          {cases.map((tc, idx) => (
+            <TestCaseCard
+              key={tc.id}
+              testCase={tc}
+              index={idx}
+              onUpdateTask={(task) => onUpdateCase(tc.id, { task })}
+              onAddAssertion={() => onAddAssertion(tc.id)}
+              onUpdateAssertion={(aId, updates) => onUpdateAssertion(tc.id, aId, updates)}
+              onRemoveAssertion={(aId) => onRemoveAssertion(tc.id, aId)}
+              onRemove={() => onRemoveCase(tc.id)}
+            />
+          ))}
+          <AddCaseButton onClick={onAddCase} />
+        </>
+      )}
     </div>
   );
 }

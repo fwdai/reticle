@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { FlaskConical, Play, GitCompare } from "lucide-react";
 import { streamText, stepCountIs } from "ai";
 import { createModel } from "@/lib/gateway";
 import { toolConfigToAiSdkTools } from "@/lib/gateway/helpers";
@@ -13,7 +14,8 @@ import {
   updateEvalResult,
 } from "@/lib/storage";
 import { calculateRequestCost } from "@/lib/modelPricing";
-import { Subheader } from "./Subheader";
+import { Tabs } from "@/components/ui/Tabs";
+import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
 import { AgentEvalsCompare } from "./AgentEvalsCompare";
@@ -26,7 +28,7 @@ interface TestViewProps {
 }
 
 export function TestView({ agentId, agentName }: TestViewProps) {
-  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compareRuns">("edit");
+  const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
@@ -202,7 +204,6 @@ export function TestView({ agentId, agentName }: TestViewProps) {
     setResults([]);
     setRunning(true);
     setProgress(0);
-    setInnerMode("run");
     runningRef.current = true;
 
     const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
@@ -397,25 +398,10 @@ export function TestView({ agentId, agentName }: TestViewProps) {
       : 0;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-slate-100">
-      <Subheader
-        innerMode={innerMode}
-        viewMode={viewMode}
-        casesCount={cases.length}
-        validCount={validCount}
-        running={running}
-        onBackToEdit={() => setInnerMode("edit")}
-        onRunSuite={runSuite}
-        onSwitchToTable={switchToTable}
-        onSwitchToJson={switchToJson}
-        onCompareRuns={() => setInnerMode("compareRuns")}
-      />
-
-      <div className="flex-1 overflow-hidden">
-        {innerMode === "compareRuns" && agentId ? (
-          <AgentEvalsCompare agentId={agentId} />
-        ) : innerMode === "edit" ? (
-          <div className="h-full overflow-y-auto custom-scrollbar">
+    <div className="flex h-full flex-col overflow-hidden">
+      <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
+        <TabPanel title="Edit" icon={<FlaskConical className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
             <EditMode
               viewMode={viewMode}
               cases={cases}
@@ -429,10 +415,14 @@ export function TestView({ agentId, agentName }: TestViewProps) {
               onRemoveCase={removeCase}
               onRemoveAssertion={removeAssertion}
               onImportCases={importCases}
+              onSwitchToTable={switchToTable}
+              onSwitchToJson={switchToJson}
             />
           </div>
-        ) : (
-          <div className="h-full overflow-y-auto custom-scrollbar">
+        </TabPanel>
+
+        <TabPanel title="Run" icon={<Play className="h-3.5 w-3.5" />} disabled={validCount === 0}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
             <RunMode
               results={results}
               running={running}
@@ -442,10 +432,18 @@ export function TestView({ agentId, agentName }: TestViewProps) {
               failCount={failCount}
               totalCost={totalCost}
               avgLatency={avgLatency}
+              hasResults={results.length > 0}
+              onRunSuite={runSuite}
             />
           </div>
-        )}
-      </div>
+        </TabPanel>
+
+        <TabPanel title="Compare Runs" icon={<GitCompare className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            {agentId && <AgentEvalsCompare agentId={agentId} />}
+          </div>
+        </TabPanel>
+      </Tabs>
 
       <div className="flex items-center justify-between border-t border-border-light bg-slate-50 px-6 py-2.5">
         <span className="text-[10px] text-text-muted">

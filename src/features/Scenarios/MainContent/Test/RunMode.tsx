@@ -1,6 +1,7 @@
-import { Check, X, Clock, Zap, Play, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Check, X } from "lucide-react";
+import { EvalSummaryBar } from "@/components/evals/EvalSummaryBar";
+import { EvalProgressBar } from "@/components/evals/EvalProgressBar";
 import type { TestCase, TestResult } from "./types";
 
 interface RunModeProps {
@@ -28,54 +29,18 @@ export function RunMode({
 }: RunModeProps) {
   return (
     <div className="p-5 space-y-3">
-      {/* Summary bar */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-light bg-white px-5 py-2">
-        <span className="text-sm font-semibold text-text-main">
-          {cases.length} cases
-        </span>
-        <div className="h-4 w-px bg-border-light" />
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-green-600">
-          <Check className="h-3.5 w-3.5" /> {passCount} passed
-        </span>
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
-          <X className="h-3.5 w-3.5" /> {failCount} failed
-        </span>
-        <div className="h-4 w-px bg-border-light" />
-        <span className="flex items-center gap-1.5 text-xs text-text-muted">
-          <Clock className="h-3 w-3" /> {avgLatency.toFixed(1)}s avg
-        </span>
-        {running && (
-          <>
-            <div className="h-4 w-px bg-border-light" />
-            <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
-              <Zap className="h-3 w-3 animate-pulse" />
-              Running {results.length} / {cases.length}
-            </span>
-          </>
-        )}
-        <div className="ml-auto">
-          {!running && (
-            <Button
-              size="sm"
-              className="h-8 gap-2 bg-primary text-white hover:bg-primary/90 font-semibold px-4"
-              onClick={onRunSuite}
-            >
-              {hasResults ? <RotateCcw className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-              {hasResults ? "Re-run" : "Run Suite"}
-            </Button>
-          )}
-        </div>
-      </div>
+      <EvalSummaryBar
+        totalCount={cases.length}
+        runningCount={results.length}
+        passCount={passCount}
+        failCount={failCount}
+        avgLatency={avgLatency}
+        running={running}
+        hasResults={hasResults}
+        onRunSuite={onRunSuite}
+      />
 
-      {/* Progress bar while running */}
-      {running && (
-        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+      {running && <EvalProgressBar progress={progress} />}
 
       {/* Results table */}
       <div className="rounded-xl border border-border-light overflow-hidden bg-white">

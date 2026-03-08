@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Check, X, Clock, Zap, ChevronDown, Coins, Hash } from "lucide-react";
+import { Check, X, Clock, ChevronDown, Coins, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EvalSummaryBar } from "@/components/evals/EvalSummaryBar";
+import { EvalProgressBar } from "@/components/evals/EvalProgressBar";
 import { ASSERTION_CONFIG } from "./constants";
 import type { TestResult } from "./types";
 
@@ -13,6 +15,8 @@ interface RunModeProps {
   failCount: number;
   totalCost: number;
   avgLatency: number;
+  hasResults: boolean;
+  onRunSuite: () => void;
 }
 
 export function RunMode({
@@ -24,48 +28,24 @@ export function RunMode({
   failCount,
   totalCost,
   avgLatency,
+  hasResults,
+  onRunSuite,
 }: RunModeProps) {
   return (
     <div className="p-5 space-y-4">
-      {/* Summary bar */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-light bg-white px-5 py-4">
-        <span className="text-sm font-semibold text-text-main">
-          {results.length} cases
-        </span>
-        <div className="h-4 w-px bg-border-light" />
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-green-600">
-          <Check className="h-3.5 w-3.5" /> {passCount} passed
-        </span>
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
-          <X className="h-3.5 w-3.5" /> {failCount} failed
-        </span>
-        <div className="h-4 w-px bg-border-light" />
-        <span className="flex items-center gap-1.5 text-xs text-text-muted">
-          <Coins className="h-3 w-3" /> ${totalCost.toFixed(4)}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-text-muted">
-          <Clock className="h-3 w-3" /> {avgLatency.toFixed(1)}s avg
-        </span>
-        {running && (
-          <>
-            <div className="h-4 w-px bg-border-light" />
-            <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
-              <Zap className="h-3 w-3 animate-pulse" />
-              Running {results.length} / {validCount}
-            </span>
-          </>
-        )}
-      </div>
+      <EvalSummaryBar
+        totalCount={validCount}
+        runningCount={results.length}
+        passCount={passCount}
+        failCount={failCount}
+        avgLatency={avgLatency}
+        running={running}
+        hasResults={hasResults}
+        onRunSuite={onRunSuite}
+        totalCost={totalCost}
+      />
 
-      {/* Progress bar while running */}
-      {running && (
-        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+      {running && <EvalProgressBar progress={progress} />}
 
       {/* Result cards */}
       <div className="space-y-3">
