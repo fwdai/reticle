@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { panelBase, panelHeader, panelTitle } from "../Spec/constants";
+import { panelBase, panelHeader, panelTitle } from "../constants";
 
 interface MemoryPanelProps {
   enabled: boolean;

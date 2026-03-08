@@ -3,9 +3,9 @@ import MainContent from "@/components/Layout/MainContent";
 
 import { AgentProvider } from "@/contexts/AgentContext";
 import { Header, type AgentViewMode } from "./Header";
-import { SpecLayout as Spec } from "./Spec";
-import { TestView } from "./Test";
-import { VisualizerView } from "./Visualizer";
+import { SpecLayout as Spec } from "../Editor";
+import { TestView } from "../Test";
+import { VisualizerView } from "../Visualizer";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evals";

@@ -7,8 +7,8 @@ import { useAgentContext } from "@/contexts/AgentContext";
 import { ToolsContainer } from "@/components/Tools/ToolsContainer";
 
 import { Tab } from "./Tab";
-import { MemoryPanel } from "../Memory/MemoryPanel";
-import { MemoryStorePanel } from "../Memory/MemoryStorePanel";
+import { MemoryPanel } from "./Memory/MemoryPanel";
+import { MemoryStorePanel } from "./Memory/MemoryStorePanel";
 import { ModelParamsSidebar } from "./ModelParamsSidebar";
 import { RuntimePanel } from "./RuntimePanel";
 

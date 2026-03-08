@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { listAgentMemories, deleteAgentMemory, clearAgentMemories } from "@/lib/storage";
 import type { AgentMemory } from "@/lib/storage";
 import { useAgentContext } from "@/contexts/AgentContext";
-import { panelBase, panelHeader, panelTitle } from "../Spec/constants";
+import { panelBase, panelHeader, panelTitle } from "../constants";
 
 interface MemoryStorePanelProps {
   agentId: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { AgentDetail, type AgentDetailAgent } from "./AgentDetail";
+import { AgentDetail, type AgentDetailAgent } from "./Detail";
 import { AgentList, type Agent, type AgentLastRun } from "./List";
 import MainContent from "@/components/Layout/MainContent";
 import { Button } from "@/components/ui/button";
