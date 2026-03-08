@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { Settings2, MessageSquare, History as HistoryIcon, Paperclip, Wrench } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { TabTitle } from "@/components/ui/Tabs/TabTitle";
@@ -23,27 +24,27 @@ function StudioMain() {
       activeIndex={context?.activeEditorTab ?? 0}
       onActiveIndexChange={(index) => context?.setActiveEditorTab(index as EditorTabIndex)}
     >
-      <TabPanel title="System">
+      <TabPanel title="System" icon={<Settings2 className="h-3.5 w-3.5" />}>
         <div className={panelContentClass}>
           <SystemMessage />
         </div>
       </TabPanel>
-      <TabPanel title="Input">
+      <TabPanel title="Input" icon={<MessageSquare className="h-3.5 w-3.5" />}>
         <div className={panelContentClass}>
           <Prompt />
         </div>
       </TabPanel>
-      <TabPanel title="History">
+      <TabPanel title="History" icon={<HistoryIcon className="h-3.5 w-3.5" />}>
         <div className={panelContentClass}>
           <History />
         </div>
       </TabPanel>
-      <TabPanel title={<TabTitle label="Files" count={fileCount} />}>
+      <TabPanel title={<TabTitle label="Files" count={fileCount} />} icon={<Paperclip className="h-3.5 w-3.5" />}>
         <div className={panelContentClass}>
           <Files />
         </div>
       </TabPanel>
-      <TabPanel title={<TabTitle label="Tools" count={toolsCount} />}>
+      <TabPanel title={<TabTitle label="Tools" count={toolsCount} />} icon={<Wrench className="h-3.5 w-3.5" />}>
         <div className={panelContentClass}>
           <Tools />
         </div>

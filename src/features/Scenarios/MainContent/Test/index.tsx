@@ -291,18 +291,18 @@ export default function Test() {
           </div>
         </TabPanel>
 
+        <TabPanel title="Compare Runs" icon={<GitCompare className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            <EvalsCompare scenarioId={scenarioId!} />
+          </div>
+        </TabPanel>
+
         <TabPanel title="Compare Models" icon={<Columns2 className="h-3.5 w-3.5" />}>
           <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
             <ModelsCompare
               cases={cases}
               providerModels={studioState.providerModels}
             />
-          </div>
-        </TabPanel>
-
-        <TabPanel title="Compare Runs" icon={<GitCompare className="h-3.5 w-3.5" />}>
-          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
-            <EvalsCompare scenarioId={scenarioId!} />
           </div>
         </TabPanel>
       </Tabs>

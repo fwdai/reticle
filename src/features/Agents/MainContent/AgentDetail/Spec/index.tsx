@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { SlidersHorizontal, Wrench, DatabaseZap } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
 import useResizablePanel from "@/hooks/useResizablePanel";
@@ -121,7 +122,7 @@ export function SpecLayout({
     <div ref={mainContentRef} className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
       <div className="flex-1 flex overflow-hidden min-h-0 -mb-[5px]">
         <Tabs>
-          <TabPanel title="Agent Spec">
+          <TabPanel title="Agent Spec" icon={<SlidersHorizontal className="h-3.5 w-3.5" />}>
             <div className={panelContentClass}>
               <Tab
                 agentGoal={agentGoal}
@@ -139,12 +140,12 @@ export function SpecLayout({
               />
             </div>
           </TabPanel>
-          <TabPanel title="Tools">
+          <TabPanel title="Tools" icon={<Wrench className="h-3.5 w-3.5" />}>
             <div className={panelContentClass}>
               <ToolsContainer entityId={agentId} entityType="agent" />
             </div>
           </TabPanel>
-          <TabPanel title="Memory">
+          <TabPanel title="Memory" icon={<DatabaseZap className="h-3.5 w-3.5" />}>
             <div className={panelContentClass}>
               <div className="space-y-5">
                 <MemoryPanel
