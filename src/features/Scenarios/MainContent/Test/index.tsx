@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useContext } from "react";
+import { FlaskConical, Play, Columns2, GitCompare } from "lucide-react";
 import { StudioContext } from "@/contexts/StudioContext";
 import {
   listEvalTestCases,
@@ -10,7 +11,8 @@ import {
   updateEvalResult,
 } from "@/lib/storage";
 import { streamText } from "@/lib/gateway";
-import { Subheader } from "./Subheader";
+import { Tabs } from "@/components/ui/Tabs";
+import TabPanel from "@/components/ui/Tabs/TabPanel";
 import { EditMode } from "./EditMode";
 import { RunMode } from "./RunMode";
 import { ModelsCompare } from "./ModelsCompare";
@@ -25,7 +27,7 @@ export default function Test() {
   const { studioState } = context;
   const { currentScenario, scenarioId } = studioState;
 
-  const [innerMode, setInnerMode] = useState<"edit" | "run" | "compare" | "compareRuns">("edit");
+  const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [cases, setCases] = useState<TestCase[]>([]);
   const [jsonValue, setJsonValue] = useState("");
@@ -131,7 +133,6 @@ export default function Test() {
     setResults([]);
     setRunning(true);
     setProgress(0);
-    setInnerMode("run");
     runningRef.current = true;
 
     const { systemPrompt, configuration, history, attachments } = currentScenario;
@@ -248,56 +249,63 @@ export default function Test() {
     : 0;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-slate-100">
-      <Subheader
-        innerMode={innerMode}
-        viewMode={viewMode}
-        casesCount={cases.length}
-        running={running}
-        onBackToEdit={() => setInnerMode("edit")}
-        onRunSuite={runSuite}
-        onSwitchToTable={switchToTable}
-        onSwitchToJson={switchToJson}
-        onCompareModels={() => setInnerMode("compare")}
-        onCompareRuns={() => setInnerMode("compareRuns")}
-      />
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-40 text-xs text-text-muted">
-            Loading test cases…
+    <div className="flex h-full flex-col overflow-hidden">
+      <Tabs activeIndex={activeTab} onActiveIndexChange={setActiveTab}>
+        <TabPanel title="Edit" icon={<FlaskConical className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-40 text-xs text-text-muted">
+                Loading test cases…
+              </div>
+            ) : (
+              <EditMode
+                viewMode={viewMode}
+                cases={cases}
+                jsonValue={jsonValue}
+                jsonError={jsonError}
+                onJsonChange={(v) => { setJsonValue(v); setJsonError(null); }}
+                onAddCase={addCase}
+                onUpdateCase={updateCase}
+                onRemoveCase={removeCase}
+                onImportCases={(newCases) => setCases((prev) => [...prev, ...newCases])}
+                onSwitchToTable={switchToTable}
+                onSwitchToJson={switchToJson}
+              />
+            )}
           </div>
-        ) : innerMode === "edit" ? (
-          <EditMode
-            viewMode={viewMode}
-            cases={cases}
-            jsonValue={jsonValue}
-            jsonError={jsonError}
-            onJsonChange={(v) => { setJsonValue(v); setJsonError(null); }}
-            onAddCase={addCase}
-            onUpdateCase={updateCase}
-            onRemoveCase={removeCase}
-            onImportCases={(newCases) => setCases((prev) => [...prev, ...newCases])}
-          />
-        ) : innerMode === "run" ? (
-          <RunMode
-            cases={cases}
-            results={results}
-            running={running}
-            progress={progress}
-            passCount={passCount}
-            failCount={failCount}
-            avgLatency={avgLatency}
-          />
-        ) : innerMode === "compareRuns" ? (
-          <EvalsCompare scenarioId={scenarioId!} />
-        ) : (
-          <ModelsCompare
-            cases={cases}
-            providerModels={studioState.providerModels}
-          />
-        )}
-      </div>
+        </TabPanel>
+
+        <TabPanel title="Run" icon={<Play className="h-3.5 w-3.5" />} disabled={cases.length === 0}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            <RunMode
+              cases={cases}
+              results={results}
+              running={running}
+              progress={progress}
+              passCount={passCount}
+              failCount={failCount}
+              avgLatency={avgLatency}
+              hasResults={results.length > 0}
+              onRunSuite={runSuite}
+            />
+          </div>
+        </TabPanel>
+
+        <TabPanel title="Compare Models" icon={<Columns2 className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            <ModelsCompare
+              cases={cases}
+              providerModels={studioState.providerModels}
+            />
+          </div>
+        </TabPanel>
+
+        <TabPanel title="Compare Runs" icon={<GitCompare className="h-3.5 w-3.5" />}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-100">
+            <EvalsCompare scenarioId={scenarioId!} />
+          </div>
+        </TabPanel>
+      </Tabs>
 
       <div className="flex items-center justify-between border-t border-border bg-slate-50 px-6 py-2.5">
         <span className="text-[10px] text-text-muted">

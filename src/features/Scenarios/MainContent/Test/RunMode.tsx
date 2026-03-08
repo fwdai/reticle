@@ -1,5 +1,6 @@
-import { Check, X, Clock, Zap } from "lucide-react";
+import { Check, X, Clock, Zap, Play, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { TestCase, TestResult } from "./types";
 
 interface RunModeProps {
@@ -10,6 +11,8 @@ interface RunModeProps {
   passCount: number;
   failCount: number;
   avgLatency: number;
+  hasResults: boolean;
+  onRunSuite: () => void;
 }
 
 export function RunMode({
@@ -20,11 +23,13 @@ export function RunMode({
   passCount,
   failCount,
   avgLatency,
+  hasResults,
+  onRunSuite,
 }: RunModeProps) {
   return (
-    <div className="p-5 space-y-4">
+    <div className="p-5 space-y-3">
       {/* Summary bar */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-light bg-white px-5 py-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-light bg-white px-5 py-2">
         <span className="text-sm font-semibold text-text-main">
           {cases.length} cases
         </span>
@@ -48,6 +53,18 @@ export function RunMode({
             </span>
           </>
         )}
+        <div className="ml-auto">
+          {!running && (
+            <Button
+              size="sm"
+              className="h-8 gap-2 bg-primary text-white hover:bg-primary/90 font-semibold px-4"
+              onClick={onRunSuite}
+            >
+              {hasResults ? <RotateCcw className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {hasResults ? "Re-run" : "Run Suite"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Progress bar while running */}

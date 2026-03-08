@@ -3,6 +3,8 @@ import TabPanel from "./TabPanel";
 
 interface TabPanelProps {
   title: React.ReactNode;
+  icon?: React.ReactNode;
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
@@ -28,16 +30,21 @@ function Tabs({ children, activeIndex: controlledIndex, onActiveIndexChange }: T
 
   const tabs = Children.map(children, (child, index) => {
     if (isValidElement<TabPanelProps>(child) && child.type === TabPanel) {
+      const isDisabled = child.props.disabled;
       return (
         <button
           key={index}
-          onClick={() => handleTabClick(index)}
-          className={`relative h-full px-4 text-xs font-bold tracking-widest uppercase flex items-center justify-center
-            ${activeIndex === index
-              ? "text-primary tab-active-underline" // New class for active tab underline
-              : "text-text-muted hover:text-text-main transition-colors"
+          onClick={() => !isDisabled && handleTabClick(index)}
+          disabled={isDisabled}
+          className={`relative h-full px-4 text-xs font-bold tracking-widest uppercase flex items-center gap-1.5 justify-center
+            ${isDisabled
+              ? "cursor-not-allowed opacity-40 text-text-muted"
+              : activeIndex === index
+                ? "text-primary tab-active-underline"
+                : "text-text-muted hover:text-text-main transition-colors"
             }`}
         >
+          {child.props.icon}
           {child.props.title}
         </button>
       );

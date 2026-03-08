@@ -1,8 +1,9 @@
-import { Plus, Trash2, FlaskConical } from "lucide-react";
+import { Plus, Trash2, FlaskConical, AlignLeft, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JsonEditorBlock } from "@/components/ui/JsonEditorBlock";
 import { ImportButton } from "@/components/ui/ImportButton";
 import { ExportButton } from "@/components/ui/ExportButton";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { parseScenarioImport } from "./helpers";
 import { exportScenarioTestCasesAsJSON, exportScenarioTestCasesAsCSV } from "@/lib/evals";
 import { AssertionDropdown } from "./AssertionDropdown";
@@ -18,6 +19,8 @@ interface EditModeProps {
   onUpdateCase: (id: string, u: Partial<TestCase>) => void;
   onRemoveCase: (id: string) => void;
   onImportCases: (cases: TestCase[]) => void;
+  onSwitchToTable: () => void;
+  onSwitchToJson: () => void;
 }
 
 export function EditMode({
@@ -30,10 +33,36 @@ export function EditMode({
   onUpdateCase,
   onRemoveCase,
   onImportCases,
+  onSwitchToTable,
+  onSwitchToJson,
 }: EditModeProps) {
-  if (viewMode === "json") {
-    return (
-      <div className="p-5">
+  return (
+    <div className="p-5 space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between">
+        <SegmentedSwitch<"table" | "json">
+          variant="secondary"
+          options={[
+            { value: "table", label: "TABLE", icon: <AlignLeft className="h-3 w-3" /> },
+            { value: "json", label: "JSON", icon: <Code className="h-3 w-3" /> },
+          ]}
+          value={viewMode}
+          onChange={(v) => (v === "table" ? onSwitchToTable() : onSwitchToJson())}
+        />
+        <div className="flex items-center gap-2">
+          <ExportButton
+            filename="scenario-test-suite"
+            disabled={cases.length === 0}
+            formats={[
+              { label: "Export as JSON", extension: "json", mimeType: "application/json", serialize: () => exportScenarioTestCasesAsJSON(cases) },
+              { label: "Export as CSV", extension: "csv", mimeType: "text/csv", serialize: () => exportScenarioTestCasesAsCSV(cases) },
+            ]}
+          />
+          <ImportButton parse={parseScenarioImport} onImport={onImportCases} />
+        </div>
+      </div>
+
+      {viewMode === "json" ? (
         <JsonEditorBlock
           filename="scenario-test-suite.json"
           metadata={`${cases.length} cases`}
@@ -42,27 +71,10 @@ export function EditMode({
           error={jsonError}
           placeholder={`[\n  { "inputs": { "input": "Give me the weather in London" }, "expected": "sunny", "assertion": "contains" }\n]`}
         />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-5 space-y-4">
-      {/* Toolbar above table */}
-      <div className="flex items-center justify-end gap-4">
-        <ExportButton
-          filename="scenario-test-suite"
-          disabled={cases.length === 0}
-          formats={[
-            { label: "Export as JSON", extension: "json", mimeType: "application/json", serialize: () => exportScenarioTestCasesAsJSON(cases) },
-            { label: "Export as CSV", extension: "csv", mimeType: "text/csv", serialize: () => exportScenarioTestCasesAsCSV(cases) },
-          ]}
-        />
-        <ImportButton parse={parseScenarioImport} onImport={onImportCases} />
-      </div>
-
-      {/* Table */}
-      <div className="rounded-xl border border-border-light overflow-hidden bg-white">
+      ) : (
+        <>
+        {/* Table */}
+        <div className="rounded-xl border border-border-light overflow-hidden bg-white">
         {/* Header */}
         <div
           className="grid gap-px bg-border-light"
@@ -155,15 +167,17 @@ export function EditMode({
         )}
       </div>
 
-      {/* Add row */}
-      {cases.length > 0 && (
-        <button
-          onClick={onAddCase}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-xs font-semibold text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all bg-transparent"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add Test Case
-        </button>
+        {/* Add row */}
+        {cases.length > 0 && (
+          <button
+            onClick={onAddCase}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-xs font-semibold text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all bg-transparent"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Test Case
+          </button>
+        )}
+        </>
       )}
     </div>
   );
