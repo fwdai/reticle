@@ -196,12 +196,9 @@ export function EvalsCompare({ scenarioId }: { scenarioId: string }) {
     <div className="flex h-full animate-fade-in">
       {/* Run History Sidebar */}
       <div className="w-[260px] flex-shrink-0 border-r border-border-light bg-white overflow-y-auto custom-scrollbar">
-        <div className="px-4 py-3 border-b border-border-light">
-          <div className="flex items-center gap-2">
-            <GitCompare className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">Run History</span>
-          </div>
-          <p className="mt-1 text-[10px] text-text-muted">Select two runs to compare</p>
+        <div className="flex h-12 items-center gap-2 px-4 border-b border-border-light flex-shrink-0">
+          <GitCompare className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">Run History</span>
         </div>
 
         <div className="p-2 space-y-0.5">
@@ -282,7 +279,7 @@ export function EvalsCompare({ scenarioId }: { scenarioId: string }) {
         {runA && runB ? (
           <>
             {/* Aggregate summary */}
-            <div className="flex items-center gap-4 border-b border-border-light bg-white px-5 py-3">
+            <div className="flex h-12 items-center gap-4 border-b border-border-light bg-white px-5 flex-shrink-0">
               <div className="flex items-center gap-2 text-sm font-semibold text-text-main">
                 <span className="font-mono text-text-muted">{passA}/{totalCases}</span>
                 <ArrowRight className="h-4 w-4 text-text-muted" />
@@ -380,7 +377,7 @@ export function EvalsCompare({ scenarioId }: { scenarioId: string }) {
             )}
 
             {/* Per-case diff rows */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
               <div
                 className="sticky top-0 z-10 grid bg-white text-[10px] font-semibold uppercase tracking-widest text-text-muted border-b border-border-light"
                 style={{ gridTemplateColumns: "36px 1fr 1fr 1fr 80px" }}
@@ -505,10 +502,10 @@ function DiffRow({
         <span className="text-xs text-text-muted truncate block">{input}</span>
       </div>
 
-      <div className="px-4 py-2.5">
+      <div className="px-4 py-2.5 min-w-0">
         <span
           className={cn(
-            "text-xs font-mono",
+            "text-xs font-mono truncate block",
             status === "improvement" ? "text-text-muted line-through" : "text-text-main"
           )}
         >
@@ -516,10 +513,10 @@ function DiffRow({
         </span>
       </div>
 
-      <div className="px-4 py-2.5">
+      <div className="px-4 py-2.5 min-w-0">
         <span
           className={cn(
-            "text-xs font-mono font-medium",
+            "text-xs font-mono font-medium truncate block",
             status === "regression" ? "text-destructive" : "text-text-main"
           )}
         >
