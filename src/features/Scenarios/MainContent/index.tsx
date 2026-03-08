@@ -141,6 +141,7 @@ function Studio() {
           onRunScenario={(id) => runScenarioById?.(id)}
           onDeleteScenario={handleDeleteClick}
           hasCollectionSelected={selectedCollectionId !== null}
+          onCreateScenario={handleCreateScenario}
         />
         <Dialog open={!!scenarioToDelete} onOpenChange={(open) => !open && setScenarioToDelete(null)}>
           <DialogContent className="sm:max-w-[425px]">

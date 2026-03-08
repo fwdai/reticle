@@ -19,6 +19,7 @@ interface AgentListProps {
   onSelectAgent: (agentId: string) => void;
   onToggleStar: (agentId: string, e: React.MouseEvent) => void;
   onDeleteAgent: (agentId: string) => void;
+  onCreateAgent?: () => void;
 }
 
 export function AgentList({
@@ -28,11 +29,12 @@ export function AgentList({
   onSelectAgent,
   onToggleStar,
   onDeleteAgent,
+  onCreateAgent,
 }: AgentListProps) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
       {agents.length === 0 ? (
-        <EmptyState />
+        <EmptyState onCreateAgent={onCreateAgent} />
       ) : (
         <div className="space-y-1.5">
           {agents.map((agent) => {

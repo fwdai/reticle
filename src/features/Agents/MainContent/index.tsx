@@ -218,6 +218,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
         onSelectAgent={handleSelectAgent}
         onToggleStar={toggleStar}
         onDeleteAgent={handleDeleteClick}
+        onCreateAgent={handleCreateAgent}
       />
       <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
         <DialogContent className="sm:max-w-[425px]">

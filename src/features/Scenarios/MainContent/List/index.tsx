@@ -33,6 +33,7 @@ interface ScenarioListProps {
   onRunScenario: (id: string) => void;
   onDeleteScenario: (scenario: Scenario) => void;
   hasCollectionSelected: boolean;
+  onCreateScenario?: () => void;
 }
 
 export function ScenarioList({
@@ -43,11 +44,12 @@ export function ScenarioList({
   onRunScenario,
   onDeleteScenario,
   hasCollectionSelected,
+  onCreateScenario,
 }: ScenarioListProps) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
       {scenarios.length === 0 ? (
-        <EmptyState hasCollectionSelected={hasCollectionSelected} />
+        <EmptyState hasCollectionSelected={hasCollectionSelected} onCreateScenario={onCreateScenario} />
       ) : (
         <div className="space-y-1.5">
           {scenarios.map((scenario) => {

@@ -134,7 +134,7 @@ interface StudioContextType {
   /** Currently selected collection filter (null = all) */
   selectedCollectionId: string | null;
   setSelectedCollectionId: (id: string | null) => void;
-  fetchCollections: () => Promise<void>;
+  fetchCollections: () => Promise<Collection[]>;
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>;
   createScenario: (collectionId: string) => Promise<void>;
@@ -232,8 +232,10 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     try {
       const collections: Collection[] = await invoke('db_select_cmd', { table: 'collections', query: {} });
       setStudioState(prev => ({ ...prev, collections }));
+      return collections;
     } catch (error) {
       console.error("Failed to fetch collections:", error);
+      return [] as Collection[];
     }
   }, []);
 
@@ -248,8 +250,11 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeStudio = async () => {
-      await fetchCollections();
+      const collections = await fetchCollections();
       await fetchScenarios();
+      if (collections.length > 0) {
+        setSelectedCollectionId(prev => prev ?? (collections[0].id ?? null));
+      }
 
       // Load models and default provider/model from settings together
       const [models, savedProvider, savedModel] = await Promise.all([

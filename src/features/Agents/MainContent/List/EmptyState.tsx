@@ -1,13 +1,41 @@
-import { Search } from "lucide-react";
+import { Bot, Wrench, Target } from "lucide-react";
+import { StarterTemplates } from "@/components/ui/StarterTemplates";
 
-export function EmptyState() {
+const AGENT_TEMPLATES = [
+  {
+    icon: Bot,
+    title: "Simple Assistant",
+    description:
+      "A prompt-driven agent with a system prompt and no tools. Great for text generation and Q&A.",
+    tags: ["gpt-4.1", "no tools"],
+  },
+  {
+    icon: Wrench,
+    title: "Tool-Using Agent",
+    description:
+      "An agent that can call your registered tools to fetch data, run code, or take actions.",
+    tags: ["gpt-4.1", "with tools"],
+  },
+  {
+    icon: Target,
+    title: "Eval-Ready Agent",
+    description:
+      "An agent configured with scenarios for regression testing and quality evaluation.",
+    tags: ["gpt-4.1", "evals"],
+  },
+];
+
+interface EmptyStateProps {
+  onCreateAgent?: () => void;
+}
+
+export function EmptyState({ onCreateAgent }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mb-4">
-        <Search className="h-7 w-7 text-text-muted" />
-      </div>
-      <p className="text-sm font-medium text-text-main mb-1">No agents found</p>
-      <p className="text-xs text-text-muted">Try a different search term or create a new agent</p>
-    </div>
+    <StarterTemplates
+      headline="Your first agent awaits"
+      subtitle="Choose a starting point to configure your AI agent, then test and iterate."
+      templates={AGENT_TEMPLATES}
+      onSelect={() => onCreateAgent?.()}
+    />
   );
 }

@@ -1,23 +1,49 @@
-import { FileText } from "lucide-react";
+import { FileText, Variable, MessageCircle } from "lucide-react";
+import { StarterTemplates } from "@/components/ui/StarterTemplates";
+
+const SCENARIO_TEMPLATES = [
+  {
+    icon: FileText,
+    title: "Basic Prompt",
+    description:
+      "A single-turn scenario with a system prompt and user message. The simplest way to test a model.",
+    tags: ["single-turn", "prompt"],
+  },
+  {
+    icon: Variable,
+    title: "With Variables",
+    description:
+      "A prompt template with input variables that can be swapped across test runs.",
+    tags: ["variables", "template"],
+  },
+  {
+    icon: MessageCircle,
+    title: "Multi-Turn Chat",
+    description:
+      "A multi-turn conversation with an assistant turn, useful for testing dialogue flows.",
+    tags: ["multi-turn", "chat"],
+  },
+];
 
 interface EmptyStateProps {
   hasCollectionSelected: boolean;
+  onCreateScenario?: () => void;
 }
 
-export function EmptyState({ hasCollectionSelected }: EmptyStateProps) {
+export function EmptyState({
+  hasCollectionSelected,
+  onCreateScenario,
+}: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mb-4">
-        <FileText className="h-7 w-7 text-text-muted" />
-      </div>
-      <p className="text-sm font-medium text-text-main mb-1">
-        {hasCollectionSelected ? "No scenarios in this collection" : "No scenarios yet"}
-      </p>
-      <p className="text-xs text-text-muted">
-        {hasCollectionSelected
-          ? "Create a new scenario using the button above"
-          : "Select a collection or create one to add scenarios"}
-      </p>
-    </div>
+    <StarterTemplates
+      headline="Add your first scenario"
+      subtitle={
+        hasCollectionSelected
+          ? "Choose a starting point to create a test scenario, then run and compare results."
+          : "Select or create a collection first, then pick a starting point below."
+      }
+      templates={SCENARIO_TEMPLATES}
+      onSelect={() => onCreateScenario?.()}
+    />
   );
 }

@@ -234,42 +234,42 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
         />
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           {viewMode === "editor" && (
-          <Spec
-            agentId={effectiveId}
-            provider={provider}
-            model={model}
-            agentGoal={agentGoal}
-            systemInstructions={systemInstructions}
-            maxIterations={maxIterations}
-            timeout={timeoutValue}
-            retryPolicy={retryPolicy}
-            toolCallStrategy={toolCallStrategy}
-            memoryEnabled={memoryEnabled}
-            memorySource={memorySource}
-            temperature={temperature}
-            topP={topP}
-            maxTokens={maxTokens}
-            seed={seed}
-            showAdvanced={showAdvanced}
-            onProviderChange={setProvider}
-            onModelChange={setModel}
-            onAgentGoalChange={setAgentGoal}
-            onSystemInstructionsChange={setSystemInstructions}
-            onMaxIterationsChange={setMaxIterations}
-            onTimeoutChange={setTimeoutValue}
-            onRetryPolicyChange={setRetryPolicy}
-            onToolCallStrategyChange={setToolCallStrategy}
-            onMemoryEnabledChange={setMemoryEnabled}
-            onMemorySourceChange={setMemorySource}
-            onTemperatureChange={setTemperature}
-            onTopPChange={setTopP}
-            onMaxTokensChange={setMaxTokens}
-            onSeedChange={setSeed}
-            onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
-          />
+            <Spec
+              agentId={effectiveId}
+              provider={provider}
+              model={model}
+              agentGoal={agentGoal}
+              systemInstructions={systemInstructions}
+              maxIterations={maxIterations}
+              timeout={timeoutValue}
+              retryPolicy={retryPolicy}
+              toolCallStrategy={toolCallStrategy}
+              memoryEnabled={memoryEnabled}
+              memorySource={memorySource}
+              temperature={temperature}
+              topP={topP}
+              maxTokens={maxTokens}
+              seed={seed}
+              showAdvanced={showAdvanced}
+              onProviderChange={setProvider}
+              onModelChange={setModel}
+              onAgentGoalChange={setAgentGoal}
+              onSystemInstructionsChange={setSystemInstructions}
+              onMaxIterationsChange={setMaxIterations}
+              onTimeoutChange={setTimeoutValue}
+              onRetryPolicyChange={setRetryPolicy}
+              onToolCallStrategyChange={setToolCallStrategy}
+              onMemoryEnabledChange={setMemoryEnabled}
+              onMemorySourceChange={setMemorySource}
+              onTemperatureChange={setTemperature}
+              onTopPChange={setTopP}
+              onMaxTokensChange={setMaxTokens}
+              onSeedChange={setSeed}
+              onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
+            />
           )}
           {viewMode === "test" && <TestView agentId={effectiveId} agentName={agentName} />}
-{viewMode === "visualizer" && (
+          {viewMode === "visualizer" && (
             <VisualizerView
               agentName={agentName}
               provider={provider}
