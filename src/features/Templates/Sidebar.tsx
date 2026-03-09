@@ -48,7 +48,7 @@ function TemplatesSidebar() {
           label="Recently Used"
           active={filter === "recently_used"}
           onClick={() => setFilter("recently_used")}
-          count={nonArchived.length}
+          count={nonArchived.filter((t) => t.last_used_at != null).length}
         />
         <SidebarItem
           icon={Archive}
