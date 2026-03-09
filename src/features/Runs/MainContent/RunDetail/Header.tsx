@@ -1,6 +1,5 @@
-import { ArrowLeft, Play, GitBranch, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import LayoutHeader from "@/components/Layout/Header";
-import { Button } from "@/components/ui/button";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import type { RunDetailRun } from "./types";
 
@@ -46,15 +45,6 @@ export function Header({ run, viewMode, onViewModeChange, onBack }: HeaderProps)
           value={viewMode}
           onChange={onViewModeChange}
         />
-        <div className="h-6 w-px bg-border-light" />
-        <Button variant="outline" size="sm" className="gap-2">
-          <Play className="h-3.5 w-3.5" />
-          Re-run
-        </Button>
-        <Button size="sm" className="gap-2">
-          <GitBranch className="h-3.5 w-3.5" />
-          Fork
-        </Button>
       </div>
     </LayoutHeader>
   );
