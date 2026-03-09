@@ -1,24 +1,28 @@
-import { Key, LayoutDashboard, CheckSquare, ArrowRight, ExternalLink } from "lucide-react";
+import { Key, LayoutDashboard, UserCircle, ArrowRight, ExternalLink, CheckCircle2 } from "lucide-react";
 import { useAppContext } from "@/contexts/AppContext";
 import type { SettingsSectionId } from "@/types";
 
 interface OnboardingViewProps {
   appVersion: string | null;
   hasApiKey: boolean;
-  hasScenarioOrAgent: boolean;
   hasCompletedRun: boolean;
+  hasProfile: boolean;
+  onSkipProfile: () => void;
 }
 
 const CURRENT_STEP_STYLE =
   "border-2 border-indigo-100 bg-indigo-50/30 rounded-xl p-6 hover:border-indigo-200 transition-colors";
 const FINISHED_STEP_STYLE =
   "border border-slate-200 bg-white rounded-xl p-6 hover:border-slate-300 transition-colors";
+const COMPLETED_STEP_STYLE =
+  "border border-primary/20 bg-primary/5 rounded-xl p-6 transition-colors";
 
 function OnboardingView({
   appVersion,
   hasApiKey,
-  hasScenarioOrAgent,
   hasCompletedRun,
+  hasProfile,
+  onSkipProfile,
 }: OnboardingViewProps) {
   const { setCurrentPage } = useAppContext();
 
@@ -26,15 +30,19 @@ function OnboardingView({
     setCurrentPage("settings", { settingsSection: section });
   };
 
-  const step1Current = !hasApiKey;
-  const step2Current = hasApiKey && !hasScenarioOrAgent;
-  const step3Current = hasScenarioOrAgent && !hasCompletedRun;
+  const step1Done = hasApiKey;
+  const step2Done = hasCompletedRun;
+  const step3Done = hasProfile;
+
+  const step1Current = !step1Done;
+  const step2Current = step1Done && !step2Done;
+  const step3Current = step1Done && step2Done && !step3Done;
 
   return (
     <>
       <section className="text-center space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium uppercase tracking-wider mb-4">
-          Get Started
+          Quick Start
         </div>
         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
           Welcome to Reticle!
@@ -45,88 +53,113 @@ function OnboardingView({
       </section>
 
       <section className="mb-4">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-xl font-bold text-slate-800">Quick Start</h3>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <button
             type="button"
             onClick={() => openSettings("api-keys")}
-            className={`${step1Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
+            className={`${step1Done ? COMPLETED_STEP_STYLE : step1Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
           >
             <div
-              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${
-                step1Current
+              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${step1Done
+                ? "bg-primary/10 text-primary"
+                : step1Current
                   ? "bg-primary text-white shadow-lg shadow-indigo-200"
                   : "bg-slate-100 text-slate-500"
-              }`}
+                }`}
             >
-              <Key className="size-6" />
+              {step1Done ? <CheckCircle2 className="size-6" /> : <Key className="size-6" />}
             </div>
-            <h4 className="font-bold text-slate-900 mb-2">1. Setup API Keys</h4>
+            <h4 className="font-bold text-slate-900 mb-2">1. Connect an AI Provider</h4>
             <p className="text-sm text-slate-500 mb-6">
-              Connect your AI provider accounts by adding API keys for OpenAI, Anthropic, or Google.
+              Add an API key for OpenAI, Anthropic, or Google to unlock running scenarios and agents.
             </p>
             {step1Current && (
-              <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+              <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer">
                 Setup Keys <ArrowRight className="size-3" />
               </span>
+            )}
+            {step1Done && (
+              <span className="text-xs font-bold text-primary">Completed</span>
             )}
           </button>
 
           <button
             type="button"
             onClick={() => setCurrentPage("studio")}
-            className={`${step2Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
+            className={`${step2Done ? COMPLETED_STEP_STYLE : step2Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
           >
             <div
-              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${
-                step2Current
+              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${step2Done
+                ? "bg-primary/10 text-primary"
+                : step2Current
                   ? "bg-primary text-white shadow-lg shadow-indigo-200"
                   : "bg-slate-100 text-slate-500"
-              }`}
+                }`}
             >
-              <LayoutDashboard className="size-6" />
+              {step2Done ? <CheckCircle2 className="size-6" /> : <LayoutDashboard className="size-6" />}
             </div>
-            <h4 className="font-bold text-slate-900 mb-2">2. Create Scenario or Agent</h4>
+            <h4 className="font-bold text-slate-900 mb-2">2. Run Your First Scenario</h4>
             <p className="text-sm text-slate-500 mb-6">
-              Set up your system prompt, choose your model, write your prompt, and configure tool calls.
+              Write a prompt, pick a model, and run it — you'll see token usage and cost in real time.
             </p>
             {step2Current && (
-              <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                Create Scenario <ArrowRight className="size-3" />
+              <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer">
+                Open Studio <ArrowRight className="size-3" />
               </span>
+            )}
+            {step2Done && (
+              <span className="text-xs font-bold text-primary">Completed</span>
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setCurrentPage("runs")}
-            className={`${step3Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
+          <div
+            className={`${step3Done ? COMPLETED_STEP_STYLE : step3Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} text-left`}
           >
             <div
-              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${
-                step3Current
+              className={`size-12 rounded-2xl flex items-center justify-center mb-6 ${step3Done
+                ? "bg-primary/10 text-primary"
+                : step3Current
                   ? "bg-primary text-white shadow-lg shadow-indigo-200"
                   : "bg-slate-100 text-slate-500"
-              }`}
+                }`}
             >
-              <CheckSquare className="size-6" />
+              {step3Done ? <CheckCircle2 className="size-6" /> : <UserCircle className="size-6" />}
             </div>
-            <h4 className="font-bold text-slate-900 mb-2">3. Run & Inspect Results</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-bold text-slate-900">3. Complete Your Profile</h4>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                Optional
+              </span>
+            </div>
             <p className="text-sm text-slate-500 mb-6">
-              Run a scenario and review token usage, costs, and tool invocations.
+              Add your name and avatar so the dashboard greets you properly.
             </p>
             {step3Current && (
-              <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                View Results <ArrowRight className="size-3" />
-              </span>
+              <div className="flex items-center gap-3 justify-between">
+                <button
+                  type="button"
+                  onClick={() => openSettings("account")}
+                  className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all cursor-pointer"
+                >
+                  Set this up <ArrowRight className="size-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onSkipProfile}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                >
+                  Skip for now
+                </button>
+              </div>
             )}
-          </button>
+            {step3Done && (
+              <span className="text-xs font-bold text-primary">Completed</span>
+            )}
+          </div>
         </div>
       </section>
 
-      <section className="bg-slate-50 rounded-3xl p-10 border border-slate-100">
+      <section className="bg-slate-50 rounded-3xl p-10 border border-slate-200">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-1">
             <h3 className="text-2xl font-bold text-slate-800 mb-4">Learning Path</h3>
@@ -135,7 +168,8 @@ function OnboardingView({
             </p>
             <a
               className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
-              href="#"
+              href="https://docs.reticle.run"
+              target="_blank"
             >
               Full Documentation <ExternalLink className="size-3" />
             </a>
@@ -185,10 +219,10 @@ function OnboardingView({
           </span>
         </div>
         <div className="flex gap-6">
-          <a className="hover:text-primary transition-colors" href="#">
+          <a className="hover:text-primary transition-colors" href="https://reticle.run/privacy">
             Privacy Policy
           </a>
-          <a className="hover:text-primary transition-colors" href="#">
+          <a className="hover:text-primary transition-colors" href="https://reticle.run/terms">
             Terms of Service
           </a>
         </div>

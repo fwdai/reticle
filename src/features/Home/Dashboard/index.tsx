@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileCode, Zap, Play } from "lucide-react";
+import { FileCode, Zap, Play, UserCircle, ArrowRight } from "lucide-react";
 import { useAppContext } from "@/contexts/AppContext";
 import { getOrCreateAccount } from "@/lib/storage";
 import { ColorTile } from "./ColorTile";
@@ -47,6 +47,24 @@ export function DashboardView() {
           Here's what's happening across your workflows and agents.
         </p>
       </div>
+
+      {/* Profile nudge — shown when user skipped the profile step */}
+      {!accountName && (
+        <button
+          type="button"
+          onClick={() => setCurrentPage("settings", { settingsSection: "account" })}
+          className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100 transition-colors text-left group"
+        >
+          <div className="size-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+            <UserCircle className="size-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-700">Complete your profile</p>
+            <p className="text-xs text-slate-400">Add your name and avatar to personalise your dashboard.</p>
+          </div>
+          <ArrowRight className="size-4 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+        </button>
+      )}
 
       {/* Colorful stat tiles row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -1,7 +1,9 @@
 import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { Page, SettingsSectionId } from '@/types';
-import { hasApiKeys, listScenarios, listAgents, listExecutions } from '@/lib/storage';
+import { hasApiKeys, listScenarios, listAgents, listExecutions, getOrCreateAccount } from '@/lib/storage';
+
+const PROFILE_SKIPPED_KEY = 'onboarding:profileSkipped';
 
 /** Onboarding status computed at startup; used by Home to avoid duplicate fetches */
 export interface OnboardingStatus {
@@ -9,6 +11,8 @@ export interface OnboardingStatus {
   hasApiKey: boolean;
   hasScenarioOrAgent: boolean;
   hasCompletedRun: boolean;
+  hasProfile: boolean;
+  profileSkipped: boolean;
   isComplete: boolean;
 }
 
@@ -40,6 +44,8 @@ interface AppContextType {
   onboardingStatus: OnboardingStatus | null;
   /** Re-run onboarding check (e.g. when returning to Home after adding API key) */
   refreshOnboardingStatus: () => Promise<void>;
+  /** Mark the profile step as skipped so the dashboard is shown */
+  skipProfileSetup: () => void;
 }
 
 // Create the AppContext
@@ -73,24 +79,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   async function loadOnboardingStatus(): Promise<OnboardingStatus> {
     try {
-      const [apiKeys, scenarios, agents, executions] = await Promise.all([
+      const [apiKeys, scenarios, agents, executions, account] = await Promise.all([
         hasApiKeys(),
         listScenarios(),
         listAgents(),
         listExecutions({ limit: 100 }),
+        getOrCreateAccount(),
       ]);
 
       const hasScenarioOrAgent = scenarios.length > 0 || agents.length > 0;
       const hasCompletedRun = executions.some(
         (e) => e.status === 'succeeded' && e.started_at != null
       );
+      const hasProfile = Boolean(account.first_name?.trim());
+      const profileSkipped = localStorage.getItem(PROFILE_SKIPPED_KEY) === 'true';
 
       return {
         isLoading: false,
         hasApiKey: apiKeys,
         hasScenarioOrAgent,
         hasCompletedRun,
-        isComplete: apiKeys && hasScenarioOrAgent && hasCompletedRun,
+        hasProfile,
+        profileSkipped,
+        isComplete: false || (apiKeys && hasCompletedRun && (hasProfile || profileSkipped)),
       };
     } catch {
       return {
@@ -98,6 +109,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         hasApiKey: false,
         hasScenarioOrAgent: false,
         hasCompletedRun: false,
+        hasProfile: false,
+        profileSkipped: false,
         isComplete: false,
       };
     }
@@ -107,6 +120,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const status = await loadOnboardingStatus();
     setOnboardingStatus(status);
   }, []);
+
+  const skipProfileSetup = React.useCallback(() => {
+    localStorage.setItem(PROFILE_SKIPPED_KEY, 'true');
+    refreshOnboardingStatus();
+  }, [refreshOnboardingStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,8 +171,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         currentPage: page,
         ...(page === 'settings' &&
           options?.settingsSection != null && {
-            settingsSection: options.settingsSection,
-          }),
+          settingsSection: options.settingsSection,
+        }),
       };
 
       if (prevState.currentPage !== page) {
@@ -188,6 +206,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         isAppReady,
         onboardingStatus,
         refreshOnboardingStatus,
+        skipProfileSetup,
       }}
     >
       {children}

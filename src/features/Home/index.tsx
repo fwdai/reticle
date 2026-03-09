@@ -7,7 +7,7 @@ import { useAppContext } from "@/contexts/AppContext";
 
 function HomePage() {
   const [appVersion, setAppVersion] = useState<string | null>(null);
-  const { onboardingStatus, refreshOnboardingStatus } = useAppContext();
+  const { onboardingStatus, refreshOnboardingStatus, skipProfileSetup } = useAppContext();
 
   useEffect(() => {
     getVersion().then(setAppVersion);
@@ -34,8 +34,9 @@ function HomePage() {
             <OnboardingView
               appVersion={appVersion}
               hasApiKey={onboarding.hasApiKey}
-              hasScenarioOrAgent={onboarding.hasScenarioOrAgent}
               hasCompletedRun={onboarding.hasCompletedRun}
+              hasProfile={onboarding.hasProfile}
+              onSkipProfile={skipProfileSetup}
             />
           )}
         </div>
