@@ -6,9 +6,10 @@ import type { AgentFilterId } from "./index";
 interface AgentsSidebarProps {
   filter: AgentFilterId;
   onFilterChange: (filter: AgentFilterId) => void;
+  counts: { all: number; ready: number; "needs-config": number };
 }
 
-function AgentsSidebar({ filter, onFilterChange }: AgentsSidebarProps) {
+function AgentsSidebar({ filter, onFilterChange, counts }: AgentsSidebarProps) {
   return (
     <Sidebar title="Agents">
       <SidebarSection title="Status">
@@ -17,18 +18,21 @@ function AgentsSidebar({ filter, onFilterChange }: AgentsSidebarProps) {
           label="All Agents"
           active={filter === "all"}
           onClick={() => onFilterChange("all")}
+          count={counts.all}
         />
         <SidebarItem
           icon={CheckCircle}
           label="Ready"
           active={filter === "ready"}
           onClick={() => onFilterChange("ready")}
+          count={counts.ready}
         />
         <SidebarItem
           icon={AlertCircle}
           label="Needs Config"
           active={filter === "needs-config"}
           onClick={() => onFilterChange("needs-config")}
+          count={counts["needs-config"]}
         />
       </SidebarSection>
       <SidebarSection title="Quick Access">
