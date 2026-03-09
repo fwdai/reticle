@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import Header from "@/features/Templates/Header";
 import { useTemplatesContext } from "@/contexts/TemplatesContext";
-import { updatePromptTemplate, deletePromptTemplate } from "@/lib/storage";
+import { updatePromptTemplate, deletePromptTemplate, insertPromptTemplate } from "@/lib/storage";
+import { saveFileWithDialog } from "@/lib/evals/evalIO";
 import { formatRelativeTime } from "@/lib/helpers/time";
 import type { PromptTemplate } from "@/types";
 import { EntityCard, type EntityStatus } from "@/components/ui/EntityCard";
@@ -121,6 +122,22 @@ function TemplatesPage() {
     [loadTemplates]
   );
 
+  const handleDuplicate = useCallback(async (template: PromptTemplate) => {
+    await insertPromptTemplate({
+      type: template.type,
+      name: `${template.name} (copy)`,
+      content: template.content,
+      variables_json: template.variables_json,
+    });
+    await loadTemplates();
+  }, [loadTemplates]);
+
+  const handleExport = useCallback((template: PromptTemplate) => {
+    const data = { name: template.name, type: template.type, content: template.content, variables_json: template.variables_json };
+    const filename = `${template.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.json`;
+    saveFileWithDialog(filename, JSON.stringify(data, null, 2), "application/json");
+  }, []);
+
   const [templateToDelete, setTemplateToDelete] = useState<PromptTemplate | null>(null);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -204,8 +221,8 @@ function TemplatesPage() {
                     { label: "Last used", value: template.last_used_at ? formatRelativeTime(template.last_used_at) : "Never" },
                   ]}
                   menuItems={[
-                    { label: "Duplicate", icon: Copy, destructive: false, onClick: () => { } },
-                    { label: "Export", icon: Download, destructive: false, onClick: () => { } },
+                    { label: "Duplicate", icon: Copy, destructive: false, onClick: () => handleDuplicate(template) },
+                    { label: "Export", icon: Download, destructive: false, onClick: () => handleExport(template) },
                     { label: "Delete", icon: Trash2, destructive: true, onClick: () => setTemplateToDelete(template) },
                   ]}
                 />
