@@ -58,21 +58,6 @@ export async function runAgentAction(
 
   const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
 
-  const snapshot = {
-    name: agentRecord.name,
-    systemPrompt: instructions ?? '',
-    configuration: {
-      provider: agentRecord.provider,
-      model: agentRecord.model,
-      temperature: params.temperature,
-      topP: params.top_p,
-      maxTokens: params.max_tokens,
-    },
-    maxIterations: agentRecord.max_iterations,
-    timeoutSeconds: agentRecord.timeout_seconds,
-  };
-  const snapshot_json = JSON.stringify(snapshot);
-
   const input_json = JSON.stringify({
     taskInput,
     systemPrompt: instructions ?? '',
@@ -85,10 +70,23 @@ export async function runAgentAction(
     },
   });
 
+  // Insert with a placeholder snapshot; we'll update it after fetching tools below
   const executionId = await insertExecution({
     type: 'agent',
     runnable_id: agentRecord.id,
-    snapshot_json,
+    snapshot_json: JSON.stringify({
+      name: agentRecord.name,
+      systemPrompt: instructions ?? '',
+      configuration: {
+        provider: agentRecord.provider,
+        model: agentRecord.model,
+        temperature: params.temperature,
+        topP: params.top_p,
+        maxTokens: params.max_tokens,
+      },
+      maxIterations: agentRecord.max_iterations,
+      timeoutSeconds: agentRecord.timeout_seconds,
+    }),
     input_json,
     status: 'running',
     started_at,
@@ -137,6 +135,24 @@ export async function runAgentAction(
         },
       });
     }
+    // Update snapshot to include the actual tools used in this run
+    await updateExecution(executionId, {
+      snapshot_json: JSON.stringify({
+        name: agentRecord.name,
+        systemPrompt: instructions ?? '',
+        configuration: {
+          provider: agentRecord.provider,
+          model: agentRecord.model,
+          temperature: params.temperature,
+          topP: params.top_p,
+          maxTokens: params.max_tokens,
+        },
+        maxIterations: agentRecord.max_iterations,
+        timeoutSeconds: agentRecord.timeout_seconds,
+        tools: linkedTools,
+      }),
+    });
+
     const hasTools = Object.keys(aiTools).length > 0;
 
     const toolChoice =
