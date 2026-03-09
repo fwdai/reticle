@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
 interface EnvVar {
   id: string;
@@ -81,6 +82,7 @@ export default function EnvVariables() {
     } catch (e) {
       console.error("Failed to save", e);
       updateRow(id, { [field]: current[field] });
+      toast.error("Failed to save variable");
     }
   }
 
@@ -98,6 +100,7 @@ async function deleteVar(id: string) {
       });
     } catch (e) {
       console.error("Failed to delete", e);
+      toast.error("Failed to delete variable");
     }
   }
 
@@ -121,6 +124,7 @@ async function deleteVar(id: string) {
       setAdding(false);
     } catch (e) {
       console.error("Failed to add variable", e);
+      toast.error("Failed to add variable");
     }
   }
 

@@ -11,6 +11,7 @@ import {
   Hash,
 } from "lucide-react";
 
+import { toast } from "sonner";
 import Header from "@/components/Layout/Header";
 import { EditableTitle } from "@/components/ui/EditableTitle";
 import { Button } from "@/components/ui/button";
@@ -162,6 +163,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted
         onCreated?.(newTemplate);
       } catch (err) {
         console.error("Failed to create template:", err);
+        toast.error("Failed to create template");
       } finally {
         setSaving(false);
       }
@@ -178,6 +180,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted
         onSaved();
       } catch (err) {
         console.error("Failed to save template:", err);
+        toast.error("Failed to save template");
       } finally {
         setSaving(false);
       }
@@ -209,6 +212,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted
       onBack();
     } catch (err) {
       console.error("Failed to archive template:", err);
+      toast.error("Failed to archive template");
     }
   }, [template.id, onSaved, onBack]);
 
@@ -227,6 +231,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted
       onBack();
     } catch (err) {
       console.error("Failed to delete template:", err);
+      toast.error("Failed to delete template");
     }
   }, [template.id, onBack, onDeleted]);
 
@@ -241,6 +246,7 @@ export function TemplateDetail({ template, onBack, onSaved, onCreated, onDeleted
       onSaved();
     } catch (err) {
       console.error("Failed to duplicate template:", err);
+      toast.error("Failed to duplicate template");
     }
   }, [template.name, type, content, variables, onSaved]);
 

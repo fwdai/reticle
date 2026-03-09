@@ -10,6 +10,7 @@ import {
   listEnvVariables,
 } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
+import { toast } from 'sonner';
 import { StudioContainerState, HistoryItem } from '@/contexts/StudioContext';
 import { Execution, Scenario } from '@/types';
 import { substituteVariables } from '@/lib/helpers/substituteVariables';
@@ -191,7 +192,9 @@ export async function saveScenarioAction(
       error_message: error instanceof Error ? error.message : 'unknown_error',
     });
     setStudioState(prev => ({ ...prev, isSaving: false }));
-    // Optionally show an error message in the UI
+    toast.error('Failed to save scenario', {
+      description: error instanceof Error ? error.message : undefined,
+    });
   }
 }
 
@@ -203,6 +206,11 @@ export async function runScenarioAction(
   const { currentScenario } = studioState;
   const { systemPrompt, userPrompt, configuration, history } = currentScenario;
   const { systemVariables = [], userVariables = [] } = currentScenario;
+
+  if (!configuration.provider || !configuration.model) {
+    toast.error('No model selected', { description: 'Choose a provider and model before running.' });
+    return;
+  }
 
   const rawEnvVars = await listEnvVariables();
   const envVars = rawEnvVars.map(v => ({ id: 0, key: v.key, value: v.value }));
@@ -227,34 +235,39 @@ export async function runScenarioAction(
   }));
 
   const scenarioId = currentScenario.id!;
-
-  // Fetch all tools linked to this scenario (local + shared) from the DB
-  const allTools = await listToolsForEntity(scenarioId, 'scenario');
-
-  const snapshot = {
-    name: currentScenario.name,
-    systemPrompt: resolvedSystemPrompt,
-    userPrompt: resolvedUserPrompt,
-    configuration,
-    history,
-    tools: allTools,
-    attachments: currentScenario.attachments,
-  };
-  const snapshot_json = JSON.stringify(snapshot);
-  const input_json = JSON.stringify(snapshot);
-
   const started_at = Date.now();
-  const executionId = await insertExecution({
-    type: 'scenario',
-    runnable_id: currentScenario.id,
-    snapshot_json,
-    input_json,
-    status: 'running',
-    started_at,
-  });
+
+  let executionId: string | undefined;
+  let snapshot_json = '';
+  let input_json = '';
 
   try {
-    setStudioState(prev => ({ ...prev, currentExecutionId: executionId }));
+    // Fetch tools and create execution record inside try so any failure here
+    // still resets loading state via the catch block below.
+    const allTools = await listToolsForEntity(scenarioId, 'scenario');
+
+    const snapshot = {
+      name: currentScenario.name,
+      systemPrompt: resolvedSystemPrompt,
+      userPrompt: resolvedUserPrompt,
+      configuration,
+      history,
+      tools: allTools,
+      attachments: currentScenario.attachments,
+    };
+    snapshot_json = JSON.stringify(snapshot);
+    input_json = JSON.stringify(snapshot);
+
+    executionId = await insertExecution({
+      type: 'scenario',
+      runnable_id: currentScenario.id,
+      snapshot_json,
+      input_json,
+      status: 'running',
+      started_at,
+    });
+
+    setStudioState(prev => ({ ...prev, currentExecutionId: executionId! }));
 
     const result = await streamText(
       resolvedUserPrompt,
@@ -361,22 +374,22 @@ export async function runScenarioAction(
       ? 'Cancelled by user'
       : error instanceof Error ? error.message : 'An unknown error occurred';
 
-    const failedExecution: Execution = {
-      type: 'scenario',
-      runnable_id: scenarioId,
-      snapshot_json,
-      input_json,
-      status: 'failed',
-      started_at,
-      ended_at,
-      error_json: JSON.stringify({ message: errorMessage }),
-    };
-
-    await updateExecution(executionId, failedExecution);
+    if (executionId) {
+      await updateExecution(executionId, {
+        type: 'scenario',
+        runnable_id: scenarioId,
+        snapshot_json,
+        input_json,
+        status: 'failed',
+        started_at,
+        ended_at,
+        error_json: JSON.stringify({ message: errorMessage }),
+      });
+    }
 
     setStudioState(prev => ({
       ...prev,
-      currentExecutionId: executionId,
+      ...(executionId ? { currentExecutionId: executionId } : {}),
       isLoading: false,
       response: {
         text: '',

@@ -10,6 +10,7 @@ import Templates from "./features/Templates";
 import Tools from "./features/Tools";
 import { Page } from "./types";
 import { useAppContext } from "./contexts/AppContext";
+import { Toaster } from "./components/ui/sonner";
 import "./App.css";
 
 const pages: Partial<Record<Page, ComponentType>> = {
@@ -34,6 +35,7 @@ function App() {
     <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light animate-fade-in">
       <Navigation />
       <PageComponent />
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }

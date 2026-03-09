@@ -1,6 +1,7 @@
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { toast } from "sonner";
 
 import { fetchAndNormalizeModels, clearModelCache } from "@/lib/modelManager";
 
@@ -96,6 +97,7 @@ function ApiKeys() {
       } catch (error) {
         console.error(`Failed to delete API key for ${provider}:`, error);
         setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
+        toast.error("Failed to remove API key", { description: `Could not remove the ${provider} key.` });
       }
       return;
     }
@@ -125,6 +127,7 @@ function ApiKeys() {
     } catch (error) {
       console.error(`Failed to save API key for ${provider}:`, error);
       setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
+      toast.error("Failed to save API key", { description: `Could not save the ${provider} key. Please try again.` });
     }
   };
 

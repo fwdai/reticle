@@ -4,6 +4,7 @@ import { createModel } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
 import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables, listAgentMemories, saveAgentMemory } from '@/lib/storage';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
+import { toast } from 'sonner';
 import type { ExecutionState } from '@/contexts/AgentContext';
 import type { AgentRecord, Execution, ExecutionStep } from '@/types';
 import { substituteVariables } from '@/lib/helpers/substituteVariables';
@@ -18,6 +19,11 @@ export async function runAgentAction(
   setExecution: (updater: (prev: ExecutionState) => ExecutionState) => void,
   abortSignal?: AbortSignal,
 ): Promise<void> {
+  if (!agentRecord.provider || !agentRecord.model) {
+    toast.error('No model selected', { description: 'Choose a provider and model for this agent before running.' });
+    return;
+  }
+
   trackEvent(TELEMETRY_EVENTS.AGENT_RUN_STARTED, {
     agent_id: agentRecord.id,
     provider: agentRecord.provider,
@@ -70,29 +76,7 @@ export async function runAgentAction(
     },
   });
 
-  // Insert with a placeholder snapshot; we'll update it after fetching tools below
-  const executionId = await insertExecution({
-    type: 'agent',
-    runnable_id: agentRecord.id,
-    snapshot_json: JSON.stringify({
-      name: agentRecord.name,
-      systemPrompt: instructions ?? '',
-      configuration: {
-        provider: agentRecord.provider,
-        model: agentRecord.model,
-        temperature: params.temperature,
-        topP: params.top_p,
-        maxTokens: params.max_tokens,
-      },
-      maxIterations: agentRecord.max_iterations,
-      timeoutSeconds: agentRecord.timeout_seconds,
-    }),
-    input_json,
-    status: 'running',
-    started_at,
-  });
-
-  setExecution(prev => ({ ...prev, executionId }));
+  let executionId: string | undefined;
 
   const stepBuffer: ExecutionStep[] = [];
   let currentLoop = 0;
@@ -126,6 +110,30 @@ export async function runAgentAction(
   setExecution(prev => ({ ...prev, steps: [...stepBuffer] }));
 
   try {
+    // Insert execution record inside try so a failure here resets state via catch.
+    executionId = await insertExecution({
+      type: 'agent',
+      runnable_id: agentRecord.id,
+      snapshot_json: JSON.stringify({
+        name: agentRecord.name,
+        systemPrompt: instructions ?? '',
+        configuration: {
+          provider: agentRecord.provider,
+          model: agentRecord.model,
+          temperature: params.temperature,
+          topP: params.top_p,
+          maxTokens: params.max_tokens,
+        },
+        maxIterations: agentRecord.max_iterations,
+        timeoutSeconds: agentRecord.timeout_seconds,
+      }),
+      input_json,
+      status: 'running',
+      started_at,
+    });
+
+    setExecution(prev => ({ ...prev, executionId }));
+
     // Fetch all tools linked to this agent (local + shared) and convert to AI SDK format
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
     const aiTools = toolConfigToAiSdkTools(linkedTools, envVarsMap);
@@ -399,17 +407,19 @@ export async function runAgentAction(
       content: errorMessage,
     });
 
-    await updateExecution(executionId, {
-      type: 'agent',
-      runnable_id: agentRecord.id,
-      snapshot_json,
-      input_json,
-      status: 'failed',
-      started_at,
-      ended_at,
-      steps_json: JSON.stringify(stepsWithError),
-      error_json: JSON.stringify({ message: errorMessage }),
-    });
+    if (executionId) {
+      await updateExecution(executionId, {
+        type: 'agent',
+        runnable_id: agentRecord.id,
+        snapshot_json,
+        input_json,
+        status: 'failed',
+        started_at,
+        ended_at,
+        steps_json: JSON.stringify(stepsWithError),
+        error_json: JSON.stringify({ message: errorMessage }),
+      });
+    }
 
     setExecution(prev => ({
       ...prev,

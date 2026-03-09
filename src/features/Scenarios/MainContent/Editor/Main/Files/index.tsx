@@ -1,4 +1,5 @@
 import { useContext, useCallback, useState } from "react";
+import { toast } from "sonner";
 import { StudioContext } from "@/contexts/StudioContext";
 import type { AttachedFile } from "@/contexts/StudioContext";
 import { FileDropZone } from "./FileDropZone";
@@ -65,6 +66,7 @@ function Files() {
         setFiles((prev) => [...prev, ...newFiles]);
       } catch (err) {
         console.error("Failed to add files:", err);
+        toast.error("Failed to attach files");
       } finally {
         setIsAdding(false);
       }
@@ -87,6 +89,7 @@ function Files() {
         setFiles((prev) => prev.filter((f) => f.id !== id));
       } catch (err) {
         console.error("Failed to remove file:", err);
+        toast.error("Failed to remove file");
       }
     },
     [setFiles, scenarioId, files]
@@ -105,6 +108,7 @@ function Files() {
       setFiles([]);
     } catch (err) {
       console.error("Failed to clear files:", err);
+      toast.error("Failed to clear attachments");
     }
   }, [setFiles, scenarioId, files]);
 
