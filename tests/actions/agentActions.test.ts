@@ -426,7 +426,7 @@ describe('runAgentAction', () => {
 
       await runAgentAction(makeAgent(), 'task', dispatch);
 
-      const saved = mockUpdateExecution.mock.calls[0][1] as any;
+      const saved = mockUpdateExecution.mock.calls.at(-1)![1] as any;
       const usage = JSON.parse(saved.usage_json);
       expect(usage.totalTokens).toBe(300);
       expect(usage.inputTokens).toBe(100);
@@ -462,7 +462,7 @@ describe('runAgentAction', () => {
 
       await runAgentAction(makeAgent(), 'task', dispatch);
 
-      const saved = mockUpdateExecution.mock.calls[0][1] as any;
+      const saved = mockUpdateExecution.mock.calls.at(-1)![1] as any;
       const steps = JSON.parse(saved.steps_json);
       expect(steps.some((s: any) => s.type === 'task_input')).toBe(true);
       expect(steps.some((s: any) => s.type === 'output')).toBe(true);

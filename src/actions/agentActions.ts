@@ -100,6 +100,19 @@ export async function runAgentAction(
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   let finalText = '';
+  let snapshot_json = JSON.stringify({
+    name: agentRecord.name,
+    systemPrompt: instructions ?? '',
+    configuration: {
+      provider: agentRecord.provider,
+      model: agentRecord.model,
+      temperature: params.temperature,
+      topP: params.top_p,
+      maxTokens: params.max_tokens,
+    },
+    maxIterations: agentRecord.max_iterations,
+    timeoutSeconds: agentRecord.timeout_seconds,
+  });
 
   // Emit task_received immediately so the UI shows something before the first LLM round-trip
   stepBuffer.push({
@@ -136,22 +149,21 @@ export async function runAgentAction(
       });
     }
     // Update snapshot to include the actual tools used in this run
-    await updateExecution(executionId, {
-      snapshot_json: JSON.stringify({
-        name: agentRecord.name,
-        systemPrompt: instructions ?? '',
-        configuration: {
-          provider: agentRecord.provider,
-          model: agentRecord.model,
-          temperature: params.temperature,
-          topP: params.top_p,
-          maxTokens: params.max_tokens,
-        },
-        maxIterations: agentRecord.max_iterations,
-        timeoutSeconds: agentRecord.timeout_seconds,
-        tools: linkedTools,
-      }),
+    snapshot_json = JSON.stringify({
+      name: agentRecord.name,
+      systemPrompt: instructions ?? '',
+      configuration: {
+        provider: agentRecord.provider,
+        model: agentRecord.model,
+        temperature: params.temperature,
+        topP: params.top_p,
+        maxTokens: params.max_tokens,
+      },
+      maxIterations: agentRecord.max_iterations,
+      timeoutSeconds: agentRecord.timeout_seconds,
+      tools: linkedTools,
     });
+    await updateExecution(executionId, { snapshot_json });
 
     const hasTools = Object.keys(aiTools).length > 0;
 
