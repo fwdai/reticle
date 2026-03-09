@@ -163,6 +163,7 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
         onSearchChange={setSearchQuery}
         onCreateTool={handleCreate}
         toolCount={filtered.length}
+        isEmpty={tools.length === 0}
       />
       <ToolList
         tools={filtered}

@@ -131,6 +131,7 @@ function Studio() {
           onCreateScenario={handleCreateScenario}
           scenarioCount={filteredScenarios.length}
           canCreate={!!selectedCollectionId}
+          isEmpty={filteredScenarios.length === 0 && !searchQuery}
         />
         <ScenarioList
           scenarios={filteredScenarios}

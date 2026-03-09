@@ -209,6 +209,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
         onSearchChange={setSearchQuery}
         onCreateAgent={handleCreateAgent}
         agentCount={filteredAgents.length}
+        isEmpty={agents.length === 0}
       />
 
       <AgentList

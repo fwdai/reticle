@@ -8,6 +8,7 @@ interface ToolsHeaderProps {
   onSearchChange: (value: string) => void;
   onCreateTool: () => void;
   toolCount: number;
+  isEmpty?: boolean;
 }
 
 function ToolsHeader({
@@ -15,6 +16,7 @@ function ToolsHeader({
   onSearchChange,
   onCreateTool,
   toolCount,
+  isEmpty,
 }: ToolsHeaderProps) {
   return (
     <Header>
@@ -29,14 +31,17 @@ function ToolsHeader({
           value={search}
           onChange={onSearchChange}
           placeholder="Search tools..."
+          disabled={isEmpty}
         />
-        <button
-          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
-          onClick={onCreateTool}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Tool
-        </button>
+        {!isEmpty && (
+          <button
+            className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
+            onClick={onCreateTool}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Tool
+          </button>
+        )}
       </div>
     </Header>
   );

@@ -7,6 +7,7 @@ interface SearchFieldProps {
   placeholder?: string;
   className?: string;
   inputClassName?: string;
+  disabled?: boolean;
 }
 
 export function SearchField({
@@ -15,17 +16,20 @@ export function SearchField({
   placeholder = "Search...",
   className,
   inputClassName,
+  disabled,
 }: SearchFieldProps) {
   return (
-    <div className={cn("relative flex-1 sm:flex-none min-w-0", className)}>
+    <div className={cn("relative flex-1 sm:flex-none min-w-0", disabled && "opacity-40 cursor-not-allowed", className)}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted size-4" />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        disabled={disabled}
         className={cn(
           "pl-10 pr-10 py-2 bg-slate-50 border border-border-light rounded-xl text-sm w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all",
+          disabled && "cursor-not-allowed",
           inputClassName
         )}
       />

@@ -164,6 +164,7 @@ function TemplatesPage() {
         onSearchChange={setSearch}
         onCreateTemplate={onCreateTemplate}
         templateCount={filtered.length}
+        isEmpty={templates.length === 0}
       />
 
       {/* ContentBody */}

@@ -8,9 +8,10 @@ interface TemplatesHeaderProps {
   onSearchChange: (value: string) => void;
   onCreateTemplate: () => void;
   templateCount: number;
+  isEmpty?: boolean;
 }
 
-function TemplatesHeader({ search, onSearchChange, onCreateTemplate, templateCount }: TemplatesHeaderProps) {
+function TemplatesHeader({ search, onSearchChange, onCreateTemplate, templateCount, isEmpty }: TemplatesHeaderProps) {
   return (
     <Header>
       <div className="flex items-center gap-4 flex-shrink-0">
@@ -24,14 +25,17 @@ function TemplatesHeader({ search, onSearchChange, onCreateTemplate, templateCou
           value={search}
           onChange={onSearchChange}
           placeholder="Search templates..."
+          disabled={isEmpty}
         />
-        <button
-          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
-          onClick={onCreateTemplate}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Template
-        </button>
+        {!isEmpty && (
+          <button
+            className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm flex-shrink-0"
+            onClick={onCreateTemplate}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Template
+          </button>
+        )}
       </div>
     </Header>
   );

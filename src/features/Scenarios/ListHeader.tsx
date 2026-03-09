@@ -9,6 +9,7 @@ interface ListHeaderProps {
   onCreateScenario: () => void;
   scenarioCount: number;
   canCreate: boolean;
+  isEmpty?: boolean;
 }
 
 function ListHeader({
@@ -18,6 +19,7 @@ function ListHeader({
   onCreateScenario,
   scenarioCount,
   canCreate,
+  isEmpty,
 }: ListHeaderProps) {
   return (
     <Header>
@@ -32,16 +34,19 @@ function ListHeader({
           value={search}
           onChange={onSearchChange}
           placeholder="Search scenarios..."
+          disabled={isEmpty}
         />
-        <button
-          className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex-shrink-0"
-          onClick={onCreateScenario}
-          disabled={!canCreate}
-          title={!canCreate ? "Select a collection to create a scenario" : "New Scenario"}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Scenario
-        </button>
+        {!isEmpty && (
+          <button
+            className="h-9 px-4 rounded-lg gap-2 inline-flex items-center justify-center text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex-shrink-0"
+            onClick={onCreateScenario}
+            disabled={!canCreate}
+            title={!canCreate ? "Select a collection to create a scenario" : "New Scenario"}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Scenario
+          </button>
+        )}
       </div>
     </Header>
   );
