@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { SlidersHorizontal, Wrench, DatabaseZap } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import TabPanel from "@/components/ui/Tabs/TabPanel";
+import { TabTitle } from "@/components/ui/Tabs/TabTitle";
 import useResizablePanel from "@/hooks/useResizablePanel";
 import { useAgentContext } from "@/contexts/AgentContext";
 import { ToolsContainer } from "@/components/Tools/ToolsContainer";
+import { listToolsForEntity } from "@/lib/storage";
 
 import { Tab } from "./Tab";
 import { MemoryPanel } from "./Memory/MemoryPanel";
@@ -83,6 +85,15 @@ export function SpecLayout({
 }: LayoutProps) {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const { execution } = useAgentContext();
+  const [toolCount, setToolCount] = useState(0);
+
+  const refreshToolCount = useCallback(async () => {
+    if (!agentId) return;
+    const tools = await listToolsForEntity(agentId, "agent");
+    setToolCount(tools.length);
+  }, [agentId]);
+
+  useEffect(() => { refreshToolCount(); }, [refreshToolCount]);
 
   const [maxResponseHeight, setMaxResponseHeight] = useState(Infinity);
 
@@ -140,9 +151,13 @@ export function SpecLayout({
               />
             </div>
           </TabPanel>
-          <TabPanel title="Tools" icon={<Wrench className="h-3.5 w-3.5" />}>
+          <TabPanel title={<TabTitle label="Tools" count={toolCount} />} icon={<Wrench className="h-3.5 w-3.5" />}>
             <div className={panelContentClass}>
-              <ToolsContainer entityId={agentId} entityType="agent" />
+              <ToolsContainer
+                entityId={agentId}
+                entityType="agent"
+                onToolCountChange={setToolCount}
+              />
             </div>
           </TabPanel>
           <TabPanel title="Memory" icon={<DatabaseZap className="h-3.5 w-3.5" />}>

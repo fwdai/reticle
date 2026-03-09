@@ -25,6 +25,7 @@ interface ToolsContainerProps {
   entityType: "scenario" | "agent";
   onLocalToolsChange?: (tools: Tool[]) => void;
   onEnabledSharedToolIdsChange?: (ids: string[]) => void;
+  onToolCountChange?: (count: number) => void;
 }
 
 export function ToolsContainer({
@@ -32,6 +33,7 @@ export function ToolsContainer({
   entityType,
   onLocalToolsChange,
   onEnabledSharedToolIdsChange,
+  onToolCountChange,
 }: ToolsContainerProps) {
   const [localTools, setLocalToolsState] = useState<Tool[]>([]);
   const [sharedTools, setSharedTools] = useState<Tool[]>([]);
@@ -79,6 +81,10 @@ export function ToolsContainer({
       cancelled = true;
     };
   }, [entityId, entityType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    onToolCountChange?.(localTools.length + enabledSharedToolIds.length);
+  }, [localTools.length, enabledSharedToolIds.length, onToolCountChange]);
 
   useEffect(() => {
     if (!selectedToolId) {
