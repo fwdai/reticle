@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { StarterTemplates } from "@/components/ui/StarterTemplates";
-import { TOOL_STARTER_TEMPLATES } from "@/constants/starterTemplates";
+import { TOOL_EMPTY_STATE } from "@/constants/starterTemplates";
 
 interface EmptyStateProps {
   hasSearch: boolean;
@@ -22,9 +22,8 @@ export function EmptyState({ hasSearch, onCreateTool }: EmptyStateProps) {
 
   return (
     <StarterTemplates
-      headline="Build your first tool"
-      subtitle="Tools are shared functions that agents and scenarios can call. Choose a starting point below."
-      templates={TOOL_STARTER_TEMPLATES}
+      {...TOOL_EMPTY_STATE}
+      onCreateBlank={onCreateTool}
       onSelect={() => onCreateTool()}
     />
   );

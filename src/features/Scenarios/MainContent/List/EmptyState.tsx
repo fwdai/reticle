@@ -1,24 +1,21 @@
 import { StarterTemplates } from "@/components/ui/StarterTemplates";
-import { SCENARIO_STARTER_TEMPLATES } from "@/constants/starterTemplates";
+import { SCENARIO_EMPTY_STATE } from "@/constants/starterTemplates";
 
 interface EmptyStateProps {
   hasCollectionSelected: boolean;
   onCreateScenario?: () => void;
 }
 
-export function EmptyState({
-  hasCollectionSelected,
-  onCreateScenario,
-}: EmptyStateProps) {
+export function EmptyState({ hasCollectionSelected, onCreateScenario }: EmptyStateProps) {
   return (
     <StarterTemplates
-      headline="Add your first scenario"
+      {...SCENARIO_EMPTY_STATE}
       subtitle={
         hasCollectionSelected
-          ? "Choose a starting point to create a test scenario, then run and compare results."
-          : "Select or create a collection first, then pick a starting point below."
+          ? SCENARIO_EMPTY_STATE.subtitle
+          : "Select or create a collection in the sidebar first, then come back here to add your first scenario."
       }
-      templates={SCENARIO_STARTER_TEMPLATES}
+      onCreateBlank={hasCollectionSelected ? onCreateScenario : undefined}
       onSelect={() => onCreateScenario?.()}
     />
   );

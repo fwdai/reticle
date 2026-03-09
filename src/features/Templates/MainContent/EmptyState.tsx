@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { StarterTemplates } from "@/components/ui/StarterTemplates";
-import { TEMPLATE_STARTER_TEMPLATES } from "@/constants/starterTemplates";
+import { TEMPLATE_EMPTY_STATE } from "@/constants/starterTemplates";
 
 interface EmptyStateProps {
   hasSearch: boolean;
@@ -22,9 +22,8 @@ export function EmptyState({ hasSearch, onCreateTemplate }: EmptyStateProps) {
 
   return (
     <StarterTemplates
-      headline="Create your first template"
-      subtitle="Reusable prompt templates keep your prompts consistent and easy to iterate on."
-      templates={TEMPLATE_STARTER_TEMPLATES}
+      {...TEMPLATE_EMPTY_STATE}
+      onCreateBlank={onCreateTemplate}
       onSelect={() => onCreateTemplate()}
     />
   );
