@@ -14,6 +14,7 @@ export interface AgentLastRun {
 
 interface AgentListProps {
   agents: Agent[];
+  hasAgents: boolean;
   starredAgentIds: Set<string>;
   lastRunByAgentId: Map<string, AgentLastRun>;
   onSelectAgent: (agentId: string) => void;
@@ -24,6 +25,7 @@ interface AgentListProps {
 
 export function AgentList({
   agents,
+  hasAgents,
   starredAgentIds,
   lastRunByAgentId,
   onSelectAgent,
@@ -34,7 +36,14 @@ export function AgentList({
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
       {agents.length === 0 ? (
-        <EmptyState onCreateAgent={onCreateAgent} />
+        hasAgents ? (
+          <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+            <p className="text-sm font-medium text-text-main">No matching agents</p>
+            <p className="mt-1 text-xs text-text-muted">Try a different filter or search term.</p>
+          </div>
+        ) : (
+          <EmptyState onCreateAgent={onCreateAgent} />
+        )
       ) : (
         <div className="space-y-1.5">
           {agents.map((agent) => {

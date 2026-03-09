@@ -167,6 +167,7 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
       />
       <ToolList
         tools={filtered}
+        hasTools={tools.length > 0}
         searchQuery={searchQuery}
         onSelectTool={setSelectedId}
         onCreateTool={handleCreate}

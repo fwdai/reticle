@@ -7,6 +7,7 @@ import type { ToolWithMeta } from "../../types";
 
 interface ToolListProps {
   tools: ToolWithMeta[];
+  hasTools: boolean;
   searchQuery: string;
   onSelectTool: (id: string) => void;
   onCreateTool: () => void;
@@ -16,6 +17,7 @@ interface ToolListProps {
 
 export function ToolList({
   tools,
+  hasTools,
   searchQuery,
   onSelectTool,
   onCreateTool,
@@ -25,7 +27,7 @@ export function ToolList({
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
       {tools.length === 0 ? (
-        <EmptyState hasSearch={!!searchQuery} onCreateTool={onCreateTool} />
+        <EmptyState hasSearch={!!searchQuery} hasTools={hasTools} onCreateTool={onCreateTool} />
       ) : (
         <div className="space-y-1.5">
           {tools.map((tool) => (

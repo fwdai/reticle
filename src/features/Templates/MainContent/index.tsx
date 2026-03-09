@@ -189,7 +189,7 @@ function TemplatesPage() {
         {loading ? (
           <p className="text-text-muted">Loading templates…</p>
         ) : filtered.length === 0 ? (
-          <EmptyState hasSearch={!!search} onCreateTemplate={onCreateTemplate} />
+          <EmptyState hasSearch={!!search} hasTemplates={templates.length > 0} onCreateTemplate={onCreateTemplate} />
         ) : (
           <div className="space-y-1.5">
             {filtered.map((template) => {

@@ -214,6 +214,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
 
       <AgentList
         agents={filteredAgents}
+        hasAgents={agents.length > 0}
         starredAgentIds={starredAgents}
         lastRunByAgentId={lastRunByAgentId}
         onSelectAgent={handleSelectAgent}
