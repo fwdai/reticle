@@ -137,6 +137,7 @@ interface StudioContextType {
   fetchCollections: () => Promise<Collection[]>;
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>;
+  deleteCollection: (id: string) => Promise<void>;
   createScenario: (collectionId: string) => Promise<void>;
   deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
@@ -579,6 +580,18 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   }, [fetchCollections]); // Depend on fetchCollections to ensure it's up-to-date
 
+  const deleteCollection = useCallback(async (id: string) => {
+    try {
+      await invoke('db_delete_cmd', { table: 'collections', query: { where: { id } } });
+      if (selectedCollectionId === id) {
+        setSelectedCollectionId(null);
+      }
+      await fetchCollections();
+    } catch (error) {
+      console.error(`Failed to delete collection ${id}:`, error);
+    }
+  }, [fetchCollections, selectedCollectionId]);
+
   const deleteScenario = useCallback(async (id: string) => {
     try {
       setStudioState(prev => ({ ...prev, isLoading: true })); // Set loading true at the start
@@ -616,7 +629,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
 
   return (
 
-    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, createScenario, deleteScenario, runScenario, runScenarioById, stopScenario }}>
+    <StudioContext.Provider value={{ studioState, setStudioState, viewMode, setViewMode, activeEditorTab, setActiveEditorTab, navigateToEditor, saveScenario, createNewScenario, loadScenario, backToList, selectedCollectionId, setSelectedCollectionId, fetchCollections, fetchScenarios, createCollection, deleteCollection, createScenario, deleteScenario, runScenario, runScenarioById, stopScenario }}>
 
       {children}
 

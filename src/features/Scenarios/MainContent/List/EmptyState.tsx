@@ -1,4 +1,4 @@
-import { FileCode } from "lucide-react";
+import { Layers } from "lucide-react";
 import { StarterTemplates, FilterEmptyState } from "@/components/ui/EmptyState";
 import { SCENARIO_EMPTY_STATE } from "@/constants/starterTemplates";
 
@@ -13,7 +13,7 @@ export function EmptyState({ hasCollectionSelected, hasScenarios, hasSearch, onC
   if (hasScenarios || hasSearch) {
     return (
       <FilterEmptyState
-        icon={FileCode}
+        icon={Layers}
         title={hasSearch ? "No scenarios match your search" : "No matching scenarios"}
         subtitle={hasSearch ? "Try a different search query." : "Try a different filter."}
       />
