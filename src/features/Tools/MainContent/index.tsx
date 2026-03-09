@@ -33,6 +33,7 @@ interface ToolsMainContentProps {
 
 function ToolsMainContent({ filter }: ToolsMainContentProps) {
   const [tools, setTools] = useState<ToolWithMeta[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
@@ -42,6 +43,7 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
   const refreshTools = useCallback(async () => {
     const rows = await listSharedToolsWithMeta();
     setTools(rows);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -165,15 +167,17 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
         toolCount={filtered.length}
         isEmpty={tools.length === 0}
       />
-      <ToolList
-        tools={filtered}
-        hasTools={tools.length > 0}
-        searchQuery={searchQuery}
-        onSelectTool={setSelectedId}
-        onCreateTool={handleCreate}
-        onDeleteTool={handleDelete}
-        onCopySchema={copyToolSchema}
-      />
+      {isLoading ? null : (
+        <ToolList
+          tools={filtered}
+          hasTools={tools.length > 0}
+          searchQuery={searchQuery}
+          onSelectTool={setSelectedId}
+          onCreateTool={handleCreate}
+          onDeleteTool={handleDelete}
+          onCopySchema={copyToolSchema}
+        />
+      )}
       <Dialog open={!!toolToDelete} onOpenChange={(open) => !open && setToolToDelete(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

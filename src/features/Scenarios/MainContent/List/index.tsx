@@ -33,6 +33,8 @@ interface ScenarioListProps {
   onRunScenario: (id: string) => void;
   onDeleteScenario: (scenario: Scenario) => void;
   hasCollectionSelected: boolean;
+  hasScenarios: boolean;
+  hasSearch: boolean;
   onCreateScenario?: () => void;
 }
 
@@ -44,12 +46,14 @@ export function ScenarioList({
   onRunScenario,
   onDeleteScenario,
   hasCollectionSelected,
+  hasScenarios,
+  hasSearch,
   onCreateScenario,
 }: ScenarioListProps) {
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50 flex flex-col">
       {scenarios.length === 0 ? (
-        <EmptyState hasCollectionSelected={hasCollectionSelected} onCreateScenario={onCreateScenario} />
+        <EmptyState hasCollectionSelected={hasCollectionSelected} hasScenarios={hasScenarios} hasSearch={hasSearch} onCreateScenario={onCreateScenario} />
       ) : (
         <div className="space-y-1.5">
           {scenarios.map((scenario) => {

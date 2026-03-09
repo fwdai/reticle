@@ -5,7 +5,7 @@ import {
   Layers, BookOpen,
   Library,
 } from "lucide-react";
-import type { StarterTemplate, StarterTemplatesProps } from "@/components/ui/StarterTemplates";
+import type { StarterTemplate, StarterTemplatesProps } from "@/components/ui/EmptyState";
 
 export type { StarterTemplate };
 

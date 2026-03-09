@@ -75,6 +75,7 @@ interface AgentsMainContentProps {
 function AgentsMainContent({ filter }: AgentsMainContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [starredAgents, setStarredAgents] = useState<Set<string>>(new Set());
   const [lastRunByAgentId, setLastRunByAgentId] = useState<Map<string, AgentLastRun>>(new Map());
 
@@ -100,6 +101,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
       lastRunMap.set(agentId, buildLastRun(exec));
     }
     setLastRunByAgentId(lastRunMap);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -212,16 +214,18 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
         isEmpty={agents.length === 0}
       />
 
-      <AgentList
-        agents={filteredAgents}
-        hasAgents={agents.length > 0}
-        starredAgentIds={starredAgents}
-        lastRunByAgentId={lastRunByAgentId}
-        onSelectAgent={handleSelectAgent}
-        onToggleStar={toggleStar}
-        onDeleteAgent={handleDeleteClick}
-        onCreateAgent={handleCreateAgent}
-      />
+      {isLoading ? null : (
+        <AgentList
+          agents={filteredAgents}
+          hasAgents={agents.length > 0}
+          starredAgentIds={starredAgents}
+          lastRunByAgentId={lastRunByAgentId}
+          onSelectAgent={handleSelectAgent}
+          onToggleStar={toggleStar}
+          onDeleteAgent={handleDeleteClick}
+          onCreateAgent={handleCreateAgent}
+        />
+      )}
       <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

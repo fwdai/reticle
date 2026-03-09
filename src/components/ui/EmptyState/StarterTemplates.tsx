@@ -87,15 +87,12 @@ export function StarterTemplates({
                   "0 1px 3px 0 rgb(0 0 0 / 0.06)";
               }}
             >
-              {/* Content */}
               <h3 className="mb-1 text-sm font-bold text-text-main">
                 {tpl.title}
               </h3>
               <p className="mb-3 flex-1 text-[12.5px] leading-relaxed text-text-muted line-clamp-3">
                 {tpl.description}
               </p>
-
-              {/* Tags */}
               <div className="mb-3 flex flex-wrap gap-1.5">
                 {tpl.tags.map((tag) => (
                   <span
@@ -106,8 +103,6 @@ export function StarterTemplates({
                   </span>
                 ))}
               </div>
-
-              {/* CTA */}
               <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary transition-all duration-200 group-hover:gap-2.5">
                 Start with this
                 <ArrowRight className="h-3.5 w-3.5" />

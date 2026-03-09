@@ -3,6 +3,7 @@ import { Zap, Wrench, Brain, Copy, Trash2 } from "lucide-react";
 import { EntityCard } from "@/components/ui/EntityCard";
 import { formatRelativeTime } from "@/lib/helpers/time";
 import { EmptyState } from "./EmptyState";
+import { FilterEmptyState } from "@/components/ui/EmptyState";
 import type { Agent } from "./types";
 
 export interface AgentLastRun {
@@ -34,13 +35,14 @@ export function AgentList({
   onCreateAgent,
 }: AgentListProps) {
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50 flex flex-col">
       {agents.length === 0 ? (
         hasAgents ? (
-          <div className="flex flex-col items-center justify-center h-full py-20 text-center">
-            <p className="text-sm font-medium text-text-main">No matching agents</p>
-            <p className="mt-1 text-xs text-text-muted">Try a different filter or search term.</p>
-          </div>
+          <FilterEmptyState
+            icon={Zap}
+            title="No matching agents"
+            subtitle="Try a different filter or search term."
+          />
         ) : (
           <EmptyState onCreateAgent={onCreateAgent} />
         )

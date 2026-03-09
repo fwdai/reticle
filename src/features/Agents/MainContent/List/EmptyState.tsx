@@ -1,4 +1,4 @@
-import { StarterTemplates } from "@/components/ui/StarterTemplates";
+import { StarterTemplates } from "@/components/ui/EmptyState";
 import { AGENT_EMPTY_STATE } from "@/constants/starterTemplates";
 
 interface EmptyStateProps {

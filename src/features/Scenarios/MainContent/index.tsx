@@ -133,17 +133,21 @@ function Studio() {
           canCreate={!!selectedCollectionId}
           isEmpty={filteredScenarios.length === 0 && !searchQuery}
         />
-        <ScenarioList
-          scenarios={filteredScenarios}
-          collectionNames={collectionNames}
-          scenarioStats={scenarioStats}
-          scenarioStatusMap={scenarioStatusMap}
-          onSelectScenario={(id) => loadScenario?.(id)}
-          onRunScenario={(id) => runScenarioById?.(id)}
-          onDeleteScenario={handleDeleteClick}
-          hasCollectionSelected={selectedCollectionId !== null}
-          onCreateScenario={handleCreateScenario}
-        />
+        {isLoading && savedScenarios.length === 0 ? null : (
+          <ScenarioList
+            scenarios={filteredScenarios}
+            collectionNames={collectionNames}
+            scenarioStats={scenarioStats}
+            scenarioStatusMap={scenarioStatusMap}
+            onSelectScenario={(id) => loadScenario?.(id)}
+            onRunScenario={(id) => runScenarioById?.(id)}
+            onDeleteScenario={handleDeleteClick}
+            hasCollectionSelected={selectedCollectionId !== null}
+            hasScenarios={savedScenarios.length > 0}
+            hasSearch={!!searchQuery.trim()}
+            onCreateScenario={handleCreateScenario}
+          />
+        )}
         <Dialog open={!!scenarioToDelete} onOpenChange={(open) => !open && setScenarioToDelete(null)}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>

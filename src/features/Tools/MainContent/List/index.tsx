@@ -25,7 +25,7 @@ export function ToolList({
   onCopySchema,
 }: ToolListProps) {
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50 flex flex-col">
       {tools.length === 0 ? (
         <EmptyState hasSearch={!!searchQuery} hasTools={hasTools} onCreateTool={onCreateTool} />
       ) : (

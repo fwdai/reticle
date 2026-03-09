@@ -185,10 +185,8 @@ function TemplatesPage() {
       />
 
       {/* ContentBody */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50">
-        {loading ? (
-          <p className="text-text-muted">Loading templates…</p>
-        ) : filtered.length === 0 ? (
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 bg-slate-50 flex flex-col">
+        {loading ? null : filtered.length === 0 ? (
           <EmptyState hasSearch={!!search} hasTemplates={templates.length > 0} onCreateTemplate={onCreateTemplate} />
         ) : (
           <div className="space-y-1.5">
