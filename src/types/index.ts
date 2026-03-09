@@ -21,7 +21,7 @@ export type ExecutionStatus =
   | 'succeeded'
   | 'failed'
   | 'canceled';
-export type ExecutionType = 'scenario' | 'agent' | 'mcp';
+export type ExecutionType = 'scenario' | 'agent';
 
 export type LLMCallConfig = {
   provider: string;
