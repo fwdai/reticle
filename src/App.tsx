@@ -25,17 +25,23 @@ const pages: Partial<Record<Page, ComponentType>> = {
 
 function App() {
   const { appState, isAppReady } = useAppContext();
+
   const PageComponent = pages[appState.currentPage] as ComponentType;
 
   if (!isAppReady) {
-    return <LoadingScreen />;
+    return (
+      <>
+        <LoadingScreen />
+        <Toaster position="bottom-right" richColors closeButton />
+      </>
+    );
   }
 
   return (
     <div className="flex h-screen w-full overflow-hidden p-0.75 bg-sidebar-light animate-fade-in">
       <Navigation />
       <PageComponent />
-      <Toaster position="bottom-right" richColors />
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
 }
