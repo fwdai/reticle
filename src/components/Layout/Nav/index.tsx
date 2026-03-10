@@ -66,6 +66,7 @@ function Navigation() {
               <Tooltip key={item.id}>
                 <TooltipTrigger asChild>
                   <button
+                    data-testid={`nav-${item.id}`}
                     onClick={(e) => handleClick(item.id, e)}
                     className={`${isActive ? "text-white" : "text-white/40 hover:text-white"
                       } transition-colors flex items-center justify-center relative cursor-pointer h-7`}

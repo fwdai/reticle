@@ -4,6 +4,10 @@ use tauri::{AppHandle, Manager};
 /// Returns the app data root (Reticle or Reticle-dev folder).
 /// Uses "Reticle-dev" when running with `tauri dev` to avoid conflicts with the built app.
 pub fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
+    if let Ok(test_dir) = std::env::var("RETICLE_DB_DIR") {
+        return Ok(PathBuf::from(test_dir));
+    }
+
     let app_data_dir = app
         .path()
         .app_data_dir()

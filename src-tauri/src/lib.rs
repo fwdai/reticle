@@ -76,7 +76,15 @@ use std::sync::{Arc, Mutex}; // Needed for State in commands
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(tauri_plugin_webdriver::init());
+    }
+
+    builder
         .setup(|app| {
             let app_handle = app.handle();
             let db_conn = database::init_database(&app_handle)

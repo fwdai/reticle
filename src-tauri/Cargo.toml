@@ -17,6 +17,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[target.'cfg(debug_assertions)'.dependencies]
+tauri-plugin-webdriver = "0.2"
+
 [dependencies]
 tauri = { version = "2.10", features = [] }
 tauri-plugin-shell = "2"
