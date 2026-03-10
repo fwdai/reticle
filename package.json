@@ -1,7 +1,7 @@
 {
   "name": "reticle",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
