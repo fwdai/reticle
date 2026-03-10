@@ -6,6 +6,7 @@ export interface StarterTemplate {
   title: string;
   description: string;
   tags: string[];
+  config?: unknown;
 }
 
 export interface StarterTemplatesProps {

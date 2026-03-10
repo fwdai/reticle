@@ -3,6 +3,7 @@ import { listPromptTemplates } from "@/lib/storage";
 import type { PromptTemplate } from "@/types";
 import { usePersistedState } from "@/hooks/usePersistedState";
 
+
 const NEW_TEMPLATE: PromptTemplate = {
   type: "user",
   name: "",
@@ -22,7 +23,7 @@ interface TemplatesContextType {
   setActiveCollection: (name: string | null) => void;
   selectedTemplate: PromptTemplate | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<PromptTemplate | null>>;
-  onCreateTemplate: () => void;
+  onCreateTemplate: (config?: Partial<PromptTemplate>) => void;
 }
 
 export const TemplatesContext = createContext<TemplatesContextType | undefined>(undefined);
@@ -60,8 +61,8 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
     }
   }, []);
 
-  const onCreateTemplate = useCallback(() => {
-    setSelectedTemplate({ ...NEW_TEMPLATE });
+  const onCreateTemplate = useCallback((config?: Partial<PromptTemplate>) => {
+    setSelectedTemplate({ ...NEW_TEMPLATE, ...config });
   }, []);
 
   useEffect(() => {

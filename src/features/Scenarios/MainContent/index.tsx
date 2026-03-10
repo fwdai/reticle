@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Scenario } from '@/types';
+import type { ScenarioStarterConfig } from '@/constants/starterTemplates';
 
 function Studio() {
   const context = useContext(StudioContext);
@@ -106,9 +107,9 @@ function Studio() {
     return () => { cancelled = true; };
   }, [filteredScenarios, isLoading]);
 
-  const handleCreateScenario = () => {
+  const handleCreateScenario = (config?: ScenarioStarterConfig) => {
     if (selectedCollectionId) {
-      createScenario?.(selectedCollectionId);
+      createScenario?.(selectedCollectionId, config);
     }
   };
 

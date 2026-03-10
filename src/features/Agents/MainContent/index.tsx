@@ -18,6 +18,7 @@ import { formatDuration } from "@/lib/helpers/time";
 import { formatTokens, formatCost } from "@/lib/helpers/format";
 import type { AgentFilterId } from "../index";
 import type { Execution } from "@/types";
+import type { AgentStarterConfig } from "@/constants/starterTemplates";
 
 function buildLastRun(exec: Execution): AgentLastRun {
   let duration = "—";
@@ -157,32 +158,38 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
   }, [agentToDelete, refreshAgents]);
 
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [pendingAgentConfig, setPendingAgentConfig] = useState<AgentStarterConfig | null>(null);
 
   useEffect(() => {
     setSelectedAgent(null);
   }, [filter]);
 
-  const handleCreateAgent = () => {
+  const handleCreateAgent = (config?: AgentStarterConfig) => {
     const newAgent: Agent = {
       id: "new",
-      name: "",
-      description: "",
+      name: config?.name ?? "",
+      description: config?.description ?? "",
       status: "needs-config",
       model: "gpt-4.1",
       toolsCount: 0,
       memoryEnabled: false,
       starred: false,
     };
+    setPendingAgentConfig(config ?? null);
     setSelectedAgent(newAgent);
   };
 
   const handleSelectAgent = (agentId: string) => {
     const agent = agents.find((a) => a.id === agentId);
-    if (agent) setSelectedAgent(agent);
+    if (agent) {
+      setPendingAgentConfig(null);
+      setSelectedAgent(agent);
+    }
   };
 
   const handleBackFromDetail = () => {
     setSelectedAgent(null);
+    setPendingAgentConfig(null);
     refreshAgents();
   };
 
@@ -194,6 +201,8 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
       model: selectedAgent.model,
       toolsCount: selectedAgent.toolsCount,
       memoryEnabled: selectedAgent.memoryEnabled,
+      agentGoal: pendingAgentConfig?.agentGoal,
+      systemInstructions: pendingAgentConfig?.systemInstructions,
     };
     return (
       <AgentDetail

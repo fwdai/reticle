@@ -6,7 +6,7 @@ export async function insertExecution(data: Execution): Promise<string> {
   return dbInsert('executions', data);
 }
 
-export async function updateExecution(id: string, data: Execution): Promise<void> {
+export async function updateExecution(id: string, data: Partial<Execution>): Promise<void> {
   // updated_at is now handled by the backend
   await dbUpdate('executions', { id }, data);
 }

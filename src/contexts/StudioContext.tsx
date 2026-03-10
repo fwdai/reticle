@@ -138,7 +138,7 @@ interface StudioContextType {
   fetchScenarios: () => Promise<void>;
   createCollection: (name: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
-  createScenario: (collectionId: string) => Promise<void>;
+  createScenario: (collectionId: string, config?: { title?: string; system_prompt?: string; user_prompt?: string; history_json?: string; variables_json?: string }) => Promise<void>;
   deleteScenario: (id: string) => Promise<void>;
   runScenario: () => Promise<void>;
   runScenarioById: (id: string) => Promise<void>;
@@ -456,7 +456,7 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   }, []);
 
   const createScenario = useCallback(
-    async (collectionId: string) => {
+    async (collectionId: string, templateConfig?: { title?: string; system_prompt?: string; user_prompt?: string; history_json?: string; variables_json?: string }) => {
       try {
         setStudioState(prev => ({ ...prev, isLoading: true }));
         const provider = appState.defaultProvider ?? initialScenario.configuration.provider;
@@ -467,16 +467,16 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           model,
         };
         const newScenario: Omit<Scenario, 'id' | 'created_at' | 'updated_at'> = {
-          title: `New Scenario`,
+          title: templateConfig?.title ?? `New Scenario`,
           collection_id: collectionId,
           provider,
           model,
-          system_prompt: initialScenario.systemPrompt,
-          user_prompt: initialScenario.userPrompt,
+          system_prompt: templateConfig?.system_prompt ?? initialScenario.systemPrompt,
+          user_prompt: templateConfig?.user_prompt ?? initialScenario.userPrompt,
           params_json: JSON.stringify(config),
           tools_json: JSON.stringify(initialScenario.tools),
-          history_json: JSON.stringify(initialScenario.history),
-          variables_json: JSON.stringify({ system: [], user: [] }),
+          history_json: templateConfig?.history_json ?? JSON.stringify(initialScenario.history),
+          variables_json: templateConfig?.variables_json ?? JSON.stringify({ system: [], user: [] }),
         };
 
         const scenarioId: string = await invoke('db_insert_cmd', { table: 'scenarios', data: newScenario });

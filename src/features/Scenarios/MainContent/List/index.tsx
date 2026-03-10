@@ -7,6 +7,7 @@ import { truncatePrompt } from "./scenarioStats";
 import type { Scenario } from "@/types";
 import type { ScenarioStats } from "./scenarioStats";
 import type { ScenarioStatus } from "./ScenarioStatusIndicator";
+import type { ScenarioStarterConfig } from "@/constants/starterTemplates";
 
 function scenarioStatusToEntityStatus(status: ScenarioStatus): EntityStatus {
   return status as EntityStatus;
@@ -35,7 +36,7 @@ interface ScenarioListProps {
   hasCollectionSelected: boolean;
   hasScenarios: boolean;
   hasSearch: boolean;
-  onCreateScenario?: () => void;
+  onCreateScenario?: (config?: ScenarioStarterConfig) => void;
 }
 
 export function ScenarioList({

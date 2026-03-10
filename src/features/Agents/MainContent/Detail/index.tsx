@@ -32,8 +32,8 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
   const [description, setDescription] = useState(agent.description ?? "");
   const [provider, setProvider] = useState("openai");
   const [model, setModel] = useState(agent.model || "gpt-4.1");
-  const [agentGoal, setAgentGoal] = useState("");
-  const [systemInstructions, setSystemInstructions] = useState("");
+  const [agentGoal, setAgentGoal] = useState(agent.agentGoal ?? "");
+  const [systemInstructions, setSystemInstructions] = useState(agent.systemInstructions ?? "");
   const [temperature, setTemperature] = useState([0.4]);
   const [topP, setTopP] = useState([0.95]);
   const [maxTokens, setMaxTokens] = useState([4096]);

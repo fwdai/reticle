@@ -1,12 +1,13 @@
 import { Layers } from "lucide-react";
 import { StarterTemplates, FilterEmptyState } from "@/components/ui/EmptyState";
 import { SCENARIO_EMPTY_STATE } from "@/constants/starterTemplates";
+import type { ScenarioStarterConfig } from "@/constants/starterTemplates";
 
 interface EmptyStateProps {
   hasCollectionSelected: boolean;
   hasScenarios: boolean;
   hasSearch: boolean;
-  onCreateScenario?: () => void;
+  onCreateScenario?: (config?: ScenarioStarterConfig) => void;
 }
 
 export function EmptyState({ hasCollectionSelected, hasScenarios, hasSearch, onCreateScenario }: EmptyStateProps) {
@@ -28,8 +29,8 @@ export function EmptyState({ hasCollectionSelected, hasScenarios, hasSearch, onC
           ? SCENARIO_EMPTY_STATE.subtitle
           : "Select or create a collection in the sidebar first, then come back here to add your first scenario."
       }
-      onCreateBlank={hasCollectionSelected ? onCreateScenario : undefined}
-      onSelect={() => onCreateScenario?.()}
+      onCreateBlank={hasCollectionSelected ? () => onCreateScenario?.() : undefined}
+      onSelect={hasCollectionSelected ? (i) => onCreateScenario?.(SCENARIO_EMPTY_STATE.templates[i].config) : undefined}
     />
   );
 }

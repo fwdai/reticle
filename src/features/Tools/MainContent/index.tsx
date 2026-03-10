@@ -106,8 +106,8 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
     };
   }, []);
 
-  const handleCreate = useCallback(async () => {
-    const newTool = createEmptyTool();
+  const handleCreate = useCallback(async (config?: Partial<Tool>) => {
+    const newTool = { ...createEmptyTool(), ...config };
     const id = await insertGlobalTool(newTool);
     await refreshTools();
     setSelectedId(id);

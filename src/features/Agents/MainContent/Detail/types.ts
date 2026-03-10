@@ -5,6 +5,8 @@ export interface AgentDetailAgent {
   model: string;
   toolsCount: number;
   memoryEnabled: boolean;
+  agentGoal?: string;
+  systemInstructions?: string;
 }
 
 export interface AgentDetailProps {

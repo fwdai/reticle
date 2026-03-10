@@ -2,11 +2,12 @@ import { Search, Library } from "lucide-react";
 import { StarterTemplates } from "@/components/ui/EmptyState";
 import { FilterEmptyState } from "@/components/ui/EmptyState";
 import { TEMPLATE_EMPTY_STATE } from "@/constants/starterTemplates";
+import type { PromptTemplate } from "@/types";
 
 interface EmptyStateProps {
   hasSearch: boolean;
   hasTemplates: boolean;
-  onCreateTemplate: () => void;
+  onCreateTemplate: (config?: Partial<PromptTemplate>) => void;
 }
 
 export function EmptyState({ hasSearch, hasTemplates, onCreateTemplate }: EmptyStateProps) {
@@ -23,8 +24,8 @@ export function EmptyState({ hasSearch, hasTemplates, onCreateTemplate }: EmptyS
   return (
     <StarterTemplates
       {...TEMPLATE_EMPTY_STATE}
-      onCreateBlank={onCreateTemplate}
-      onSelect={() => onCreateTemplate()}
+      onCreateBlank={() => onCreateTemplate()}
+      onSelect={(i) => onCreateTemplate(TEMPLATE_EMPTY_STATE.templates[i].config)}
     />
   );
 }
