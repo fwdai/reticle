@@ -42,10 +42,21 @@ async function waitForHttp(url: string, timeoutMs: number, label: string): Promi
   throw new Error(`[e2e] ${label} did not respond at ${url} within ${timeoutMs}ms`);
 }
 
-/** Poll via TCP until a port accepts connections or we time out. */
-async function waitForPort(port: number, timeoutMs: number, label: string): Promise<void> {
+/** Poll via TCP until a port accepts connections, the process exits, or we time out. */
+async function waitForPort(
+  port: number,
+  timeoutMs: number,
+  label: string,
+  process?: ChildProcess,
+): Promise<void> {
+  let exitCode: number | null = null;
+  process?.once("exit", (code) => { exitCode = code ?? 1; });
+
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    if (exitCode !== null) {
+      throw new Error(`[e2e] ${label} process exited with code ${exitCode} before port ${port} opened`);
+    }
     const open = await new Promise<boolean>((resolve) => {
       const s = net.connect(port, "127.0.0.1");
       s.once("connect", () => { s.destroy(); resolve(true); });
@@ -142,7 +153,7 @@ export const config: WebdriverIO.Config = {
       }
     });
 
-    await waitForPort(4445, 20_000, "App WebDriver server");
+    await waitForPort(4445, 30_000, "App WebDriver server", appProcess);
     console.log("[e2e] App WebDriver server ready on :4445");
   },
 
