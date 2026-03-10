@@ -61,6 +61,8 @@ jobs:
 
       - name: Download Deno sidecar
         run: bun run setup
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build debug binary
         run: cargo build --manifest-path src-tauri/Cargo.toml

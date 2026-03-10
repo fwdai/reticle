@@ -50,13 +50,19 @@ jobs:
         with:
           workspaces: ./src-tauri -> target
 
+      - name: Install create-dmg (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: brew install create-dmg
+
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
       - name: Download Deno sidecar
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DENO_VERSION=$(curl -fsSL "https://api.github.com/repos/denoland/deno/releases/latest" | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
+          DENO_VERSION=$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/denoland/deno/releases/latest" | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
           TRIPLE="${{ matrix.deno_triple }}"
           DEST="src-tauri/binaries"
           mkdir -p "$DEST"

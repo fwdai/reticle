@@ -2,7 +2,13 @@
 set -euo pipefail
 
 # Pin a specific version or override via env: DENO_VERSION=2.x.y bash scripts/download-deno.sh
-DENO_VERSION="${DENO_VERSION:-$(curl -fsSL "https://api.github.com/repos/denoland/deno/releases/latest" | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')}"
+DENO_VERSION_DEFAULT="2.3.3"
+if [[ -z "${DENO_VERSION:-}" ]]; then
+  AUTH_HEADER=""
+  [[ -n "${GITHUB_TOKEN:-}" ]] && AUTH_HEADER="-H \"Authorization: token ${GITHUB_TOKEN}\""
+  FETCHED=$(eval curl -fsSL ${AUTH_HEADER} "https://api.github.com/repos/denoland/deno/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/' || true)
+  DENO_VERSION="${FETCHED:-${DENO_VERSION_DEFAULT}}"
+fi
 
 DEST="$(cd "$(dirname "$0")/.." && pwd)/src-tauri/binaries"
 mkdir -p "$DEST"
