@@ -11,7 +11,7 @@ import { listToolsForEntity } from "@/lib/storage";
 import { Tab } from "./Tab";
 import { MemoryPanel } from "./Memory/MemoryPanel";
 import { MemoryStorePanel } from "./Memory/MemoryStorePanel";
-import { ModelParamsSidebar } from "./ModelParamsSidebar";
+import Configuration from "./Configuration";
 import { RuntimePanel } from "./RuntimePanel";
 
 const panelContentClass = "h-full min-h-0 p-6 overflow-y-auto custom-scrollbar bg-[#FCFDFF]";
@@ -177,7 +177,7 @@ export function SpecLayout({
           </TabPanel>
         </Tabs>
         <div className="w-[300px] min-h-0 overflow-auto custom-scrollbar flex-shrink-0 border-l border-border-light bg-slate-50">
-          <ModelParamsSidebar
+          <Configuration
             provider={provider}
             model={model}
             temperature={temperature}

@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listToolsByScenarioId, listAttachmentsByScenarioId, getLastExecutionForScenario, getSetting } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { saveScenarioAction, runScenarioAction } from '@/actions/scenarioActions';
-import { fetchAndNormalizeModels } from '@/lib/modelManager';
+import { useProviderModels } from '@/hooks/useProviderModels';
 import { Collection, Scenario } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 import { PROVIDERS_LIST } from '@/constants/providers';
@@ -186,6 +186,7 @@ const initialScenario: CurrentScenario = {
 
 export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
   const { appState, setAppState } = useAppContext();
+  const providerModels = useProviderModels();
   const [viewMode, setViewMode] = useState<StudioViewMode>('editor');
   const [activeEditorTab, setActiveEditorTab] = useState<EditorTabIndex>(0);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
@@ -257,29 +258,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
         setSelectedCollectionId(prev => prev ?? (collections[0].id ?? null));
       }
 
-      // Load models and default provider/model from settings together
-      const [models, savedProvider, savedModel] = await Promise.all([
-        fetchAndNormalizeModels(),
-        getSetting('default_provider'),
-        getSetting('default_model'),
-      ]);
-      setStudioState(prev => ({ ...prev, providerModels: models }));
-
-      // Validate and set defaults in AppContext
-      const provider =
-        savedProvider && PROVIDERS_LIST.some((p) => p.id === savedProvider)
-          ? savedProvider
-          : PROVIDERS_LIST[0]?.id ?? 'openai';
-      const modelsForProvider = models[provider] ?? [];
-      const model =
-        savedModel && modelsForProvider.some((m) => m.id === savedModel)
-          ? savedModel
-          : modelsForProvider[0]?.id ?? initialScenario.configuration.model;
-      setAppState(prev => ({ ...prev, defaultProvider: provider, defaultModel: model }));
-
-      // Don't auto-load last used - show list view first for consistency with other features
-      // Note: don't override scenarioId here — if loadScenario() already ran (fast user click),
-      // we must not reset it back to null.
       setStudioState(prev => ({
         ...prev,
         isLoading: false,
@@ -287,7 +265,37 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     };
 
     initializeStudio();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
+
+  // Sync providerModels from hook and validate default provider/model when models are ready
+  const hasValidatedDefaults = useRef(false);
+  useEffect(() => {
+    if (Object.keys(providerModels).length === 0) return;
+
+    setStudioState(prev => ({ ...prev, providerModels }));
+
+    if (hasValidatedDefaults.current) return;
+    hasValidatedDefaults.current = true;
+
+    const validateDefaults = async () => {
+      const [savedProvider, savedModel] = await Promise.all([
+        getSetting('default_provider'),
+        getSetting('default_model'),
+      ]);
+      const provider =
+        savedProvider && PROVIDERS_LIST.some((p) => p.id === savedProvider)
+          ? savedProvider
+          : PROVIDERS_LIST[0]?.id ?? 'openai';
+      const modelsForProvider = providerModels[provider] ?? [];
+      const model =
+        savedModel && modelsForProvider.some((m) => m.id === savedModel)
+          ? savedModel
+          : modelsForProvider[0]?.id ?? initialScenario.configuration.model;
+      setAppState(prev => ({ ...prev, defaultProvider: provider, defaultModel: model }));
+    };
+
+    validateDefaults();
+  }, [providerModels, setAppState]);
 
   const saveScenario = useCallback(async (scenarioName: string | null) => {
     await saveScenarioAction(studioState, setStudioState, setPrevScenarioJson, scenarioName);

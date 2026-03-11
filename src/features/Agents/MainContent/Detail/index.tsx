@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import MainContent from "@/components/Layout/MainContent";
 
 import { AgentProvider } from "@/contexts/AgentContext";
+import { useProviderModels } from "@/hooks/useProviderModels";
 import { Header, type AgentViewMode } from "./Header";
 import { SpecLayout as Spec } from "../Editor";
 import { TestView } from "../Test";
@@ -212,11 +213,14 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
     memorySource,
   ]);
 
+  const providerModels = useProviderModels();
+
   const agentContextValue = {
     runAgent: handleRun,
     stopAgent: handleStop,
     execution,
     isRunning: execution.status === "running",
+    providerModels,
   };
 
   return (

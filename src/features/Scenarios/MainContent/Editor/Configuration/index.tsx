@@ -1,12 +1,7 @@
 import { useContext } from 'react';
-import { ChevronDown, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { StudioContext } from '@/contexts/StudioContext';
-import { useAppContext } from '@/contexts/AppContext';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
-import { PROVIDERS_LIST } from '@/constants/providers';
+import { ModelParams } from '@/components/ModelParams';
 
 function Configuration() {
   const context = useContext(StudioContext);
@@ -15,7 +10,6 @@ function Configuration() {
     throw new Error('Configuration component must be used within a StudioProvider');
   }
 
-  const { setCurrentPage } = useAppContext();
   const { studioState, setStudioState } = context;
   const configuration = studioState.currentScenario.configuration;
 
@@ -32,153 +26,31 @@ function Configuration() {
     }));
   };
 
+  const models = studioState.providerModels[configuration.provider] ?? [];
+
   return (
     <aside className="w-full h-full flex-shrink-0 bg-slate-50 overflow-y-auto custom-scrollbar">
       <div className="px-6 py-4">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">
-            Configuration
-          </h3>
-          <Info
-            className="text-text-muted cursor-pointer hover:text-text-main"
-            size={16}
-          />
-        </div>
-        <div className="space-y-8">
-          <div className="space-y-3">
-            <Label className="font-bold text-text-main">Provider</Label>
-            <Select
-              name="provider"
-              value={configuration.provider}
-              onValueChange={(value) => handleValueChange('provider', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDERS_LIST.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
-                    {provider.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-3">
-            <Label className="font-bold text-text-main">Model</Label>
-            {(() => {
-              const models = studioState.providerModels[configuration.provider] ?? [];
-              return models.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border-light bg-white px-3 py-3 text-center">
-                  <p className="text-[11px] text-text-muted">No models available.</p>
-                  <button
-                    className="mt-1 text-[11px] text-primary underline"
-                    onClick={() => setCurrentPage("settings", { settingsSection: "api-keys" })}
-                  >
-                    Add an API key in Settings
-                  </button>
-                </div>
-              ) : (
-                <Select
-                  name="model"
-                  value={configuration.model}
-                  onValueChange={(value) => handleValueChange('model', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((model: any) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              );
-            })()}
-          </div>
-          <div className="space-y-6 pt-6 border-t border-border-light">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="font-bold text-text-main">Temperature</Label>
-                <Input
-                  name="temperature"
-                  className="w-16 h-8 text-right bg-sidebar-light border-none text-xs font-mono text-text-main font-bold focus:ring-0 p-0 shadow-none"
-                  type="number"
-                  value={configuration.temperature}
-                  onChange={(e) => handleValueChange('temperature', parseFloat(e.target.value))}
-                  step={0.1}
-                  max={1}
-                  min={0}
-                  readOnly // Make it read-only
-                />
-              </div>
-              <Slider
-                name="temperature"
-                max={1}
-                min={0}
-                step={0.1}
-                value={[configuration.temperature]}
-                onValueChange={(value) => handleValueChange('temperature', value[0])}
-              />
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="font-bold text-text-main">Top P</Label>
-                <Input
-                  name="topP"
-                  className="w-16 h-8 text-right bg-sidebar-light border-none text-xs font-mono text-text-main font-bold focus:ring-0 p-0 shadow-none"
-                  type="number"
-                  value={configuration.topP}
-                  onChange={(e) => handleValueChange('topP', parseFloat(e.target.value))}
-                  step={0.05}
-                  max={1}
-                  min={0}
-                  readOnly // Make it read-only
-                />
-              </div>
-              <Slider
-                name="topP"
-                max={1}
-                min={0}
-                step={0.05}
-                value={[configuration.topP]}
-                onValueChange={(value) => handleValueChange('topP', value[0])}
-              />
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="font-bold text-text-main">Max Tokens</Label>
-                <Input
-                  name="maxTokens"
-                  className="w-20 h-8 text-right bg-sidebar-light border-none text-xs font-mono text-text-main font-bold focus:ring-0 p-0 shadow-none"
-                  type="number"
-                  value={configuration.maxTokens}
-                  onChange={(e) => handleValueChange('maxTokens', parseInt(e.target.value, 10))}
-                  step={1}
-                  max={4096}
-                  min={1}
-                  readOnly // Make it read-only
-                />
-              </div>
-              <Slider
-                name="maxTokens"
-                max={4096}
-                min={1}
-                step={1}
-                value={[configuration.maxTokens]}
-                onValueChange={(value) => handleValueChange('maxTokens', value[0])}
-              />
-            </div>
-          </div>
-          <div className="pt-6">
-            <button className="w-full flex items-center justify-between text-xs font-bold text-text-muted hover:text-text-main transition-colors">
-              ADVANCED OPTIONS
-              <ChevronDown size={16} />
-            </button>
-          </div>
-        </div>
+        <ModelParams
+          title="Configuration"
+          provider={configuration.provider}
+          model={configuration.model}
+          temperature={configuration.temperature}
+          topP={configuration.topP}
+          maxTokens={configuration.maxTokens}
+          models={models}
+          onProviderChange={(value) => handleValueChange('provider', value)}
+          onModelChange={(value) => handleValueChange('model', value)}
+          onTemperatureChange={(value) => handleValueChange('temperature', value)}
+          onTopPChange={(value) => handleValueChange('topP', value)}
+          onMaxTokensChange={(value) => handleValueChange('maxTokens', value)}
+          headerAction={
+            <Info
+              className="text-text-muted cursor-pointer hover:text-text-main"
+              size={16}
+            />
+          }
+        />
       </div>
     </aside>
   );

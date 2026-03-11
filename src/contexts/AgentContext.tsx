@@ -11,6 +11,8 @@ export interface ExecutionState {
   executionId?: string;
 }
 
+export type ProviderModels = Record<string, { id: string; name: string }[]>;
+
 interface AgentContextType {
   /** Run the agent with the given task input. */
   runAgent: (taskInput?: string) => void;
@@ -18,6 +20,8 @@ interface AgentContextType {
   stopAgent: () => void;
   execution: ExecutionState;
   isRunning: boolean;
+  /** Models per provider (from modelManager cache) */
+  providerModels: ProviderModels;
 }
 
 export const AgentContext = createContext<AgentContextType | undefined>(
