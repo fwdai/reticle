@@ -18,6 +18,8 @@
 
 > **Public beta.** Core features work and are actively used, but this is early software — things may break and APIs may change. [Open a bug report](https://github.com/fwdai/reticle/issues) if you hit an issue. We'd love your feedback.
 
+If Reticle is useful, please consider starring the repo ⭐
+
 <br />
 
 <!-- Replace with a hero GIF or screenshot of the app -->
