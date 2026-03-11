@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "lib": ["ES2022"],
-    "types": ["node"],
+    "types": ["node", "mocha"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

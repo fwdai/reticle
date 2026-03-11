@@ -1,3 +1,5 @@
+import { browser } from "@wdio/globals";
+
 export type NavPage = "home" | "studio" | "agents" | "tools" | "templates" | "runs";
 
 /** Wait for the app to finish loading (nav is the first reliable landmark). */
