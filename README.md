@@ -2,161 +2,121 @@
   <img src="./.github/screenshots/logo.svg" alt="Reticle Logo" width="48" />
 </p>
 
-<h1 align="center">
-  Reticle
-</h1>
+<h1 align="center">Reticle</h1>
 
 <p align="center">
-  <strong>AI Engineering DevTools</strong>
-  <br />
-  <em>Design, simulate, and debug LLM interactions with full transparency.</em>
+  <strong>Postman for AI.</strong><br />
+  Design, evaluate, and debug LLM scenarios and AI agents across providers — entirely on your machine.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-alpha-0bb89c?style=flat-square&labelColor=1a1f2e" />
-  <img src="https://img.shields.io/badge/react-18-61dafb?style=flat-square&labelColor=1a1f2e&logo=react&logoColor=61dafb" />
-  <img src="https://img.shields.io/badge/typescript-5-3178c6?style=flat-square&labelColor=1a1f2e&logo=typescript&logoColor=3178c6" />
-  <img src="https://img.shields.io/badge/tailwind-4-38bdf8?style=flat-square&labelColor=1a1f2e&logo=tailwindcss&logoColor=38bdf8" />
+  <a href="https://reticle.run">reticle.run</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/releases">Download</a> &nbsp;·&nbsp;
+  <a href="#quick-start">Quick Start</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/issues">Report a bug</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/status-beta-orange?style=flat-square&labelColor=1a1f2e" />
   <img src="https://img.shields.io/badge/license-MIT-ffffff?style=flat-square&labelColor=1a1f2e" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square&labelColor=1a1f2e" />
 </p>
+
+> **Public beta.** Core features work and are actively used, but this is early software — things may break and APIs may change. [Open a bug report](https://github.com/fwdai/reticle/issues) if you hit an issue. We'd love your feedback.
 
 <br />
 
+<!-- Replace with a hero GIF or screenshot of the app -->
 <p align="center">
   <img src="./.github/screenshots/app_window.png" alt="Reticle app" width="860" />
 </p>
 
 <br />
 
-## What is Reticle?
+---
 
-Reticle is a local-first DevTools environment for designing, simulating, and debugging LLM and agent executions before they reach your codebase.
+## The problem
 
-Define prompts, tools, model parameters, and full execution scenarios in one place — then inspect exactly what happened: request payloads, tool call sequences, token usage, latency, and cost. No hidden system prompts. No playground guesswork.
+AI development tooling is fragmented. Provider playgrounds, eval frameworks, cloud-hosted observability platforms — each solves one piece of the development workflow.
 
-When you're satisfied, export the scenario or agent configuration and integrate it into your production stack.
+There's no unified environment that takes you from designing a prompt or agent, through debugging and evaluation, to shipping with confidence that nothing broke — all in one place.
 
-### Not a Chat App. Not Observability.
+Reticle is that environment. And it runs entirely on your machine, so your prompts, agents, and data stay yours.
 
-Reticle focuses on the design phase of AI development — helping engineers understand and validate execution behavior before production. It does not trace arbitrary runtime code or replace production monitoring tools.
+---
 
-<br />
+## Features
 
-## 🌟 Features
+Reticle is a desktop app — everything runs locally, no account required, no context switching between tools.
 
-### ⚙️ Scenario Execution
+### Scenarios
+Build structured prompts with variables, multi-turn history, and full model control — provider, variant, temperature, seed, max tokens. Run the same scenario against GPT-4o, Claude, and Gemini and compare outputs, latency, and cost side by side.
 
-Design and run fully-configurable LLM calls with deterministic control.
+### Agents
+Define agents with goals, system instructions, and tools. Execute them step by step, inspect every tool call and intermediate output, and debug exactly where things go wrong.
 
-- System & user prompts with live token estimation
-- Full model configuration (provider, variant, temperature, top-p, max tokens, seed)
-- Attach conversation history and contextual files
-- Inspect raw request/response payloads
-- Latency, token breakdown, and per-run cost estimation
+### Evals
+Write assertions on your outputs and catch regressions before you ship. Supports `contains`, `equals`, `not_contains`, `LLM judge`, `tool_called`, `tool_not_called`, `JSON schema`, `tool_sequence`, and more. Run evals on scenarios and agents alike.
 
-### 🔍 Execution Trace
+### Tools
+Attach tools to scenarios and agents. Use mock JSON responses while designing, or run real Deno code for live execution. Define once, use everywhere.
 
-See what actually happened — not just the final output.
+### Templates
+Save reusable system and user prompts with `{{variables}}`. Build a library of battle-tested building blocks and stop copy-pasting prompts across projects.
 
-- Visual flow from prompt → model → tool calls → response
-- Expandable steps with timing and metadata
-- Tool call arguments and intermediate outputs
-- Reproducible runs with explicit parameters
+### Runs history
+Every execution is stored locally. Review outputs, costs, and latency across all your runs — nothing is ever thrown away.
 
-### 🛠 Tool Definitions
+### Private by default
+API keys are injected via a local proxy server. Your prompts, agents, data, and API credentials never leave your machine.
 
-Define and simulate function/tool calls before writing backend code.
+---
 
-- JSON schema builder with OpenAI-compatible output
-- Mock tool responses to test agent behavior
-- Toggle between structured and raw modes
-- Copy-ready schema export
+## Quick start
 
-### 📎 Multimodal Inputs
+### Download
 
-Test real-world scenarios with structured and unstructured data.
+Get the latest release from [reticle.run](https://reticle.run) or the [Releases page](https://github.com/fwdai/reticle/releases).
 
-- Drag-and-drop file attachments (PDF, CSV, images, etc.)
-- Batch management with size tracking
-- File-aware execution context
+| Platform | Format |
+|---|---|
+| macOS (Apple Silicon) | `.dmg` |
+| macOS (Intel) | `.dmg` |
+| Linux | `.AppImage` / `.deb` |
+| Windows | `.msi` |
 
-### 🧩 Prompt Templates
-
-Reusable building blocks for consistent AI behavior.
-
-- Variable-based templates (`{{var}}`)
-- Inline highlighting and validation
-- Versioned usage across scenarios
-
-### 🔄 Model Comparison
-
-Validate behavior across providers before committing.
-
-- Run the same scenario against multiple models
-- Compare outputs, latency, and cost side-by-side
-- Identify drift or regression quickly
-
-### 🧠 Agent Simulation _(coming soon)_
-
-Design and simulate multi-step tool-calling agents.
-
-- Step-by-step execution graph
-- Loop and retry visibility
-- Token and cost accumulation per cycle
-- Export agent configuration for production integration
-
-> All execution happens locally. API keys and credentials never leave your machine.
-
-<br />
-
-## 🛠 Development Setup
-
-### Telemetry (Development)
-
-Reticle includes an initial OpenTelemetry setup for frontend instrumentation in development mode.
-
-- Export: console span exporter (browser console)
-- Enabled in: `vite dev` only
-- Current events: page navigation, scenario save lifecycle, scenario run lifecycle
-
-Implementation entry point: `src/lib/telemetry`
-
-### Requirements
-
-- Rust
-- Node.js ≥ 22
-- bun
-
-### Run Locally
+### Build from source
 
 ```bash
-git clone https://github.com/fwdai/reticle.git
+# Prerequisites: Rust, Bun
+git clone https://github.com/fwdai/reticle
 cd reticle
-
 bun install
-bun tauri dev
+bun run setup       # downloads Deno sidecar
+bun run tauri dev
 ```
 
-<br />
+---
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Here's how to get started:
+Issues and PRs are welcome. For anything significant, open an issue first so we can align on direction before you invest time in it.
 
-1. **Fork** the repo
-2. **Create a branch** — `git checkout -b feat/my-feature`
-3. **Commit** — `git commit -m "feat: add my feature"`
-4. **Push** — `git push origin feat/my-feature`
-5. **Open a Pull Request**
+```bash
+bun run dev           # frontend only
+bun run tauri dev     # full app with hot reload
+bun run test          # unit tests
+bun run test:e2e      # end-to-end tests (requires built binary)
+```
 
-<br />
+---
 
-## 📄 License
+## License
 
-MIT — do whatever you want. Just build cool things.
+MIT — [LICENSE](LICENSE)
 
-<br />
+---
 
 <p align="center">
-  <sub>Built for engineers who want to see what their AI is actually doing.</sub>
+  <sub>Built for engineers who want to know what their AI is actually doing.</sub>
 </p>
