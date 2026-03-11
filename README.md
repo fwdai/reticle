@@ -5,16 +5,10 @@
 <h1 align="center">Reticle</h1>
 
 <p align="center">
-  <strong>Postman for AI.</strong><br />
+  <strong>Postman for AI</strong><br />
   Design, evaluate, and debug LLM scenarios and AI agents across providers — entirely on your machine.
 </p>
 
-<p align="center">
-  <a href="https://reticle.run">reticle.run</a> &nbsp;·&nbsp;
-  <a href="https://github.com/fwdai/reticle/releases">Download</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Quick Start</a> &nbsp;·&nbsp;
-  <a href="https://github.com/fwdai/reticle/issues">Report a bug</a>
-</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-beta-orange?style=flat-square&labelColor=1a1f2e" />
@@ -23,6 +17,14 @@
 </p>
 
 > **Public beta.** Core features work and are actively used, but this is early software — things may break and APIs may change. [Open a bug report](https://github.com/fwdai/reticle/issues) if you hit an issue. We'd love your feedback.
+
+
+<p align="center">
+  <a href="https://reticle.run">reticle.run</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/releases">Download</a> &nbsp;·&nbsp;
+  <a href="#quick-start">Quick Start</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/issues">Report a bug</a>
+</p>
 
 <br />
 
@@ -49,26 +51,33 @@ Reticle is that environment. And it runs entirely on your machine, so your promp
 
 Reticle is a desktop app — everything runs locally, no account required, no context switching between tools.
 
-### Scenarios
-Build structured prompts with variables, multi-turn history, and full model control — provider, variant, temperature, seed, max tokens. Run the same scenario against GPT-4o, Claude, and Gemini and compare outputs, latency, and cost side by side.
+### 📋 Scenarios
+Design LLM scenarios with system prompts, variables, multi-turn history, tool calling, files, and full model control — provider, variant, temperature, seed, max tokens. Run the same scenario against OpenAI, Anthropic, and Google models and compare outputs, latency, and cost side by side.
 
-### Agents
-Define agents with goals, system instructions, and tools. Execute them step by step, inspect every tool call and intermediate output, and debug exactly where things go wrong.
+### 🤖 Agents
+Define AI agents with goals, system instructions, tools, memory. Give your agent a task and see them execute step by step, inspect every tool call and intermediate output, and debug exactly where things go wrong. Default Agent architecture is **ReAct** (aka ToolLoopAgent), however more agent architectures can be introduced in the future.
 
-### Evals
-Write assertions on your outputs and catch regressions before you ship. Supports `contains`, `equals`, `not_contains`, `LLM judge`, `tool_called`, `tool_not_called`, `JSON schema`, `tool_sequence`, and more. Run evals on scenarios and agents alike.
+### 🧪 Evals
+In production AI systems, evals are the only way to know if your scenario or agent still does what it was designed to do after a prompt tweak, a model upgrade, or a tool change. Without them, every change is a guess.
 
-### Tools
-Attach tools to scenarios and agents. Use mock JSON responses while designing, or run real Deno code for live execution. Define once, use everywhere.
+Reticle lets you build eval datasets directly in the app, paste them in, or import from JSON and CSV. Run your scenarios and agents against those datasets and assert on the outputs — `contains`, `equals`, `not_contains`, `LLM judge`, `tool_called`, `tool_not_called`, `JSON schema`, `tool_sequence`, and more. Ship with confidence instead of hope.
 
-### Templates
-Save reusable system and user prompts with `{{variables}}`. Build a library of battle-tested building blocks and stop copy-pasting prompts across projects.
+### 💰 Cost visibility
+Every LLM call tracks input and output token usage. Cost is estimated based on token counts and model pricing — not exact billing data from the provider, but accurate enough to understand what your scenarios, agent runs, and evals actually cost and where the spend is going.
 
-### Runs history
-Every execution is stored locally. Review outputs, costs, and latency across all your runs — nothing is ever thrown away.
+### 🔧 Tools
+Define tools globally and reuse them across any scenario or agent, or scope them locally to a specific scenario or agent when they're only relevant there.
 
-### Private by default
-API keys are injected via a local proxy server. Your prompts, agents, data, and API credentials never leave your machine.
+Each tool has two execution modes. If the goal is to test LLM reasoning and response quality, mock the tool with a fixed JSON response — the model sees a realistic tool result without any risk of real failures or side effects. If the goal is end-to-end validation, provide a real JavaScript implementation and the tool will be executed during the run, giving the model actual live data to work with.
+
+### 📝 Templates
+Build a library of battle-tested building blocks and stop copy-pasting prompts across projects. Templates support `{{variables}}` that get filled in at runtime, and can be attached to multiple scenarios — so when a core prompt improves, every scenario that uses it benefits immediately.
+
+### 🕓 Runs history
+Every scenario and agent execution is automatically recorded and stored locally. Full inputs, outputs, execution traces, tool calls, token usage, and cost — all preserved. Go back and re-inspect any previous run at any time, compare how the same scenario behaved across different models, or trace exactly what an agent did three iterations ago.
+
+### 🔒 Private by default
+API keys, environment variables, scenarios, agents, and the entire run history are stored locally in a SQLite database on your machine — nothing is ever sent to an external server. API keys are injected at runtime via a local proxy, so they never touch the frontend or any network layer outside your device. Reticle is secure by default, giving you the freedom to experiment without worrying about where your data ends up.
 
 ---
 
@@ -76,7 +85,7 @@ API keys are injected via a local proxy server. Your prompts, agents, data, and 
 
 ### Download
 
-Get the latest release from [reticle.run](https://reticle.run) or the [Releases page](https://github.com/fwdai/reticle/releases).
+Get the latest release from [reticle.run](https://reticle.run/download) or the [Releases page](https://github.com/fwdai/reticle/releases).
 
 | Platform | Format |
 |---|---|
