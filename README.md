@@ -18,19 +18,20 @@
 
 > **Public beta.** Core features work and are actively used, but this is early software — things may break and APIs may change. [Open a bug report](https://github.com/fwdai/reticle/issues) if you hit an issue. We'd love your feedback.
 
-
-<p align="center">
-  <a href="https://reticle.run">reticle.run</a> &nbsp;·&nbsp;
-  <a href="https://github.com/fwdai/reticle/releases">Download</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Quick Start</a> &nbsp;·&nbsp;
-  <a href="https://github.com/fwdai/reticle/issues">Report a bug</a>
-</p>
-
 <br />
 
 <!-- Replace with a hero GIF or screenshot of the app -->
 <p align="center">
   <img src="./.github/screenshots/app_window.png" alt="Reticle app" width="860" />
+</p>
+
+<br />
+
+<p align="center">
+  <a href="https://reticle.run">Website</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/releases">Download</a> &nbsp;·&nbsp;
+  <a href="#quick-start">Quick Start</a> &nbsp;·&nbsp;
+  <a href="https://github.com/fwdai/reticle/issues">Report a bug</a>
 </p>
 
 <br />
