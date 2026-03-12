@@ -56,6 +56,7 @@ export function Prompt() {
             </span>
           )}
           <button
+            data-testid="agent-run-button"
             disabled={!taskInput.trim() && !isRunning}
             onClick={isRunning ? handleStop : handleRun}
             className={cn(

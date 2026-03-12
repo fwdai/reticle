@@ -12,3 +12,21 @@ export async function navigateTo(page: NavPage): Promise<void> {
   await $(`[data-testid="nav-${page}"]`).click();
   await browser.pause(300);
 }
+
+/** Wait for the response content element to contain the expected text. */
+export async function waitForResponseContent(
+  expectedText: string,
+  timeout = 20_000
+): Promise<void> {
+  await browser.waitUntil(
+    async () => {
+      const el = await $('[data-testid="response-content"]');
+      const text = await el.getText();
+      return text.includes(expectedText);
+    },
+    {
+      timeout,
+      timeoutMsg: `Response content did not contain expected text: "${expectedText}"`,
+    }
+  );
+}

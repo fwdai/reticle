@@ -86,6 +86,7 @@ export function Header({
               Status
             </span>
             <span
+              data-testid="execution-status"
               className={cn(
                 "text-[11px] font-bold leading-none uppercase",
                 status === "error" && "text-red-600",

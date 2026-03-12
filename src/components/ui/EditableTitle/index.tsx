@@ -84,6 +84,7 @@ export function EditableTitle({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        data-save-status={saveStatus}
         style={{ width: inputWidth }}
         className="font-bold bg-transparent border-none outline-none text-text-main placeholder:text-text-muted/40 focus:ring-0 py-0"
         autoFocus={autoFocus}

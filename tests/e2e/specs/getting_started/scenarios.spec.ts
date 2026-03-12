@@ -1,4 +1,4 @@
-import { navigateTo, waitForAppReady } from "../../helpers/app";
+import { navigateTo, waitForResponseContent } from "../../helpers/app";
 import { mockResponse, resetMocks } from "../../helpers/mock";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -6,25 +6,11 @@ import { mockResponse, resetMocks } from "../../helpers/mock";
 async function assertRunSuccess() {
   await $("button=Run").click();
   await $("button=Stop").waitForDisplayed({ timeout: 3_000 });
-  await browser.waitUntil(
-    async () => {
-      const el = await $('[data-testid="response-content"]');
-      const text = await el.getText();
-      return text.includes("Hello from the mock!");
-    },
-    { timeout: 20_000, timeoutMsg: "Response content did not contain expected text" }
-  );
+  await waitForResponseContent("Hello from the mock!");
   await $("button=Run").waitForDisplayed({ timeout: 3_000 });
   await expect($("span=200 OK")).toBeDisplayed();
   await expect($("span*=tokens")).toBeDisplayed();
   await expect($("span*=$")).toBeDisplayed();
-}
-
-async function deleteAllScenarios() {
-  await browser.executeAsync((done: () => void) =>
-    (globalThis as any).__e2e.deleteAllScenarios().then(done)
-  );
-  await browser.refresh();
 }
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -46,13 +32,8 @@ describe("Scenarios", () => {
   });
 
   beforeEach(async () => {
-    await waitForAppReady();
     await navigateTo("scenarios");
     await $("h2=Start testing your models").waitForDisplayed({ timeout: 5_000 });
-  });
-
-  afterEach(async () => {
-    await deleteAllScenarios();
   });
 
   // ── From starter template ─────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { waitForAppReady, navigateTo } from "../../helpers/app";
+import { navigateTo, waitForResponseContent } from "../../helpers/app";
 import { mockResponse, resetMocks } from "../../helpers/mock";
 
 // ─── Shared setup ────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ async function completeTwoOnboardingSteps() {
   await $("button=Run").click();
   await $("button=Stop").waitForDisplayed({ timeout: 3_000 });
 
-  await $("p*=Hello from the mock!").waitForDisplayed({ timeout: 10_000 });
+  await waitForResponseContent("Hello from the mock!");
   await $("button=Run").waitForDisplayed({ timeout: 3_000 });
   await expect($("span=200 OK")).toBeDisplayed();
   await expect($("span*=tokens")).toBeDisplayed();
@@ -68,7 +68,7 @@ async function completeTwoOnboardingSteps() {
 // ─── Suite ───────────────────────────────────────────────────────────────────
 
 describe("Getting started", () => {
-  before(async () => {
+  beforeEach(async () => {
     await mockResponse("/v1/models", "tests/e2e/fixtures/openai/models.json", {
       provider: "openai",
     });
@@ -76,11 +76,9 @@ describe("Getting started", () => {
       provider: "openai",
       contentType: "text/event-stream",
     });
-    await waitForAppReady();
-    await browser.execute(() => localStorage.removeItem("onboarding:profileSkipped"));
   });
 
-  after(async () => {
+  afterEach(async () => {
     await resetMocks();
   });
 
@@ -107,17 +105,7 @@ describe("Getting started", () => {
   // ── Variant B: skip profile ───────────────────────────────────────────────
 
   it("shows dashboard with profile nudge after skipping step 3", async () => {
-    // Steps 1 & 2 are already done — only reset the profile so step 3 appears
-    await $('[data-testid="nav-settings"]').click();
-    await $('[data-testid="settings-nav-account"]').click();
-    const firstNameInput = await $('input[placeholder="e.g. Alex"]');
-    await firstNameInput.clearValue();
-    await firstNameInput.blur();
-
-    await browser.execute(() => localStorage.removeItem("onboarding:profileSkipped"));
-
-    await navigateTo("home");
-    await $("h2=Welcome to Reticle!").waitForDisplayed({ timeout: 5_000 });
+    await completeTwoOnboardingSteps();
 
     await $("button=Skip for now").click();
 

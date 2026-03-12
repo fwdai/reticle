@@ -10,12 +10,13 @@
  *      (Vite dev server is started automatically by the test runner)
  */
 
-import type {} from "@wdio/types";
+import type { } from "@wdio/types";
 import { spawn, type ChildProcess } from "child_process";
 import fs from "fs";
 import net from "net";
 import os from "os";
 import path from "path";
+import { waitForAppReady } from "./helpers/app";
 
 const ROOT = path.resolve(__dirname, "../..");
 
@@ -78,7 +79,7 @@ async function waitForPort(
     const open = await new Promise<boolean>((resolve) => {
       const s = net.connect(port, "127.0.0.1");
       s.once("connect", () => { s.destroy(); resolve(true); });
-      s.once("error",   () => { s.destroy(); resolve(false); });
+      s.once("error", () => { s.destroy(); resolve(false); });
     });
     if (open) return;
     await new Promise<void>((r) => setTimeout(r, 250));
@@ -126,6 +127,15 @@ export const config: WebdriverIO.Config = {
       },
       true,
     );
+  },
+
+  afterTest: async () => {
+    await browser.executeAsync((done: () => void) =>
+      (globalThis as any).__e2e.clearDatabase().then(done)
+    );
+    await browser.execute(() => localStorage.clear());
+    await browser.refresh();
+    await waitForAppReady();
   },
 
   onPrepare: async () => {

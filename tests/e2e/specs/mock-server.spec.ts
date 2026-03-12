@@ -10,7 +10,6 @@
  * feature tests that navigate the UI and assert on rendered model names.
  */
 
-import { waitForAppReady } from "../helpers/app";
 import { mockResponse, resetMocks } from "../helpers/mock";
 
 const PROXY = "http://localhost:11513";
@@ -21,10 +20,6 @@ interface ModelsResponse {
 }
 
 describe("mock server", () => {
-  before(async () => {
-    await waitForAppReady();
-  });
-
   afterEach(async () => {
     await resetMocks();
   });
