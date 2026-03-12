@@ -38,7 +38,7 @@ function Navigation() {
   const currentPage = appState.currentPage;
   const navItems = [
     { id: "home" as Page, icon: Home, label: "Home" },
-    { id: "studio" as Page, icon: Layers, label: "Scenarios" },
+    { id: "scenarios" as Page, icon: Layers, label: "Scenarios" },
     { id: "agents" as Page, icon: Zap, label: "Agents" },
     { id: "tools" as Page, icon: Wrench, label: "Tools" },
     { id: "templates" as Page, icon: Library, label: "Templates" },

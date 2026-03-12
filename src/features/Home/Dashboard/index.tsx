@@ -73,7 +73,7 @@ export function DashboardView() {
           label="Scenarios"
           value={stats.scenariosCount}
           icon={FileCode}
-          onClick={() => setCurrentPage("studio")}
+          onClick={() => setCurrentPage("scenarios")}
         />
         <ColorTile
           palette={tilePalettes[1]}

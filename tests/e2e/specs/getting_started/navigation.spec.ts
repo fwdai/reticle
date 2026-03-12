@@ -10,7 +10,7 @@ describe("Navigation", () => {
   });
 
   it("navigates to Scenarios", async () => {
-    await navigateTo("studio");
+    await navigateTo("scenarios");
     await expect($("h1=All Scenarios")).toBeDisplayed();
     await expect($("h2=Start testing your models")).toBeDisplayed();
     await expect($("h3=Sentiment Classifier")).toBeDisplayed();

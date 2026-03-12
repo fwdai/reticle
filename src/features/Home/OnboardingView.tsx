@@ -85,7 +85,7 @@ function OnboardingView({
 
           <button
             type="button"
-            onClick={() => setCurrentPage("studio")}
+            onClick={() => setCurrentPage("scenarios")}
             className={`${step2Done ? COMPLETED_STEP_STYLE : step2Current ? CURRENT_STEP_STYLE : FINISHED_STEP_STYLE} group cursor-pointer text-left`}
           >
             <div

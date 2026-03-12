@@ -1,6 +1,6 @@
 export type Page =
   | 'home'
-  | 'studio'
+  | 'scenarios'
   | 'agents'
   | 'tools'
   | 'runs'

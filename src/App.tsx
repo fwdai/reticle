@@ -15,7 +15,7 @@ import "./App.css";
 
 const pages: Partial<Record<Page, ComponentType>> = {
   home: Home,
-  studio: Studio,
+  scenarios: Studio,
   agents: Agents,
   tools: Tools,
   runs: Runs,
