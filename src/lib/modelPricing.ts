@@ -1,6 +1,21 @@
 // OpenAI pricing in cents per million tokens
 // Prices can be inspected at https://developers.openai.com/api/docs/models/compare
 const OPENAI_PRICING = {
+  'gpt-5.4-pro': {
+    input: 3000,
+    output: 18000,
+    cached: null,
+  },
+  'gpt-5.4': {
+    input: 250,
+    output: 1500,
+    cached: 25,
+  },
+  'gpt-5.3': {
+    input: 175,
+    output: 1400,
+    cached: 18,
+  },
   'gpt-5.2-pro': {
     input: 2100,
     output: 16800,
@@ -12,7 +27,7 @@ const OPENAI_PRICING = {
     cached: 60,
   },
   'gpt-5.1': {
-    input: 175, 
+    input: 175,
     output: 1400,
     cached: 60,
   },
