@@ -27,5 +27,8 @@ dist-ssr
 # Deno sidecar binaries (downloaded via scripts/download-deno.sh)
 src-tauri/binaries/
 
+# Mock server build artifacts
+tests/mock-server/target/
+
 .feedback
 .lovable

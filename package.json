@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "wdio run tests/e2e/wdio.conf.ts",
-    "test:e2e:build": "cargo build --manifest-path src-tauri/Cargo.toml && bun run test:e2e",
+    "test:e2e:build": "cargo build --manifest-path src-tauri/Cargo.toml && cargo build --manifest-path tests/mock-server/Cargo.toml && bun run test:e2e",
     "tauri": "tauri"
   },
   "dependencies": {

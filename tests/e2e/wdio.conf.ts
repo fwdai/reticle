@@ -23,10 +23,20 @@ const APP_BINARY =
   process.env.RETICLE_APP_BINARY ??
   path.join(ROOT, "src-tauri", "target", "debug", "reticle");
 
+const MOCK_SERVER_BINARY = path.join(
+  ROOT,
+  "tests",
+  "mock-server",
+  "target",
+  "debug",
+  "reticle-mock-server",
+);
+
 const TEST_DB_DIR = path.join(os.tmpdir(), `reticle-e2e-${Date.now()}`);
 
 let viteProcess: ChildProcess;
 let appProcess: ChildProcess;
+let mockServerProcess: ChildProcess;
 
 /** Poll via HTTP GET until a server responds or we time out. */
 async function waitForHttp(url: string, timeoutMs: number, label: string): Promise<void> {
@@ -103,6 +113,23 @@ export const config: WebdriverIO.Config = {
   onPrepare: async () => {
     fs.mkdirSync(TEST_DB_DIR, { recursive: true });
 
+    // 0. Start mock server on :11513 — replaces the real Axum proxy.
+    //    The Tauri binary is started with RETICLE_DISABLE_PROXY=1 so it
+    //    doesn't try to bind the same port.
+    console.log("[e2e] Starting mock server...");
+    mockServerProcess = spawn(MOCK_SERVER_BINARY, [], {
+      cwd: ROOT,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    mockServerProcess.stdout?.on("data", (d: Buffer) =>
+      process.stdout.write(`[mock] ${d}`),
+    );
+    mockServerProcess.stderr?.on("data", (d: Buffer) =>
+      process.stderr.write(`[mock] ${d}`),
+    );
+    await waitForPort(11513, 10_000, "Mock server", mockServerProcess);
+    console.log("[e2e] Mock server ready on :11513");
+
     // 1. Start the Vite dev server — the debug binary loads the frontend from
     //    http://localhost:1420 (baked in at compile time by tauri-build).
     console.log("[e2e] Starting Vite dev server...");
@@ -138,6 +165,7 @@ export const config: WebdriverIO.Config = {
       env: {
         ...process.env,
         RETICLE_DB_DIR: TEST_DB_DIR,
+        RETICLE_DISABLE_PROXY: "1",
         WEBKIT_DISABLE_COMPOSITING_MODE: "1",
       },
     });
@@ -160,6 +188,7 @@ export const config: WebdriverIO.Config = {
   onComplete: () => {
     appProcess?.kill();
     viteProcess?.kill();
+    mockServerProcess?.kill();
     try {
       fs.rmSync(TEST_DB_DIR, { recursive: true, force: true });
     } catch {

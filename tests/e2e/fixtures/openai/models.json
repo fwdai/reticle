@@ -1,0 +1,7 @@
+{
+  "object": "list",
+  "data": [
+    { "id": "gpt-4o", "object": "model" },
+    { "id": "gpt-4o-mini", "object": "model" }
+  ]
+}

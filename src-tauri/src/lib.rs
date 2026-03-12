@@ -91,7 +91,9 @@ pub fn run() {
                 .expect("Failed to initialize database");
             app.manage(db_conn);
             app.manage(Arc::new(Mutex::new(runner::RunnerManager::new())));
-            tauri::async_runtime::spawn(server::start_proxy_server(app_handle.clone()));
+            if std::env::var("RETICLE_DISABLE_PROXY").is_err() {
+                tauri::async_runtime::spawn(server::start_proxy_server(app_handle.clone()));
+            }
 
             // Create main window with drag-drop disabled so HTML5 drop zone works
             let window_config = app.config().app.windows.first().expect("main window config");
