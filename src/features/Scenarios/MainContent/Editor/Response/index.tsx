@@ -129,7 +129,7 @@ function Response() {
               </div>
             </div>
           ) : response.text ? (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto" data-testid="response-content">
               <MarkdownPreview content={response.text} />
               {isLoading && (
                 <span className="inline-block w-2 h-4 ml-0.5 -mb-1 bg-primary animate-pulse" />

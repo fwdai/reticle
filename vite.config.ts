@@ -6,7 +6,16 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: "e2e-helpers",
+      transformIndexHtml(_html, ctx) {
+        if (!ctx.server) return;
+        return [{ tag: "script", attrs: { type: "module", src: "/src/e2e-helpers.ts" }, injectTo: "body" }];
+      },
+    },
+  ],
 
   resolve: {
     alias: {

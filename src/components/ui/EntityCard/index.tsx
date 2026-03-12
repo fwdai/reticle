@@ -118,6 +118,7 @@ export interface EntityCardProps {
   onRun?: (e: React.MouseEvent) => void;
   onClick: () => void;
   menuItems?: EntityMenuItem[];
+  testId?: string;
 }
 
 function StatusIndicator({ status }: { status: EntityStatus }) {
@@ -157,12 +158,14 @@ export function EntityCard({
   onRun,
   onClick,
   menuItems = [],
+  testId,
 }: EntityCardProps) {
   const regularItems = menuItems.filter((i) => !i.destructive);
   const destructiveItems = menuItems.filter((i) => i.destructive);
 
   return (
     <div
+      data-testid={testId}
       onClick={onClick}
       className="group relative rounded-xl border border-border-light bg-white cursor-pointer select-none overflow-hidden transition-all duration-200 hover:shadow-sm"
     >
@@ -290,6 +293,7 @@ export function EntityCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  data-testid={testId ? `${testId}-options` : undefined}
                   className="h-7 w-7 text-text-muted hover:text-text-main"
                   onClick={(e) => e.stopPropagation()}
                 >

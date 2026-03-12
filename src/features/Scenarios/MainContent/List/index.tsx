@@ -72,6 +72,7 @@ export function ScenarioList({
             return (
               <EntityCard
                 key={scenario.id}
+                testId="scenario-card"
                 icon={FileText}
                 status={scenarioStatusToEntityStatus(status)}
                 name={scenario.title}
