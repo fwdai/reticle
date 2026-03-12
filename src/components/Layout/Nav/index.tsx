@@ -89,6 +89,7 @@ function Navigation() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                data-testid="nav-settings"
                 onClick={(e) => handleClick("settings", e, { settingsSection: "api-keys" })}
                 className={`${currentPage === "settings" ? "text-white" : "text-white/40 hover:text-white"
                   } transition-colors flex items-center justify-center relative cursor-pointer h-7`}

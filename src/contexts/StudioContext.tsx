@@ -136,7 +136,7 @@ interface StudioContextType {
   setSelectedCollectionId: (id: string | null) => void;
   fetchCollections: () => Promise<Collection[]>;
   fetchScenarios: () => Promise<void>;
-  createCollection: (name: string) => Promise<void>;
+  createCollection: (name: string) => Promise<string>;
   deleteCollection: (id: string) => Promise<void>;
   createScenario: (collectionId: string, config?: { title?: string; system_prompt?: string; user_prompt?: string; history_json?: string; variables_json?: string }) => Promise<void>;
   deleteScenario: (id: string) => Promise<void>;
@@ -573,20 +573,20 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
     }
   }, [studioState, setStudioState]);
 
-  const createCollection = useCallback(async (name: string) => {
+  const createCollection = useCallback(async (name: string): Promise<string> => {
     console.log(`Creating collection '${name}'`);
     try {
       setStudioState(prev => ({ ...prev, isLoading: true }));
-      await invoke('db_insert_cmd', { table: 'collections', data: { name } });
-
-      await fetchCollections(); // Refresh collections after adding a new one
+      const id = await invoke<string>('db_insert_cmd', { table: 'collections', data: { name } });
+      await fetchCollections();
       setStudioState(prev => ({ ...prev, isLoading: false }));
+      return id;
     } catch (error) {
       console.error(`Failed to create collection '${name}':`, error);
       setStudioState(prev => ({ ...prev, isLoading: false }));
+      throw error;
     }
-
-  }, [fetchCollections]); // Depend on fetchCollections to ensure it's up-to-date
+  }, [fetchCollections]);
 
   const deleteCollection = useCallback(async (id: string) => {
     try {

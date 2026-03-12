@@ -11,6 +11,7 @@ interface SidebarItemProps {
   muted?: boolean;
   /** Trailing content (e.g. dropdown menu) - use stopPropagation on interactive elements to prevent row click */
   actions?: React.ReactNode;
+  "data-testid"?: string;
 }
 
 function SidebarItem({
@@ -22,6 +23,7 @@ function SidebarItem({
   indent = false,
   muted = false,
   actions,
+  "data-testid": testId,
 }: SidebarItemProps) {
   const textClass = muted ? "text-gray-500" : "text-sidebar-text";
   const baseClass =
@@ -50,6 +52,7 @@ function SidebarItem({
     <div
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
+      data-testid={testId}
       onClick={onClick}
       onKeyDown={
         onClick

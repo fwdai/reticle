@@ -32,6 +32,7 @@ function Studio() {
     selectedCollectionId,
     loadScenario,
     createScenario,
+    createCollection,
     deleteScenario,
     runScenarioById,
   } = context ?? {};
@@ -107,9 +108,16 @@ function Studio() {
     return () => { cancelled = true; };
   }, [filteredScenarios, isLoading]);
 
-  const handleCreateScenario = (config?: ScenarioStarterConfig) => {
+  const handleCreateScenario = async (config?: ScenarioStarterConfig) => {
     if (selectedCollectionId) {
-      createScenario?.(selectedCollectionId, config);
+      await createScenario?.(selectedCollectionId, config);
+      return;
+    }
+    // No collection selected — reuse an existing "Default" collection or create one
+    const existing = collections.find((c) => c.name === "Default");
+    const collectionId = existing?.id ?? await createCollection?.("Default");
+    if (collectionId) {
+      await createScenario?.(collectionId, config);
     }
   };
 
@@ -131,7 +139,7 @@ function Studio() {
           onSearchChange={setSearchQuery}
           onCreateScenario={handleCreateScenario}
           scenarioCount={filteredScenarios.length}
-          canCreate={!!selectedCollectionId}
+          canCreate={true}
           isEmpty={savedScenarios.length === 0}
         />
         {isLoading && savedScenarios.length === 0 ? null : (

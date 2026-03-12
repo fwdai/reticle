@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { Activity, CheckCircle, XCircle } from "lucide-react";
+import { FilterEmptyState } from "@/components/ui/EmptyState";
 
 import type { Execution, ExecutionType, ExecutionStatus, Scenario, AgentRecord } from "@/types";
 import MainContent from "@/components/Layout/MainContent";
@@ -219,10 +220,21 @@ function Runs({ filter }: RunsProps) {
     );
   }
 
+  const isEmpty = !isLoading && runs.length === 0;
+
   return (
     <MainContent>
       <TooltipProvider delayDuration={200}>
         <Header searchQuery={searchQuery} onSearchQueryChange={handleSearchChange} totalExecutions={totalExecutions} />
+        {isEmpty ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            <FilterEmptyState
+              icon={Activity}
+              title="No runs yet"
+              subtitle="Run a scenario or an agent to see executions here."
+            />
+          </div>
+        ) : (
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           <div className="flex-1 min-h-0 overflow-auto custom-scrollbar min-w-0">
             <table className="w-full text-left border-collapse table-fixed">
@@ -242,13 +254,6 @@ function Runs({ filter }: RunsProps) {
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-sm text-text-muted">
                       Loading runs…
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && runs.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-text-muted">
-                      No runs yet. Run a scenario from Studio to see executions here.
                     </td>
                   </tr>
                 )}
@@ -325,6 +330,7 @@ function Runs({ filter }: RunsProps) {
             />
           </footer>
         </div>
+        )}
       </TooltipProvider>
     </MainContent>
   );

@@ -24,13 +24,8 @@ export function EmptyState({ hasCollectionSelected, hasScenarios, hasSearch, onC
   return (
     <StarterTemplates
       {...SCENARIO_EMPTY_STATE}
-      subtitle={
-        hasCollectionSelected
-          ? SCENARIO_EMPTY_STATE.subtitle
-          : "Select or create a collection in the sidebar first, then come back here to add your first scenario."
-      }
-      onCreateBlank={hasCollectionSelected ? () => onCreateScenario?.() : undefined}
-      onSelect={hasCollectionSelected ? (i) => onCreateScenario?.(SCENARIO_EMPTY_STATE.templates[i].config) : undefined}
+      onCreateBlank={() => onCreateScenario?.()}
+      onSelect={(i) => onCreateScenario?.(SCENARIO_EMPTY_STATE.templates[i].config)}
     />
   );
 }
