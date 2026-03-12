@@ -9,6 +9,8 @@ interface MockOptions {
    *  When omitted, the mock matches any (or no) provider. */
   provider?: "openai" | "anthropic" | "google";
   status?: number;
+  /** Override the response Content-Type (default: application/json). */
+  contentType?: string;
 }
 
 /**
@@ -29,12 +31,12 @@ export async function mockResponse(
   fixturePath: string,
   options: MockOptions = {},
 ): Promise<void> {
-  const { provider, status = 200 } = options;
+  const { provider, status = 200, contentType } = options;
   const body = fs.readFileSync(path.resolve(ROOT, fixturePath), "utf-8");
   const res = await fetch(`${ADMIN_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: urlPath, body, status, provider }),
+    body: JSON.stringify({ path: urlPath, body, status, provider, content_type: contentType }),
   });
   if (!res.ok) {
     throw new Error(`[mock] Failed to register mock for ${urlPath}: ${res.status}`);

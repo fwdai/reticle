@@ -1,0 +1,7 @@
+data: {"id":"chatcmpl-mock001","object":"chat.completion.chunk","created":1731234567,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock001","object":"chat.completion.chunk","created":1731234567,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"content":"Hello from the mock!"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock001","object":"chat.completion.chunk","created":1731234567,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":5,"total_tokens":25}}
+
+data: [DONE]

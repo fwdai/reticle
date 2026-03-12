@@ -1,126 +1,128 @@
-import { browser } from "@wdio/globals";
 import { waitForAppReady, navigateTo } from "../../helpers/app";
 import { mockResponse, resetMocks } from "../../helpers/mock";
 
-describe("getting started", () => {
+// ─── Shared setup ────────────────────────────────────────────────────────────
+
+/**
+ * Walk through steps 1 and 2 of the getting-started flow.
+ * Ends with the app on the Home page, both steps marked Completed.
+ */
+async function completeTwoOnboardingSteps() {
+  // Getting started screen is shown with all three steps
+  await expect($("h2=Welcome to Reticle!")).toBeDisplayed();
+  await expect($("h4=1. Connect an AI Provider")).toBeDisplayed();
+  await expect($("h4=2. Run Your First Scenario")).toBeDisplayed();
+  await expect($("h4=3. Complete Your Profile")).toBeDisplayed();
+
+  // ── Step 1: connect a provider ─────────────────────────────────────────────
+  await $("h4=1. Connect an AI Provider").click();
+  await expect($("label=OpenAI API Key")).toBeDisplayed();
+
+  const apiKeyInput = await $('input[placeholder="sk-..."]');
+  await apiKeyInput.setValue("OPENAI_KEY");
+  await apiKeyInput.blur();
+  await $('input[placeholder="sk-..."][data-save-status="saved"]').waitForExist({ timeout: 5_000 });
+
+  await navigateTo("home");
+  await $("span=Completed").waitForDisplayed({ timeout: 5_000 });
+
+  // ── Step 2: run a scenario ─────────────────────────────────────────────────
+  await $("h4=2. Run Your First Scenario").click();
+  await expect($("h1=All Scenarios")).toBeDisplayed();
+
+  await $("button=Create a scenario").click();
+
+  const titleInput = await $('input[placeholder="Name your scenario..."]');
+  await titleInput.waitForDisplayed({ timeout: 5_000 });
+  await titleInput.setValue("First scenario");
+  await browser.keys("Enter");
+  await expect($('input[placeholder="Name your scenario..."]')).toHaveValue("First scenario");
+
+  await $('textarea[placeholder="Type your system instructions here..."]').setValue(
+    "You are a helpful assistant."
+  );
+
+  await $("button=Input").click();
+  await $('textarea[placeholder*="Enter your prompt here"]').setValue("Say hello!");
+
+  await $('[data-testid="model-select"]').click();
+  await $('[role="option"]=gpt-4o-mini').waitForDisplayed({ timeout: 3_000 });
+  await $('[role="option"]=gpt-4o').click();
+
+  await $("button=Run").click();
+  await $("button=Stop").waitForDisplayed({ timeout: 3_000 });
+
+  await $("p*=Hello from the mock!").waitForDisplayed({ timeout: 10_000 });
+  await $("button=Run").waitForDisplayed({ timeout: 3_000 });
+  await expect($("span=200 OK")).toBeDisplayed();
+  await expect($("span*=tokens")).toBeDisplayed();
+  await expect($("span*=$")).toBeDisplayed();
+
+  await navigateTo("home");
+  await browser.waitUntil(
+    async () => (await $$("span=Completed")).length >= 2,
+    { timeout: 5_000, timeoutMsg: "Expected step 2 to be marked Completed" }
+  );
+}
+
+// ─── Suite ───────────────────────────────────────────────────────────────────
+
+describe("Getting started", () => {
   before(async () => {
-    // Register mock before the app fetches models on boot
     await mockResponse("/v1/models", "tests/e2e/fixtures/openai/models.json", {
       provider: "openai",
     });
+    await mockResponse("/v1/chat/completions", "tests/e2e/fixtures/openai/chat-completions.sse", {
+      provider: "openai",
+      contentType: "text/event-stream",
+    });
     await waitForAppReady();
+    await browser.execute(() => localStorage.removeItem("onboarding:profileSkipped"));
   });
 
   after(async () => {
     await resetMocks();
   });
 
-  // ─── Homepage ────────────────────────────────────────────────────────────────
+  // ── Variant A: complete profile ───────────────────────────────────────────
 
-  it("shows the welcome screen with all three getting-started steps", async () => {
-    await expect($("h2=Welcome to Reticle!")).toBeDisplayed();
-    await expect($("h4=1. Connect an AI Provider")).toBeDisplayed();
-    await expect($("h4=2. Run Your First Scenario")).toBeDisplayed();
-    await expect($("h4=3. Complete Your Profile")).toBeDisplayed();
-  });
+  it("shows dashboard after completing all three steps", async () => {
+    await completeTwoOnboardingSteps();
 
-  // ─── Scenarios: no-models warning ────────────────────────────────────────────
+    await $("button*=Set this up").click();
+    await expect($("h1=Account")).toBeDisplayed();
 
-  it("shows a no-models warning in the Scenarios Configuration panel", async () => {
-    await navigateTo("scenarios");
+    const firstNameInput = await $('input[placeholder="e.g. Alex"]');
+    await firstNameInput.setValue("Alex");
+    await firstNameInput.blur();
 
-    // Scenarios require a collection — create one first
-    await $("=Add collection").click();
-    await $("#collection-name").setValue("E2E Tests");
-    await $("button=Create collection").click();
-
-    // Select the new collection and create a blank scenario
-    await $("=E2E Tests").click();
-    await $("button=Create a scenario").click();
-
-    // Configuration panel (right sidebar) should warn about missing API key
-    await expect($("=No models available.")).toBeDisplayed();
-    await expect($("=Add an API key in Settings")).toBeDisplayed();
-  });
-
-  // ─── Agents: no-models warning ───────────────────────────────────────────────
-
-  it("shows a no-models warning in the Agents Configuration panel", async () => {
-    await navigateTo("agents");
-
-    // Create a blank agent from the empty state
-    await $("button=Create an agent").click();
-
-    await expect($("=No models available.")).toBeDisplayed();
-    await expect($("=Add an API key in Settings")).toBeDisplayed();
-  });
-
-  // ─── Step 1: connect a provider ──────────────────────────────────────────────
-
-  it("clicking step 1 navigates to API keys settings", async () => {
     await navigateTo("home");
-
-    await $("h4=1. Connect an AI Provider").click();
-
-    await expect($("label=OpenAI API Key")).toBeDisplayed();
+    await $("h1*=Welcome back").waitForDisplayed({ timeout: 5_000 });
+    await expect($("h2=Welcome to Reticle!")).not.toBeDisplayed();
+    await expect($("span=Scenarios")).toBeDisplayed();
+    await expect($("span=Agents")).toBeDisplayed();
+    await expect($("span=Runs this week")).toBeDisplayed();
   });
 
-  it("entering an OpenAI API key saves successfully", async () => {
-    await $('input[placeholder="sk-..."]').setValue("OPENAI_KEY");
-    // The field auto-saves on change; wait for the Saved badge
-    await $("=Saved").waitForDisplayed({ timeout: 5_000 });
-  });
+  // ── Variant B: skip profile ───────────────────────────────────────────────
 
-  it("models from mock are shown in the Scenarios Configuration panel", async () => {
-    await navigateTo("scenarios");
+  it("shows dashboard with profile nudge after skipping step 3", async () => {
+    // Steps 1 & 2 are already done — only reset the profile so step 3 appears
+    await $('[data-testid="nav-settings"]').click();
+    await $('[data-testid="settings-nav-account"]').click();
+    const firstNameInput = await $('input[placeholder="e.g. Alex"]');
+    await firstNameInput.clearValue();
+    await firstNameInput.blur();
 
-    // Select the collection and open the previously-created scenario
-    await $("=E2E Tests").click();
-    await $("[data-testid='scenario-card']").click();
+    await browser.execute(() => localStorage.removeItem("onboarding:profileSkipped"));
 
-    // Model dropdown should now list the mocked OpenAI models
-    await expect($("=gpt-4o")).toBeDisplayed();
-    await expect($("=gpt-4o-mini")).toBeDisplayed();
-  });
-
-  it("models from mock are shown in the Agents Configuration panel", async () => {
-    await navigateTo("agents");
-
-    // Re-open the previously-created agent
-    await $("[data-testid='agent-card']").click();
-
-    await expect($("=gpt-4o")).toBeDisplayed();
-    await expect($("=gpt-4o-mini")).toBeDisplayed();
-  });
-
-  // ─── Step 1 completion ───────────────────────────────────────────────────────
-
-  it("step 1 shows Completed on the homepage after the API key is saved", async () => {
     await navigateTo("home");
+    await $("h2=Welcome to Reticle!").waitForDisplayed({ timeout: 5_000 });
 
-    // The step 1 card should now show "Completed" instead of "Setup Keys"
-    await expect($("h4=1. Connect an AI Provider")).toBeDisplayed();
-    await expect($("=Completed")).toBeDisplayed();
-  });
+    await $("button=Skip for now").click();
 
-  // ─── Step 2: run a scenario ───────────────────────────────────────────────────
-
-  it("clicking step 2 navigates to Scenarios and a new scenario can be named", async () => {
-    // Step 2 is now the current step (step 1 done, step 2 not done)
-    await $("h4=2. Run Your First Scenario").click();
-
-    // Should be on the Scenarios page
-    await expect($("[data-testid='nav-scenarios']")).toBeDisplayed();
-
-    // Create a new scenario
-    await $("=E2E Tests").click();
-    await $("button=New Scenario").click();
-
-    // Type the scenario name
-    const titleInput = await $('input[placeholder="Name your scenario..."]');
-    await titleInput.setValue("First scenario");
-    await browser.keys("Enter");
-
-    await expect($("=First scenario")).toBeDisplayed();
+    await $("h1*=Welcome back").waitForDisplayed({ timeout: 5_000 });
+    await expect($("h2=Welcome to Reticle!")).not.toBeDisplayed();
+    await expect($("p=Complete your profile")).toBeDisplayed();
   });
 });

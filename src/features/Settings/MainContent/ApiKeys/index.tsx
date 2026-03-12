@@ -188,6 +188,7 @@ function ApiKeys() {
                 placeholder={placeholder}
                 type={visibility[id] ? "text" : "password"}
                 value={apiKeys[id] ?? ""}
+                data-save-status={saveStatus[id]}
                 onChange={(e) =>
                   setApiKeys((prev) => ({ ...prev, [id]: e.target.value }))
                 }

@@ -111,7 +111,7 @@ export function ModelParams({
             noModelsSlot
           ) : (
             <Select value={model} onValueChange={onModelChange}>
-              <SelectTrigger>
+              <SelectTrigger data-testid="model-select">
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>

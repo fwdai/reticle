@@ -19,6 +19,14 @@ import path from "path";
 
 const ROOT = path.resolve(__dirname, "../..");
 
+declare global {
+  namespace WebdriverIO {
+    interface Element {
+      blur(): Promise<void>;
+    }
+  }
+}
+
 const APP_BINARY =
   process.env.RETICLE_APP_BINARY ??
   path.join(ROOT, "src-tauri", "target", "debug", "reticle");
@@ -108,6 +116,16 @@ export const config: WebdriverIO.Config = {
       project: path.join(__dirname, "tsconfig.json"),
       transpileOnly: true,
     },
+  },
+
+  before: async () => {
+    browser.addCommand(
+      "blur",
+      async function (this: WebdriverIO.Element) {
+        await browser.execute((el) => (el as unknown as { blur(): void }).blur(), this);
+      },
+      true,
+    );
   },
 
   onPrepare: async () => {
