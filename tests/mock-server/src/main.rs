@@ -11,6 +11,7 @@ use std::{
     net::SocketAddr,
     sync::{Arc, RwLock},
 };
+use tokio::time::{sleep, Duration};
 use tower_http::cors::CorsLayer;
 
 type MockMap = Arc<RwLock<HashMap<MockKey, MockEntry>>>;
@@ -28,6 +29,7 @@ struct MockEntry {
     body: String,
     status: u16,
     content_type: String,
+    delay_ms: u64,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +43,9 @@ struct RegisterRequest {
     status: u16,
     #[serde(default = "default_content_type")]
     content_type: String,
+    /// Optional artificial delay in milliseconds before the response is sent.
+    #[serde(default)]
+    delay_ms: u64,
 }
 
 fn default_status() -> u16 {
@@ -53,7 +58,7 @@ fn default_content_type() -> String {
 async fn register(State(map): State<MockMap>, Json(req): Json<RegisterRequest>) -> StatusCode {
     map.write().unwrap().insert(
         MockKey { path: req.path, provider: req.provider },
-        MockEntry { body: req.body, status: req.status, content_type: req.content_type },
+        MockEntry { body: req.body, status: req.status, content_type: req.content_type, delay_ms: req.delay_ms },
     );
     StatusCode::OK
 }
@@ -71,21 +76,28 @@ async fn handle(State(map): State<MockMap>, request: Request) -> impl IntoRespon
         .and_then(|v| v.to_str().ok())
         .map(str::to_owned);
 
-    let map = map.read().unwrap();
-
-    // Provider-specific mock takes priority, then fall back to wildcard.
-    let entry = provider
-        .as_ref()
-        .and_then(|p| map.get(&MockKey { path: path.clone(), provider: Some(p.clone()) }))
-        .or_else(|| map.get(&MockKey { path: path.clone(), provider: None }));
+    // Clone the entry while holding the lock, then release before any await.
+    let entry = {
+        let map = map.read().unwrap();
+        provider
+            .as_ref()
+            .and_then(|p| map.get(&MockKey { path: path.clone(), provider: Some(p.clone()) }))
+            .or_else(|| map.get(&MockKey { path: path.clone(), provider: None }))
+            .cloned()
+    };
 
     match entry {
-        Some(entry) => (
-            StatusCode::from_u16(entry.status).unwrap_or(StatusCode::OK),
-            [(axum::http::header::CONTENT_TYPE, entry.content_type.clone())],
-            entry.body.clone(),
-        )
-            .into_response(),
+        Some(entry) => {
+            if entry.delay_ms > 0 {
+                sleep(Duration::from_millis(entry.delay_ms)).await;
+            }
+            (
+                StatusCode::from_u16(entry.status).unwrap_or(StatusCode::OK),
+                [(axum::http::header::CONTENT_TYPE, entry.content_type.clone())],
+                entry.body.clone(),
+            )
+                .into_response()
+        }
         None => (
             StatusCode::NOT_FOUND,
             format!("No mock registered for {path}"),
@@ -93,6 +105,7 @@ async fn handle(State(map): State<MockMap>, request: Request) -> impl IntoRespon
             .into_response(),
     }
 }
+
 
 #[tokio::main]
 async fn main() {

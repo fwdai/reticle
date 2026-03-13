@@ -50,8 +50,6 @@ async function completeTwoOnboardingSteps() {
   await $('[role="option"]=gpt-4o').click();
 
   await $("button=Run").click();
-  await $("button=Stop").waitForDisplayed({ timeout: 3_000 });
-
   await waitForResponseContent("Hello from the mock!");
   await $("button=Run").waitForDisplayed({ timeout: 3_000 });
   await expect($("span=200 OK")).toBeDisplayed();

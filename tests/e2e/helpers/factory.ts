@@ -40,6 +40,13 @@ const FACTORIES: Record<string, FactoryDef> = {
     table: 'accounts',
     defaults: {},
   },
+  api_key: {
+    table: 'api_keys',
+    defaults: {
+      provider: 'openai',
+      key: 'test-key',
+    },
+  },
   prompt_template: {
     table: 'prompt_templates',
     defaults: {

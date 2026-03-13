@@ -11,7 +11,7 @@
  */
 
 import type { } from "@wdio/types";
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, spawnSync, type ChildProcess } from "child_process";
 import fs from "fs";
 import net from "net";
 import os from "os";
@@ -141,7 +141,18 @@ export const config: WebdriverIO.Config = {
   onPrepare: async () => {
     fs.mkdirSync(TEST_DB_DIR, { recursive: true });
 
-    // 0. Start mock server on :11513 — replaces the real Axum proxy.
+    // 0a. Build the mock server so any source changes are picked up.
+    console.log("[e2e] Building mock server...");
+    const build = spawnSync(
+      "cargo",
+      ["build", "--manifest-path", "tests/mock-server/Cargo.toml"],
+      { cwd: ROOT, stdio: "inherit" },
+    );
+    if (build.status !== 0) {
+      throw new Error("[e2e] Mock server build failed");
+    }
+
+    // 0b. Start mock server on :11513 — replaces the real Axum proxy.
     //    The Tauri binary is started with RETICLE_DISABLE_PROXY=1 so it
     //    doesn't try to bind the same port.
     console.log("[e2e] Starting mock server...");

@@ -11,6 +11,8 @@ interface MockOptions {
   status?: number;
   /** Override the response Content-Type (default: application/json). */
   contentType?: string;
+  /** Artificial delay in milliseconds before the response is sent. */
+  delayMs?: number;
 }
 
 /**
@@ -31,12 +33,12 @@ export async function mockResponse(
   fixturePath: string,
   options: MockOptions = {},
 ): Promise<void> {
-  const { provider, status = 200, contentType } = options;
+  const { provider, status = 200, contentType, delayMs } = options;
   const body = fs.readFileSync(path.resolve(ROOT, fixturePath), "utf-8");
   const res = await fetch(`${ADMIN_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path: urlPath, body, status, provider, content_type: contentType }),
+    body: JSON.stringify({ path: urlPath, body, status, provider, content_type: contentType, delay_ms: delayMs }),
   });
   if (!res.ok) {
     throw new Error(`[mock] Failed to register mock for ${urlPath}: ${res.status}`);
