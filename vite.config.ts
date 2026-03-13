@@ -12,7 +12,7 @@ export default defineConfig(async () => ({
       name: "e2e-helpers",
       transformIndexHtml(_html, ctx) {
         if (!ctx.server) return;
-        return [{ tag: "script", attrs: { type: "module", src: "/src/e2e-helpers.ts" }, injectTo: "body" }];
+        return [{ tag: "script", attrs: { type: "module", src: "/tests/e2e/e2e-helpers.ts" }, injectTo: "body" }];
       },
     },
   ],

@@ -1,0 +1,67 @@
+type Overrides = Record<string, unknown>;
+
+interface FactoryDef {
+  table: string;
+  defaults: Overrides;
+}
+
+const FACTORIES: Record<string, FactoryDef> = {
+  scenario: {
+    table: 'scenarios',
+    defaults: {
+      title: 'Test Scenario',
+      provider: 'openai',
+      model: 'gpt-4o',
+      system_prompt: '',
+      user_prompt: '',
+      params_json: '{}',
+    },
+  },
+  agent: {
+    table: 'agents',
+    defaults: {
+      name: 'Test Agent',
+      provider: 'openai',
+      model: 'gpt-4o',
+      params_json: '{"temperature":0.4,"top_p":0.95,"max_tokens":4096}',
+    },
+  },
+  account: {
+    table: 'accounts',
+    defaults: {},
+  },
+  prompt_template: {
+    table: 'prompt_templates',
+    defaults: {
+      type: 'system',
+      name: 'Test Template',
+      content: 'You are a helpful assistant.',
+    },
+  },
+};
+
+export async function create<T extends Overrides = Overrides>(
+  type: string,
+  overrides: Overrides = {}
+): Promise<T & { id: string }> {
+  const factory = FACTORIES[type];
+  if (!factory) throw new Error(`No factory defined for "${type}"`);
+
+  const data: Overrides = { ...factory.defaults, ...overrides };
+
+  if (type === 'scenario' && !data.collection_id) {
+    data.collection_id = await browser.executeAsync((done: (id: string) => void) => {
+      (globalThis as any).__e2e.getOrCreateDefaultCollection().then(done);
+    });
+  }
+
+  const id: string = await browser.executeAsync(
+    (table: string, data: Overrides, done: (id: string) => void) => {
+      (globalThis as any).__e2e.insert(table, data).then(done);
+    },
+    factory.table,
+    data
+  );
+
+  return { ...data, id } as T & { id: string };
+}
