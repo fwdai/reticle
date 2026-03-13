@@ -1,6 +1,6 @@
 import { browser } from "@wdio/globals";
 
-export type NavPage = "home" | "scenarios" | "agents" | "tools" | "templates" | "runs";
+export type NavPage = "home" | "scenarios" | "agents" | "tools" | "templates" | "runs" | "settings";
 
 /** Wait for the app to finish loading (nav is the first reliable landmark). */
 export async function waitForAppReady(timeout = 15_000): Promise<void> {

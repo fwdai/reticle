@@ -291,6 +291,8 @@ function Account() {
             <button
               key={opt.value}
               type="button"
+              data-testid={`usage-context-${opt.value}`}
+              aria-pressed={usageContext === opt.value}
               onClick={() => {
                 setUsageContext(opt.value);
                 saveField({ usage_context: opt.value });
