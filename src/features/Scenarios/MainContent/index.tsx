@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo, useEffect } from 'react';
+import { useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import MainContent from '@/components/Layout/MainContent';
 import { StudioContext } from '@/contexts/StudioContext';
 
@@ -122,6 +122,12 @@ function Studio() {
   };
 
   const handleDeleteClick = (scenario: Scenario) => setScenarioToDelete(scenario);
+
+  const handleDeleteCurrentScenario = useCallback(() => {
+    const s = savedScenarios.find((s) => s.id === scenarioId);
+    if (s) setScenarioToDelete(s);
+  }, [savedScenarios, scenarioId]);
+
   const handleConfirmDelete = async () => {
     if (!scenarioToDelete) return;
     await deleteScenario?.(scenarioToDelete.id!);
@@ -130,62 +136,71 @@ function Studio() {
 
   const isListViewModel = scenarioId === null;
 
+  const deleteDialog = (
+    <Dialog open={!!scenarioToDelete} onOpenChange={(open) => !open && setScenarioToDelete(null)}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Delete scenario</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete &quot;{scenarioToDelete?.title}&quot;? This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setScenarioToDelete(null)}>
+            Cancel
+          </Button>
+          <Button data-testid="confirm-delete" variant="destructive" onClick={handleConfirmDelete}>
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isListViewModel) {
     return (
-      <MainContent>
-        <ListHeader
-          title={selectedCollectionId ? (collectionNames[selectedCollectionId] ?? "Collection") : "All Scenarios"}
-          search={searchQuery}
-          onSearchChange={setSearchQuery}
-          onCreateScenario={handleCreateScenario}
-          scenarioCount={filteredScenarios.length}
-          canCreate={true}
-          isEmpty={savedScenarios.length === 0}
-        />
-        {isLoading && savedScenarios.length === 0 ? null : (
-          <ScenarioList
-            scenarios={filteredScenarios}
-            collectionNames={collectionNames}
-            scenarioStats={scenarioStats}
-            scenarioStatusMap={scenarioStatusMap}
-            onSelectScenario={(id) => loadScenario?.(id)}
-            onRunScenario={(id) => runScenarioById?.(id)}
-            onDeleteScenario={handleDeleteClick}
-            hasCollectionSelected={selectedCollectionId !== null}
-            hasScenarios={savedScenarios.length > 0}
-            hasSearch={!!searchQuery.trim()}
+      <>
+        <MainContent>
+          <ListHeader
+            title={selectedCollectionId ? (collectionNames[selectedCollectionId] ?? "Collection") : "All Scenarios"}
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
             onCreateScenario={handleCreateScenario}
+            scenarioCount={filteredScenarios.length}
+            canCreate={true}
+            isEmpty={savedScenarios.length === 0}
           />
-        )}
-        <Dialog open={!!scenarioToDelete} onOpenChange={(open) => !open && setScenarioToDelete(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Delete scenario</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete &quot;{scenarioToDelete?.title}&quot;? This cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setScenarioToDelete(null)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </MainContent>
+          {isLoading && savedScenarios.length === 0 ? null : (
+            <ScenarioList
+              scenarios={filteredScenarios}
+              collectionNames={collectionNames}
+              scenarioStats={scenarioStats}
+              scenarioStatusMap={scenarioStatusMap}
+              onSelectScenario={(id) => loadScenario?.(id)}
+              onRunScenario={(id) => runScenarioById?.(id)}
+              onDeleteScenario={handleDeleteClick}
+              hasCollectionSelected={selectedCollectionId !== null}
+              hasScenarios={savedScenarios.length > 0}
+              hasSearch={!!searchQuery.trim()}
+              onCreateScenario={handleCreateScenario}
+            />
+          )}
+        </MainContent>
+        {deleteDialog}
+      </>
     );
   }
 
   return (
-    <MainContent>
-      <Header />
-      {viewMode === 'editor' && <Editor />}
-      {viewMode === 'test' && <Test />}
-      {viewMode === 'visualizer' && <Visualizer />}
-    </MainContent>
+    <>
+      <MainContent>
+        <Header onDelete={handleDeleteCurrentScenario} />
+        {viewMode === 'editor' && <Editor />}
+        {viewMode === 'test' && <Test />}
+        {viewMode === 'visualizer' && <Visualizer />}
+      </MainContent>
+      {deleteDialog}
+    </>
   );
 }
 

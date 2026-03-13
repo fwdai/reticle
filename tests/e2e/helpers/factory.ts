@@ -55,6 +55,12 @@ const FACTORIES: Record<string, FactoryDef> = {
       content: 'You are a helpful assistant.',
     },
   },
+  collection: {
+    table: 'collections',
+    defaults: {
+      name: 'Test Collection',
+    },
+  },
   tool: {
     table: 'tools',
     defaults: {

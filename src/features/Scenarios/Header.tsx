@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ArrowLeft, Pencil, FlaskConical, Network, Play, Square, MoreVertical, Download } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, Play, Square, MoreVertical, Download, Trash2 } from "lucide-react";
 
 import { StudioContext } from '@/contexts/StudioContext';
 import { exportScenarioAsJSON, saveFileWithDialog } from "@/lib/evals";
@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-function StudioHeader() {
+interface StudioHeaderProps {
+  onDelete?: () => void;
+}
+
+function StudioHeader({ onDelete }: StudioHeaderProps) {
   const context = useContext(StudioContext);
 
   if (!context) {
@@ -84,7 +88,7 @@ function StudioHeader() {
           onChange={(v) => setViewMode(v)}
         />
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild data-testid="scenario-menu">
             <Button
               variant="ghost"
               size="icon"
@@ -112,6 +116,15 @@ function StudioHeader() {
               <Download className="h-4 w-4" />
               Export
             </DropdownMenuItem>
+            {onDelete && (
+              <DropdownMenuItem
+                className="gap-2 text-sm text-destructive focus:text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
