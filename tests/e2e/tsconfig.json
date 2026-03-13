@@ -1,18 +1,10 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "baseUrl": "../..",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "lib": ["ES2022"],
-    "types": ["node", "mocha"],
-    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true
+    "types": ["node", "mocha"]
   },
   "ts-node": {
     "transpileOnly": true

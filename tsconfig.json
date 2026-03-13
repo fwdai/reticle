@@ -26,7 +26,6 @@
       "@/lib/utils": ["./src/lib/utils"]
     }
   },
-  "include": ["src"],
-  "exclude": ["tests"],
+  "include": ["src", "tests"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
