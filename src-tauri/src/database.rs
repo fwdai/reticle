@@ -251,6 +251,12 @@ pub fn db_count(conn: &Connection, table: &str, query: Value) -> AnyhowResult<i6
     Ok(count)
 }
 
+// Raw SQL execution (no params) — for e2e test helpers
+pub fn db_exec(conn: &Connection, sql: &str) -> AnyhowResult<()> {
+    conn.execute_batch(sql)?;
+    Ok(())
+}
+
 // Generic DELETE operation
 pub fn db_delete(conn: &Connection, table: &str, query: Value) -> AnyhowResult<usize> {
     let query_map = query.as_object().ok_or_else(|| anyhow!("Query must be a JSON object for delete"))?;

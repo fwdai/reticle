@@ -30,6 +30,10 @@ export async function dbDelete(table: string, where?: Record<string, unknown>): 
   return typeof deleted === 'number' ? deleted : 0;
 }
 
+export async function dbExec(sql: string): Promise<void> {
+  await invoke('db_exec_cmd', { sql });
+}
+
 export async function dbUpsert(
   table: string,
   where: Record<string, unknown>,

@@ -67,6 +67,15 @@ async fn db_count_cmd(
     database::db_count(&conn, &table, query).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn db_exec_cmd(
+    sql: String,
+    state: tauri::State<'_, Arc<Mutex<rusqlite::Connection>>>,
+) -> Result<(), String> {
+    let conn = state.lock().unwrap();
+    database::db_exec(&conn, &sql).map_err(|e| e.to_string())
+}
+
 mod blobs;
 mod database;
 mod paths;
@@ -119,6 +128,7 @@ pub fn run() {
             db_update_cmd,
             db_delete_cmd,
             db_count_cmd,
+            db_exec_cmd,
             runner::runner_spawn,
             runner::runner_send,
             runner::runner_kill,
