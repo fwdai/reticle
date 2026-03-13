@@ -48,6 +48,19 @@ const FACTORIES: Record<string, FactoryDef> = {
       content: 'You are a helpful assistant.',
     },
   },
+  tool: {
+    table: 'tools',
+    defaults: {
+      name: 'test_tool',
+      description: 'A test tool',
+      parameters_json: '[]',
+      mock_response: '{"result":"success"}',
+      mock_mode: 'json',
+      is_enabled: 1,
+      is_global: 1,
+      sort_order: 0,
+    },
+  },
 };
 
 export async function create<T extends Overrides = Overrides>(

@@ -146,37 +146,37 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
     refreshTools();
   }, [flushSave, refreshTools]);
 
-  if (selectedTool) {
-    return (
-      <ToolDetail
-        tool={selectedTool}
-        saveStatus={saveStatus}
-        onBack={handleBack}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-      />
-    );
-  }
-
   return (
-    <MainContent>
-      <Header
-        search={searchQuery}
-        onSearchChange={setSearchQuery}
-        onCreateTool={handleCreate}
-        toolCount={filtered.length}
-        isEmpty={tools.length === 0}
-      />
-      {isLoading ? null : (
-        <ToolList
-          tools={filtered}
-          hasTools={tools.length > 0}
-          searchQuery={searchQuery}
-          onSelectTool={setSelectedId}
-          onCreateTool={handleCreate}
-          onDeleteTool={handleDelete}
-          onCopySchema={copyToolSchema}
+    <>
+      {selectedTool ? (
+        <ToolDetail
+          tool={selectedTool}
+          saveStatus={saveStatus}
+          onBack={handleBack}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
         />
+      ) : (
+        <MainContent>
+          <Header
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            onCreateTool={handleCreate}
+            toolCount={filtered.length}
+            isEmpty={tools.length === 0}
+          />
+          {isLoading ? null : (
+            <ToolList
+              tools={filtered}
+              hasTools={tools.length > 0}
+              searchQuery={searchQuery}
+              onSelectTool={setSelectedId}
+              onCreateTool={handleCreate}
+              onDeleteTool={handleDelete}
+              onCopySchema={copyToolSchema}
+            />
+          )}
+        </MainContent>
       )}
       <Dialog open={!!toolToDelete} onOpenChange={(open) => !open && setToolToDelete(null)}>
         <DialogContent className="sm:max-w-[425px]">
@@ -196,7 +196,7 @@ function ToolsMainContent({ filter }: ToolsMainContentProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainContent>
+    </>
   );
 }
 
