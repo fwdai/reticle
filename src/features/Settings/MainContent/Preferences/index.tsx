@@ -128,6 +128,7 @@ function Preferences() {
               value={defaultProvider}
               onSelect={p => handleProviderChange(p.id)}
               placeholder="Select a provider"
+              testId="default-provider-select"
             />
           </div>
           <div className="space-y-1.5">
@@ -142,6 +143,7 @@ function Preferences() {
               onSelect={m => handleModelChange(m.id)}
               placeholder="Select a model"
               disabled={modelsForProvider.length === 0}
+              testId="default-model-select"
             />
           </div>
         </div>
@@ -156,6 +158,8 @@ function Preferences() {
         </div>
         <button
           type="button"
+          data-testid="telemetry-toggle"
+          aria-checked={telemetryEnabled}
           className={`relative w-14 h-7 rounded-full transition-colors ${telemetryEnabled ? 'bg-primary' : 'bg-slate-300'}`}
           onClick={handleTelemetryToggle}
         >

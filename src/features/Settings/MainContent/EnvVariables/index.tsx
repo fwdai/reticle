@@ -178,9 +178,10 @@ async function deleteVar(id: string) {
                 const row = rows[v.id];
                 if (!row) return null;
                 return (
-                  <div key={v.id} className="flex items-center px-6 py-2.5 border-b border-border-light hover:bg-sidebar-light/30 transition-colors group">
+                  <div key={v.id} data-testid={`env-var-row-${v.id}`} className="flex items-center px-6 py-2.5 border-b border-border-light hover:bg-sidebar-light/30 transition-colors group">
                     <div className="w-[38%] shrink-0">
                       <input
+                        data-testid={`env-key-${v.id}`}
                         className="font-mono text-sm font-medium text-text-main bg-transparent w-full focus:outline-none"
                         value={row.key}
                         onChange={(e) => updateRow(v.id, { key: e.target.value })}
@@ -191,6 +192,7 @@ async function deleteVar(id: string) {
                     <div className="flex-1 min-w-0">
                       <div className="bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg flex items-center justify-between gap-3">
                         <input
+                          data-testid={`env-value-${v.id}`}
                           className={`text-sm font-mono bg-transparent flex-1 min-w-0 focus:outline-none ${
                             row.is_secret && !row.showValue ? "text-text-muted" : "text-text-main"
                           }`}
@@ -212,6 +214,7 @@ async function deleteVar(id: string) {
                     </div>
                     <div className="w-40 shrink-0 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        data-testid={`env-delete-${v.id}`}
                         className="text-text-muted hover:text-red-500 transition-colors"
                         onClick={() => deleteVar(v.id)}
                       >
@@ -249,6 +252,7 @@ async function deleteVar(id: string) {
                   </div>
                   <div className="w-40 shrink-0 flex items-center justify-end gap-3">
                     <button
+                      data-testid="new-var-secret"
                       className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
                         newIsSecret ? "text-primary" : "text-text-muted hover:text-primary"
                       }`}
@@ -257,6 +261,7 @@ async function deleteVar(id: string) {
                       Secret
                     </button>
                     <button
+                      data-testid="new-var-add"
                       className="text-[10px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest transition-colors"
                       onClick={addVar}
                     >

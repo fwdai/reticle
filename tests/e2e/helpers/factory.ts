@@ -61,6 +61,14 @@ const FACTORIES: Record<string, FactoryDef> = {
       name: 'Test Collection',
     },
   },
+  env_variable: {
+    table: 'env_variables',
+    defaults: {
+      key: 'TEST_VAR',
+      value: 'test-value',
+      is_secret: 0,
+    },
+  },
   tool: {
     table: 'tools',
     defaults: {
