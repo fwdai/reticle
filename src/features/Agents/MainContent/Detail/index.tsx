@@ -26,7 +26,7 @@ function parseParamsJson(json: string): { temperature?: number; top_p?: number; 
   }
 }
 
-export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
+export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailProps) {
   const isNew = agent.id === "new";
   const [effectiveId, setEffectiveId] = useState<string | null>(isNew ? null : agent.id);
   const [agentName, setAgentName] = useState(agent.name);
@@ -235,6 +235,7 @@ export function AgentDetail({ agent, onBack, onSaved }: AgentDetailProps) {
           onAgentNameChange={setAgentName}
           onViewModeChange={setViewMode}
           onExport={handleExport}
+          onDelete={onDelete}
         />
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           {viewMode === "editor" && (

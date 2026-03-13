@@ -154,6 +154,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
     if (!agentToDelete) return;
     await updateAgent(agentToDelete.id, { archived_at: Date.now() });
     setAgentToDelete(null);
+    setSelectedAgent(null);
     await refreshAgents();
   }, [agentToDelete, refreshAgents]);
 
@@ -193,47 +194,51 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
     refreshAgents();
   };
 
-  if (selectedAgent) {
-    const detailAgent: AgentDetailAgent = {
-      id: selectedAgent.id,
-      name: selectedAgent.name,
-      description: selectedAgent.description,
-      model: selectedAgent.model,
-      toolsCount: selectedAgent.toolsCount,
-      memoryEnabled: selectedAgent.memoryEnabled,
-      agentGoal: pendingAgentConfig?.agentGoal,
-      systemInstructions: pendingAgentConfig?.systemInstructions,
-    };
-    return (
-      <AgentDetail
-        agent={detailAgent}
-        onBack={handleBackFromDetail}
-        onSaved={refreshAgents}
-      />
-    );
-  }
+  const detailAgent: AgentDetailAgent | null = selectedAgent
+    ? {
+        id: selectedAgent.id,
+        name: selectedAgent.name,
+        description: selectedAgent.description,
+        model: selectedAgent.model,
+        toolsCount: selectedAgent.toolsCount,
+        memoryEnabled: selectedAgent.memoryEnabled,
+        agentGoal: pendingAgentConfig?.agentGoal,
+        systemInstructions: pendingAgentConfig?.systemInstructions,
+      }
+    : null;
 
   return (
-    <MainContent>
-      <Header
-        search={searchQuery}
-        onSearchChange={setSearchQuery}
-        onCreateAgent={handleCreateAgent}
-        agentCount={filteredAgents.length}
-        isEmpty={agents.length === 0}
-      />
-
-      {isLoading ? null : (
-        <AgentList
-          agents={filteredAgents}
-          hasAgents={agents.length > 0}
-          starredAgentIds={starredAgents}
-          lastRunByAgentId={lastRunByAgentId}
-          onSelectAgent={handleSelectAgent}
-          onToggleStar={toggleStar}
-          onDeleteAgent={handleDeleteClick}
-          onCreateAgent={handleCreateAgent}
+    <>
+      {detailAgent ? (
+        <AgentDetail
+          agent={detailAgent}
+          onBack={handleBackFromDetail}
+          onSaved={refreshAgents}
+          onDelete={() => handleDeleteClick(detailAgent.id)}
         />
+      ) : (
+        <MainContent>
+          <Header
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            onCreateAgent={handleCreateAgent}
+            agentCount={filteredAgents.length}
+            isEmpty={agents.length === 0}
+          />
+
+          {isLoading ? null : (
+            <AgentList
+              agents={filteredAgents}
+              hasAgents={agents.length > 0}
+              starredAgentIds={starredAgents}
+              lastRunByAgentId={lastRunByAgentId}
+              onSelectAgent={handleSelectAgent}
+              onToggleStar={toggleStar}
+              onDeleteAgent={handleDeleteClick}
+              onCreateAgent={handleCreateAgent}
+            />
+          )}
+        </MainContent>
       )}
       <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
         <DialogContent className="sm:max-w-[425px]">
@@ -253,7 +258,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainContent>
+    </>
   );
 }
 

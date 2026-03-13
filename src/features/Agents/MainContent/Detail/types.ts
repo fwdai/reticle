@@ -13,4 +13,5 @@ export interface AgentDetailProps {
   agent: AgentDetailAgent;
   onBack: () => void;
   onSaved?: () => void;
+  onDelete?: () => void;
 }

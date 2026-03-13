@@ -1,4 +1,4 @@
-import { ArrowLeft, Pencil, FlaskConical, Network, MoreVertical, Download } from "lucide-react";
+import { ArrowLeft, Pencil, FlaskConical, Network, MoreVertical, Download, Trash2 } from "lucide-react";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 import { EditableTitle, type SaveStatus } from "@/components/ui/EditableTitle";
 import LayoutHeader from "@/components/Layout/Header";
@@ -21,6 +21,7 @@ interface HeaderProps {
   onAgentNameChange: (name: string) => void;
   onViewModeChange: (mode: AgentViewMode) => void;
   onExport?: () => void | Promise<void>;
+  onDelete?: () => void;
 }
 
 export function Header({
@@ -32,6 +33,7 @@ export function Header({
   onAgentNameChange,
   onViewModeChange,
   onExport,
+  onDelete,
 }: HeaderProps) {
   return (
     <LayoutHeader>
@@ -67,6 +69,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
+              data-testid="agent-menu"
               className="h-9 w-9 text-text-muted hover:text-text-main hover:bg-gray-100/80 active:bg-gray-100"
             >
               <MoreVertical className="h-4 w-4" />
@@ -80,6 +83,15 @@ export function Header({
               <Download className="h-4 w-4" />
               Export
             </DropdownMenuItem>
+            {onDelete && (
+              <DropdownMenuItem
+                className="gap-2 text-sm text-destructive focus:text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

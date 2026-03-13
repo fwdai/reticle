@@ -13,6 +13,17 @@ export async function navigateTo(page: NavPage): Promise<void> {
   await browser.pause(300);
 }
 
+/**
+ * Open a Radix DropdownMenu via keyboard.
+ * WebKit WebDriver doesn't fire `pointerdown` through any WebDriver mechanism,
+ * so pointer-based approaches don't open Radix menus. Focusing the trigger via
+ * JS and pressing Enter uses Radix's keyboard handler instead.
+ */
+export async function openDropdown(trigger: WebdriverIO.Element): Promise<void> {
+  await browser.execute((el) => (el as unknown as HTMLElement).focus(), trigger);
+  await browser.keys(["\uE007"]); // Enter
+}
+
 /** Wait for the response content element to contain the expected text. */
 export async function waitForResponseContent(
   expectedText: string,
