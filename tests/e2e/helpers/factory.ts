@@ -26,6 +26,16 @@ const FACTORIES: Record<string, FactoryDef> = {
       params_json: '{"temperature":0.4,"top_p":0.95,"max_tokens":4096}',
     },
   },
+  execution: {
+    table: 'executions',
+    defaults: {
+      type: 'scenario',
+      runnable_id: '',
+      snapshot_json: '{}',
+      status: 'succeeded',
+      started_at: Date.now(),
+    },
+  },
   account: {
     table: 'accounts',
     defaults: {},
