@@ -357,17 +357,20 @@ export function downloadFile(filename: string, content: string, mimeType = "text
 }
 
 /**
- * Opens a native file picker and returns the file content as a string.
+ * Opens a native file picker and returns the path + content.
  * In Tauri: uses plugin-dialog open() + read_import_file Rust command.
  * Returns null if cancelled or unavailable.
  */
-export async function openFileWithDialog(filters: { name: string; extensions: string[] }[]): Promise<string | null> {
+export async function openFileWithDialog(
+  filters: { name: string; extensions: string[] }[]
+): Promise<{ path: string; content: string } | null> {
   try {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await open({ multiple: false, filters });
     if (!path || typeof path !== "string") return null;
-    return await invoke<string>("read_import_file", { path });
+    const content = await invoke<string>("read_import_file", { path });
+    return { path, content };
   } catch {
     return null;
   }

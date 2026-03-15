@@ -25,9 +25,9 @@ function ListHeader({
   isEmpty,
 }: ListHeaderProps) {
   const handleImport = async () => {
-    const content = await openFileWithDialog([{ name: "JSON", extensions: ["json"] }]);
-    if (!content) return;
-    const config = parseScenarioConfig(content);
+    const result = await openFileWithDialog([{ name: "JSON", extensions: ["json"] }]);
+    if (!result) return;
+    const config = parseScenarioConfig(result.content);
     if (config) onImportScenario(config);
   };
 
