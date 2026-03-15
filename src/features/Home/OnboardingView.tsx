@@ -40,7 +40,7 @@ function OnboardingView({
 
   return (
     <>
-      <section className="text-center space-y-4">
+      <section className="text-center space-y-4 mb-12">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium uppercase tracking-wider mb-4">
           Quick Start
         </div>
