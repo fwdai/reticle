@@ -233,6 +233,29 @@ export function exportScenarioAsJSON(scenario: ScenarioConfigExport): string {
   return JSON.stringify(scenario, null, 2);
 }
 
+export function parseScenarioConfig(content: string): ScenarioConfigExport | null {
+  try {
+    const data = JSON.parse(content) as Partial<ScenarioConfigExport>;
+    if (typeof data.name !== 'string' || typeof data.systemPrompt !== 'string') return null;
+    return {
+      name: data.name,
+      configuration: {
+        provider: data.configuration?.provider ?? 'openai',
+        model: data.configuration?.model ?? 'gpt-4o-2024-05-13',
+        temperature: data.configuration?.temperature ?? 0.7,
+        topP: data.configuration?.topP ?? 1.0,
+        maxTokens: data.configuration?.maxTokens ?? 2048,
+      },
+      systemPrompt: data.systemPrompt,
+      userPrompt: data.userPrompt ?? '',
+      systemVariables: Array.isArray(data.systemVariables) ? data.systemVariables : [],
+      userVariables: Array.isArray(data.userVariables) ? data.userVariables : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Agent config export                                                */
 /* ------------------------------------------------------------------ */
@@ -260,6 +283,35 @@ export interface AgentConfigExport {
 
 export function exportAgentAsJSON(agent: AgentConfigExport): string {
   return JSON.stringify(agent, null, 2);
+}
+
+export function parseAgentConfig(content: string): AgentConfigExport | null {
+  try {
+    const data = JSON.parse(content) as Partial<AgentConfigExport>;
+    if (typeof data.name !== 'string') return null;
+    return {
+      name: data.name,
+      description: data.description ?? null,
+      configuration: {
+        provider: data.configuration?.provider ?? 'openai',
+        model: data.configuration?.model ?? 'gpt-4o',
+        temperature: data.configuration?.temperature ?? 0.7,
+        topP: data.configuration?.topP ?? 1.0,
+        maxTokens: data.configuration?.maxTokens ?? 2048,
+        ...(data.configuration?.seed ? { seed: data.configuration.seed } : {}),
+      },
+      agentGoal: data.agentGoal ?? null,
+      systemInstructions: data.systemInstructions ?? null,
+      maxIterations: data.maxIterations ?? 10,
+      timeoutSeconds: data.timeoutSeconds ?? 60,
+      retryPolicy: data.retryPolicy ?? 'none',
+      toolCallStrategy: data.toolCallStrategy ?? 'auto',
+      memoryEnabled: data.memoryEnabled ?? false,
+      memorySource: data.memorySource ?? 'local',
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -302,4 +354,21 @@ export async function saveFileWithDialog(
 
 export function downloadFile(filename: string, content: string, mimeType = "text/plain"): void {
   downloadFileBlob(filename, content, mimeType);
+}
+
+/**
+ * Opens a native file picker and returns the file content as a string.
+ * In Tauri: uses plugin-dialog open() + read_import_file Rust command.
+ * Returns null if cancelled or unavailable.
+ */
+export async function openFileWithDialog(filters: { name: string; extensions: string[] }[]): Promise<string | null> {
+  try {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const { invoke } = await import("@tauri-apps/api/core");
+    const path = await open({ multiple: false, filters });
+    if (!path || typeof path !== "string") return null;
+    return await invoke<string>("read_import_file", { path });
+  } catch {
+    return null;
+  }
 }

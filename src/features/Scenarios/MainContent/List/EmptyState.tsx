@@ -10,7 +10,7 @@ interface EmptyStateProps {
   onCreateScenario?: (config?: ScenarioStarterConfig) => void;
 }
 
-export function EmptyState({ hasCollectionSelected, hasScenarios, hasSearch, onCreateScenario }: EmptyStateProps) {
+export function EmptyState({ hasScenarios, hasSearch, onCreateScenario }: EmptyStateProps) {
   if (hasScenarios || hasSearch) {
     return (
       <FilterEmptyState

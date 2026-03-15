@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS executions (
   id               TEXT PRIMARY KEY,      -- ULID
-  type             TEXT NOT NULL,         -- 'scenario'|'agent'|'mcp'
-  runnable_id      TEXT NOT NULL,         -- ULID in scenarios/agents/mcps (app-enforced)
+  type             TEXT NOT NULL,         -- 'scenario'|'agent'
+  runnable_id      TEXT NOT NULL,         -- ULID in scenarios/agents (app-enforced)
   runnable_version INTEGER,               -- scenario.version at run time, etc.
 
   snapshot_json    TEXT NOT NULL,         -- frozen config/state of the runnable(JSON TEXT)

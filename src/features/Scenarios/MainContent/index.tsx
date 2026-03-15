@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Scenario } from '@/types';
 import type { ScenarioStarterConfig } from '@/constants/starterTemplates';
+import type { ScenarioConfigExport } from '@/lib/evals';
 
 function Studio() {
   const context = useContext(StudioContext);
@@ -108,6 +109,19 @@ function Studio() {
     return () => { cancelled = true; };
   }, [filteredScenarios, isLoading]);
 
+  const handleImportScenario = async (config: ScenarioConfigExport) => {
+    const variables_json = JSON.stringify({
+      system: config.systemVariables.map((v) => ({ id: crypto.randomUUID(), key: v.key, value: v.value })),
+      user: config.userVariables.map((v) => ({ id: crypto.randomUUID(), key: v.key, value: v.value })),
+    });
+    await handleCreateScenario({
+      title: config.name,
+      system_prompt: config.systemPrompt,
+      user_prompt: config.userPrompt,
+      variables_json,
+    });
+  };
+
   const handleCreateScenario = async (config?: ScenarioStarterConfig) => {
     if (selectedCollectionId) {
       await createScenario?.(selectedCollectionId, config);
@@ -166,6 +180,7 @@ function Studio() {
             search={searchQuery}
             onSearchChange={setSearchQuery}
             onCreateScenario={handleCreateScenario}
+            onImportScenario={handleImportScenario}
             scenarioCount={filteredScenarios.length}
             canCreate={true}
             isEmpty={savedScenarios.length === 0}

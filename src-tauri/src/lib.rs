@@ -58,6 +58,11 @@ async fn write_export_file(path: String, content: String) -> Result<(), String> 
 }
 
 #[tauri::command]
+async fn read_import_file(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn db_count_cmd(
     table: String,
     query: Value,
@@ -120,6 +125,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             write_export_file,
+            read_import_file,
             blobs::store_attachment_blob,
             blobs::read_attachment_blob,
             blobs::delete_attachment_blob,

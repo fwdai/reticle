@@ -19,6 +19,7 @@ import { formatTokens, formatCost } from "@/lib/helpers/format";
 import type { AgentFilterId } from "../index";
 import type { Execution } from "@/types";
 import type { AgentStarterConfig } from "@/constants/starterTemplates";
+import type { AgentConfigExport } from "@/lib/evals";
 
 function buildLastRun(exec: Execution): AgentLastRun {
   let duration = "—";
@@ -165,6 +166,15 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
     setSelectedAgent(null);
   }, [filter]);
 
+  const handleImportAgent = (config: AgentConfigExport) => {
+    handleCreateAgent({
+      name: config.name,
+      description: config.description ?? "",
+      agentGoal: config.agentGoal ?? "",
+      systemInstructions: config.systemInstructions ?? "",
+    });
+  };
+
   const handleCreateAgent = (config?: AgentStarterConfig) => {
     const newAgent: Agent = {
       id: "new",
@@ -222,6 +232,7 @@ function AgentsMainContent({ filter }: AgentsMainContentProps) {
             search={searchQuery}
             onSearchChange={setSearchQuery}
             onCreateAgent={handleCreateAgent}
+            onImportAgent={handleImportAgent}
             agentCount={filteredAgents.length}
             isEmpty={agents.length === 0}
           />
