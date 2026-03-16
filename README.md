@@ -22,9 +22,8 @@ If Reticle is useful, please consider starring the repo ⭐
 
 <br />
 
-<!-- Replace with a hero GIF or screenshot of the app -->
 <p align="center">
-  <img src="./.github/screenshots/app_window.png" alt="Reticle app" width="860" />
+  <img src="./.github/screenshots/reticle_showcase.gif" alt="Reticle app" width="860" />
 </p>
 
 <br />

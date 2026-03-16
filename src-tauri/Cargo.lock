@@ -3444,7 +3444,7 @@ dependencies = [
 
 [[package]]
 name = "reticle"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "axum 0.7.9",
