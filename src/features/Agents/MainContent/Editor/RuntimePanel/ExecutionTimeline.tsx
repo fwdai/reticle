@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Zap } from "lucide-react";
 import { filterOptions } from "./constants";
-import { ExecutionStep as ExecutionStepItem } from "./ExecutionStep";
+import { ExecutionStep as ExecutionStepItem } from "@/components/Timeline/ExecutionStep";
 import type { AgentExecutionStatus, ExecutionStep, StepPhase, StepType } from "@/types";
 import { cn } from "@/lib/utils";
 

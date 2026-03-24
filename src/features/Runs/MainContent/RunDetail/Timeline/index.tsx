@@ -18,22 +18,19 @@ export function Timeline({
   copiedId,
 }: TimelineProps) {
   return (
-    <div className="relative max-w-4xl mx-auto">
-      {/* Timeline line */}
-      <div className="absolute left-[23px] top-4 bottom-4 w-px bg-border-light" />
-
-      <div className="space-y-1">
-        {traceSteps.map((step) => (
-          <TraceStepItem
-            key={step.id}
-            step={step}
-            isExpanded={expandedSteps.has(step.id)}
-            onToggle={() => onToggleStep(step.id)}
-            onCopy={onCopyContent}
-            copiedId={copiedId}
-          />
-        ))}
-      </div>
+    <div className="w-full max-w-5xl mx-auto">
+      {/* Vertical gap between steps is pb-3 on each ExecutionStep (comfortable) so the rail line runs through it */}
+      {traceSteps.map((step, idx) => (
+        <TraceStepItem
+          key={step.id}
+          step={step}
+          isExpanded={expandedSteps.has(step.id)}
+          isLast={idx === traceSteps.length - 1}
+          onToggle={() => onToggleStep(step.id)}
+          onCopy={onCopyContent}
+          copiedId={copiedId}
+        />
+      ))}
     </div>
   );
 }

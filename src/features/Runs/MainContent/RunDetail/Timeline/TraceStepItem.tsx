@@ -1,6 +1,6 @@
-import { ChevronDown, ChevronRight, Copy, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { StepTypeBadge } from "./StepTypeBadge";
+import type { ExecutionStep as ExecutionStepType, StepType } from "@/types";
+import { ExecutionStep } from "@/components/Timeline/ExecutionStep";
+import { stepConfig } from "@/components/Timeline/constants";
 import { TokenStat } from "./TokenStat";
 
 export interface TraceStep {
@@ -17,9 +17,22 @@ export interface TraceStep {
 interface TraceStepItemProps {
   step: TraceStep;
   isExpanded: boolean;
+  isLast: boolean;
   onToggle: () => void;
   onCopy: (id: string, content: unknown) => void;
   copiedId: string | null;
+}
+
+const TRACE_TYPE_MAP: Record<string, StepType> = {
+  prompt_assembly: "task_input",
+  model_step: "model_call",
+};
+
+function traceTypeToStepType(type: string): StepType {
+  if (Object.prototype.hasOwnProperty.call(stepConfig, type)) {
+    return type as StepType;
+  }
+  return TRACE_TYPE_MAP[type] ?? "model_call";
 }
 
 function renderStepContent(step: TraceStep): string {
@@ -42,19 +55,20 @@ function renderStepContent(step: TraceStep): string {
   if (step.type === "model_step" || step.type === "model_response") {
     const text = (c.chunks as string[] | undefined)?.join("") ?? "";
     const reason = c.finish_reason ? `\n\n// finish_reason: "${c.finish_reason}"` : "";
-    const toolCalls = c.tool_calls as Array<{ id: string; name: string; arguments?: Record<string, unknown> }> | undefined;
-    const toolCallsSection =
-      toolCalls?.length
-        ? `\n\n// tool_calls requested:\n${JSON.stringify(toolCalls.map((tc) => ({ id: tc.id, name: tc.name, arguments: tc.arguments ?? {} })), null, 2)}`
-        : "";
+    const toolCalls = c.tool_calls as
+      | Array<{ id: string; name: string; arguments?: Record<string, unknown> }>
+      | undefined;
+    const toolCallsSection = toolCalls?.length
+      ? `\n\n// tool_calls requested:\n${JSON.stringify(
+        toolCalls.map((tc) => ({ id: tc.id, name: tc.name, arguments: tc.arguments ?? {} })),
+        null,
+        2
+      )}`
+      : "";
     return (text + reason + toolCallsSection) || "—";
   }
   if (step.type === "tool_call") {
-    return JSON.stringify(
-      { tool: c.name, arguments: c.arguments ?? {} },
-      null,
-      2
-    );
+    return JSON.stringify({ tool: c.name, arguments: c.arguments ?? {} }, null, 2);
   }
   if (step.type === "tool_response") {
     const result = c.result;
@@ -66,79 +80,47 @@ function renderStepContent(step: TraceStep): string {
   return JSON.stringify(step.content, null, 2);
 }
 
-export function TraceStepItem({ step, isExpanded, onToggle, onCopy, copiedId }: TraceStepItemProps) {
-  const Icon = step.icon;
+export function TraceStepItem({
+  step,
+  isExpanded,
+  isLast,
+  onToggle,
+  onCopy,
+  copiedId,
+}: TraceStepItemProps) {
   const content = step.content as Record<string, unknown>;
   const hasUsage = "usage" in content;
+  const mappedType = traceTypeToStepType(step.type);
+
+  const executionStep: ExecutionStepType = {
+    id: step.id,
+    type: mappedType,
+    label: step.label,
+    status: step.status === "error" ? "error" : "success",
+    timestamp: step.timestamp,
+    duration: step.duration,
+    content: "",
+  };
 
   return (
-    <div className="relative">
-      {/* Timeline node */}
-      <div
-        className={cn(
-          "flex items-start gap-4 cursor-pointer group",
-          isExpanded && "mb-0"
-        )}
-        onClick={onToggle}
-      >
-        {/* Node dot */}
-        <div
-          className={cn(
-            "relative z-10 flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200",
-            step.status === "success"
-              ? "border-green-500/30 bg-green-500/10 text-green-500"
-              : "border-red-500/30 bg-red-500/10 text-red-500",
-            isExpanded && step.status === "success" && "border-green-500/60 shadow-glow-success",
-            isExpanded && step.status === "error" && "border-red-500/60"
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-
-        {/* Header */}
-        <div className="flex-1 flex items-center justify-between py-2.5 pr-2">
-          <div className="flex items-center gap-3">
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-text-muted" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-text-muted" />
-            )}
-            <span className="text-sm font-semibold text-text-main group-hover:text-primary transition-colors">
-              {step.label}
-            </span>
-            <StepTypeBadge type={step.type} />
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="font-mono text-xs text-text-muted">{step.timestamp}</span>
-            <span className="font-mono text-xs font-medium text-text-main">+{step.duration}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCopy(step.id, step.content);
-              }}
-              className="flex h-7 w-7 items-center justify-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-slate-100 transition-all"
-              title="Copy payload"
-            >
-              {copiedId === step.id ? (
-                <Check className="h-3.5 w-3.5 text-green-500" />
-              ) : (
-                <Copy className="h-3.5 w-3.5 text-text-muted" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Expanded content */}
-      {isExpanded && (
-        <div className="ml-[62px] mb-4">
-          <div className="rounded-lg border border-border-light bg-slate-50 overflow-x-auto text-[13px] leading-6 p-4">
-            <pre className="whitespace-pre-wrap break-words text-text-main">
-              {renderStepContent(step)}
-            </pre>
+    <ExecutionStep
+      step={executionStep}
+      phase="done"
+      lineProgress={1}
+      isExpanded={isExpanded}
+      isLast={isLast}
+      copiedId={copiedId}
+      iconOverride={step.icon}
+      variant="comfortable"
+      onToggle={onToggle}
+      onCopy={() => onCopy(step.id, step.content)}
+      expandedContent={
+        <>
+          <div className="rounded-lg bg-gray-50 text-text-main p-3.5 font-mono text-xs leading-[1.7] overflow-x-auto border border-border-light custom-scrollbar">
+            <pre className="whitespace-pre-wrap break-words">{renderStepContent(step)}</pre>
           </div>
           {hasUsage && content.usage ? (
-            <div className="mt-3 flex items-center gap-4 rounded-lg border border-border-light bg-slate-50 px-4 py-2.5">
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border-light bg-gray-50 px-3.5 py-2.5">
               <span className="text-[10px] font-bold tracking-widest text-text-muted">USAGE</span>
               <TokenStat
                 label="Prompt"
@@ -155,8 +137,8 @@ export function TraceStepItem({ step, isExpanded, onToggle, onCopy, copiedId }: 
               />
             </div>
           ) : null}
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   );
 }
