@@ -28,7 +28,6 @@ export type LLMCallConfig = {
   model: string;
   systemPrompt: string;
   temperature?: number;
-  topP?: number;
   maxTokens?: number;
 };
 

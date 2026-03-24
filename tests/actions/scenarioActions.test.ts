@@ -82,7 +82,7 @@ function makeScenarioState(overrides: Record<string, any> = {}) {
       systemVariables: [],
       userVariables: [],
       createdAt: null,
-      configuration: { provider: 'openai', model: 'gpt-4o', temperature: 0.7, topP: 1, maxTokens: 1000 },
+      configuration: { provider: 'openai', model: 'gpt-4o', temperature: 0.7, maxTokens: 1000 },
       ...csOverrides,
     },
     ...rest,
@@ -105,7 +105,7 @@ function makeRunState(overrides: Record<string, any> = {}) {
       attachments: [],
       systemVariables: [],
       userVariables: [],
-      configuration: { provider: 'openai', model: 'gpt-4o', temperature: 0.7, topP: 1, maxTokens: 1000 },
+      configuration: { provider: 'openai', model: 'gpt-4o', temperature: 0.7, maxTokens: 1000 },
       ...csOverrides,
     },
     ...rest,
@@ -132,8 +132,8 @@ function makeStreamResult({
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  vi.spyOn(console, 'log').mockImplementation(() => {});
-  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => { });
+  vi.spyOn(console, 'error').mockImplementation(() => { });
 
   mockInsertScenario.mockResolvedValue('scenario-new');
   mockUpdateScenario.mockResolvedValue(undefined as any);

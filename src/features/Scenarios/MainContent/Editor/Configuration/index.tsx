@@ -36,13 +36,11 @@ function Configuration() {
           provider={configuration.provider}
           model={configuration.model}
           temperature={configuration.temperature}
-          topP={configuration.topP}
           maxTokens={configuration.maxTokens}
           models={models}
           onProviderChange={(value) => handleValueChange('provider', value)}
           onModelChange={(value) => handleValueChange('model', value)}
           onTemperatureChange={(value) => handleValueChange('temperature', value)}
-          onTopPChange={(value) => handleValueChange('topP', value)}
           onMaxTokensChange={(value) => handleValueChange('maxTokens', value)}
           headerAction={
             <Info

@@ -23,7 +23,6 @@ export interface AgentFlowCanvasProps {
   memoryEnabled: boolean;
   memorySource: string;
   temperature: number;
-  topP: number;
   maxTokens: number;
 }
 
@@ -36,7 +35,6 @@ export function AgentFlowCanvas({
   memoryEnabled,
   memorySource,
   temperature,
-  topP,
   maxTokens,
 }: AgentFlowCanvasProps) {
   const { execution } = useAgentContext();
@@ -188,9 +186,8 @@ export function AgentFlowCanvas({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <ConfigChip label="Temp" value={String(temperature)} />
-                  <ConfigChip label="Top P" value={String(topP)} />
                   <ConfigChip label="Max" value={String(maxTokens)} />
                 </div>
 

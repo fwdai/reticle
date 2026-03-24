@@ -143,7 +143,6 @@ export const streamText = async (
     model: createModel(config, gateway),
     messages: messages,
     temperature: config.temperature,
-    topP: config.topP,
     maxOutputTokens: config.maxTokens,
     ...(aiTools ? { tools: aiTools } : {}),
     ...(aiTools ? { stopWhen: stepCountIs(STEPS_COUNT) } : {}),

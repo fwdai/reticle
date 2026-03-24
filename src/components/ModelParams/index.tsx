@@ -18,13 +18,11 @@ export interface ModelParamsProps {
   provider: string;
   model: string;
   temperature: number;
-  topP: number;
   maxTokens: number;
   models: ModelOption[];
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
   onTemperatureChange: (value: number) => void;
-  onTopPChange: (value: number) => void;
   onMaxTokensChange: (value: number) => void;
   temperatureMax?: number;
   temperatureStep?: number;
@@ -46,13 +44,11 @@ export function ModelParams({
   provider,
   model,
   temperature,
-  topP,
   maxTokens,
   models,
   onProviderChange,
   onModelChange,
   onTemperatureChange,
-  onTopPChange,
   onMaxTokensChange,
   temperatureMax = 1,
   temperatureStep = 0.1,
@@ -66,7 +62,6 @@ export function ModelParams({
   className,
 }: ModelParamsProps) {
   const { setCurrentPage } = useAppContext();
-  const topPStep = 0.05;
   const hasAdvanced = onShowAdvancedToggle != null;
 
   const noModelsSlot = (
@@ -83,13 +78,13 @@ export function ModelParams({
 
   return (
     <div className={cn("space-y-8", className)}>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">
           {title}
         </h3>
         {headerAction}
       </div>
-      <div className="space-y-8">
+      <div className="space-y-4">
         <div className="space-y-3">
           <Label className="font-bold text-text-main">Provider</Label>
           <Select value={provider} onValueChange={onProviderChange}>
@@ -105,7 +100,7 @@ export function ModelParams({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 mb-6">
           <Label className="font-bold text-text-main">Model</Label>
           {models.length === 0 ? (
             noModelsSlot
@@ -145,28 +140,6 @@ export function ModelParams({
               step={temperatureStep}
               value={[temperature]}
               onValueChange={(v) => onTemperatureChange(v[0])}
-            />
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Label className="font-bold text-text-main">Top P</Label>
-              <Input
-                className={cn(valueInputClass, "w-16")}
-                type="number"
-                value={topP}
-                onChange={(e) => onTopPChange(parseFloat(e.target.value) || 0)}
-                step={topPStep}
-                max={1}
-                min={0}
-                readOnly
-              />
-            </div>
-            <Slider
-              max={1}
-              min={0}
-              step={topPStep}
-              value={[topP]}
-              onValueChange={(v) => onTopPChange(v[0])}
             />
           </div>
           <div className="space-y-4">

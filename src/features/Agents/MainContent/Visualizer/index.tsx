@@ -13,7 +13,6 @@ export interface VisualizerViewProps {
   memoryEnabled: boolean;
   memorySource: string;
   temperature: number;
-  topP: number;
   maxTokens: number;
 }
 
@@ -64,7 +63,6 @@ export function VisualizerView({
   memoryEnabled,
   memorySource,
   temperature,
-  topP,
   maxTokens,
 }: VisualizerViewProps) {
   const { execution } = useAgentContext();
@@ -82,7 +80,6 @@ export function VisualizerView({
         memoryEnabled={memoryEnabled}
         memorySource={memorySource}
         temperature={temperature}
-        topP={topP}
         maxTokens={maxTokens}
       />
       <BottomBar {...nodeStats} />

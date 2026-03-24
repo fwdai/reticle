@@ -111,7 +111,6 @@ export async function saveScenarioAction(
       variables_json: JSON.stringify(variablesPayload),
       params_json: JSON.stringify({
         temperature: scenarioData.configuration.temperature,
-        topP: scenarioData.configuration.topP,
         maxTokens: scenarioData.configuration.maxTokens,
       }),
       response_format_json: null,
@@ -278,7 +277,6 @@ export async function runScenarioAction(
         model: configuration.model,
         systemPrompt: resolvedSystemPrompt,
         temperature: configuration.temperature,
-        topP: configuration.topP,
         maxTokens: configuration.maxTokens,
       },
       allTools,

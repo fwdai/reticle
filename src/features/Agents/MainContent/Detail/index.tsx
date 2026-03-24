@@ -17,7 +17,7 @@ export type { AgentDetailAgent };
 
 const DEBOUNCE_MS = 800;
 
-function parseParamsJson(json: string): { temperature?: number; top_p?: number; max_tokens?: number; seed?: string } {
+function parseParamsJson(json: string): { temperature?: number; max_tokens?: number; seed?: string } {
   try {
     const v = JSON.parse(json ?? "{}");
     return typeof v === "object" && v ? v : {};
@@ -36,7 +36,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const [agentGoal, setAgentGoal] = useState(agent.agentGoal ?? "");
   const [systemInstructions, setSystemInstructions] = useState(agent.systemInstructions ?? "");
   const [temperature, setTemperature] = useState([0.4]);
-  const [topP, setTopP] = useState([0.95]);
   const [maxTokens, setMaxTokens] = useState([4096]);
   const [seed, setSeed] = useState("");
   const [maxIterations, setMaxIterations] = useState([10]);
@@ -66,7 +65,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
         setSystemInstructions(record.system_instructions ?? "");
         const params = parseParamsJson(record.params_json);
         setTemperature([params.temperature ?? 0.4]);
-        setTopP([params.top_p ?? 0.95]);
         setMaxTokens([params.max_tokens ?? 4096]);
         setSeed(params.seed ?? "");
         setMaxIterations([record.max_iterations ?? 10]);
@@ -93,7 +91,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     model,
     params_json: JSON.stringify({
       temperature: temperature[0],
-      top_p: topP[0],
       max_tokens: maxTokens[0],
       ...(seed.trim() ? { seed: seed.trim() } : {}),
     }),
@@ -107,7 +104,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     memory_enabled: memoryEnabled ? 1 : 0,
     memory_source: memorySource,
   }), [
-    agentName, description, provider, model, temperature, topP, maxTokens, seed,
+    agentName, description, provider, model, temperature, maxTokens, seed,
     agentGoal, systemInstructions, maxIterations, timeoutValue, retryPolicy,
     toolCallStrategy, memoryEnabled, memorySource,
   ]);
@@ -179,7 +176,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
         provider,
         model,
         temperature: temperature[0],
-        topP: topP[0],
         maxTokens: maxTokens[0],
         ...(seed.trim() ? { seed: seed.trim() } : {}),
       },
@@ -200,7 +196,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     provider,
     model,
     temperature,
-    topP,
     maxTokens,
     seed,
     agentGoal,
@@ -252,7 +247,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               memoryEnabled={memoryEnabled}
               memorySource={memorySource}
               temperature={temperature}
-              topP={topP}
               maxTokens={maxTokens}
               seed={seed}
               showAdvanced={showAdvanced}
@@ -267,7 +261,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               onMemoryEnabledChange={setMemoryEnabled}
               onMemorySourceChange={setMemorySource}
               onTemperatureChange={setTemperature}
-              onTopPChange={setTopP}
               onMaxTokensChange={setMaxTokens}
               onSeedChange={setSeed}
               onShowAdvancedToggle={() => setShowAdvanced(v => !v)}
@@ -285,7 +278,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               memoryEnabled={memoryEnabled}
               memorySource={memorySource}
               temperature={temperature[0]}
-              topP={topP[0]}
               maxTokens={maxTokens[0]}
             />
           )}

@@ -43,7 +43,6 @@ export interface ConfigurationState {
   provider: string;
   model: string;
   temperature: number;
-  topP: number;
   maxTokens: number;
 }
 
@@ -169,7 +168,6 @@ const initialScenario: CurrentScenario = {
     provider: 'openai',
     model: 'gpt-4o-2024-05-13',
     temperature: 0.7,
-    topP: 1.0,
     maxTokens: 2048,
   },
   systemPrompt: 'You are a helpful assistant.',
@@ -415,7 +413,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
             provider: dbScenario.provider,
             model: dbScenario.model,
             temperature: configParams.temperature ?? 0.7,
-            topP: configParams.topP ?? 1.0,
             maxTokens: configParams.maxTokens ?? 2048,
           },
           systemPrompt: dbScenario.system_prompt,
@@ -542,7 +539,6 @@ export const StudioProvider: React.FC<StudioProviderProps> = ({ children }) => {
           provider: dbScenario.provider,
           model: dbScenario.model,
           temperature: configParams.temperature ?? 0.7,
-          topP: configParams.topP ?? 1.0,
           maxTokens: configParams.maxTokens ?? 2048,
         },
         systemPrompt: dbScenario.system_prompt,
