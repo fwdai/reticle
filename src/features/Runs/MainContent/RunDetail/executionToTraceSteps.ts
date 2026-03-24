@@ -1,4 +1,5 @@
 import { FileText, Cpu, Wrench, Send, AlertCircle, Zap, MessageSquare } from "lucide-react";
+import { parseAgentToolCallContent } from "@/lib/helpers/agentToolStepContent";
 import type { Execution, ExecutionStep as AgentExecutionStep } from "@/types";
 import type { TraceStep } from "./Timeline";
 
@@ -15,6 +16,7 @@ const AGENT_STEP_ICON: Record<string, React.ElementType> = {
   model_call: Cpu,
   model_response: Cpu,
   tool_call: Wrench,
+  memory_write: Wrench,
   tool_response: Send,
   output: MessageSquare,
   error: AlertCircle,
@@ -134,12 +136,18 @@ export function executionToTraceSteps(
                 }
               : {},
         };
-      } else if (agentStep.type === 'tool_call') {
-        try {
-          content = JSON.parse(agentStep.content);
-        } catch {
-          content = { raw: agentStep.content };
-        }
+      } else if (agentStep.type === 'tool_call' || agentStep.type === 'memory_write') {
+        // runAgentAction stores args, then appends `\n\n` + tool output (see parseAgentToolCallContent).
+        const { input, output } = parseAgentToolCallContent(agentStep.content);
+        const args =
+          typeof input === 'object' && input !== null && !Array.isArray(input)
+            ? (input as Record<string, unknown>)
+            : { value: input };
+        content = {
+          name: agentStep.label,
+          arguments: args,
+          ...(output !== undefined ? { result: output } : {}),
+        };
       } else {
         content = { text: agentStep.content };
       }

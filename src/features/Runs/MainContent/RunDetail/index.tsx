@@ -105,7 +105,7 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         onCollapseAll={collapseAll}
       />
       {/* Execution timeline or visualizer */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <div
           className={`flex-1 overflow-y-auto custom-scrollbar ${viewMode === "timeline" ? "p-6" : "p-0"}`}
         >

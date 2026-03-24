@@ -116,7 +116,7 @@ export const ExecutionTimeline = forwardRef<
                     provider={provider}
                     model={model}
                     onToggle={() => onToggleStep(step.id)}
-                    onCopy={() => onCopy(step.id, step.content)}
+                    onCopy={(text) => onCopy(step.id, text)}
                   />
                 </div>
               );

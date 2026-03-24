@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 import { stepConfig } from "./constants";
 import { calculateRequestCost } from "@/lib/modelPricing";
 import type { ExecutionStep as ExecutionStepType, StepPhase, StepType } from "@/types";
+import {
+  formatAgentToolCallStepContentForDisplay,
+  isAgentToolConcatStepType,
+} from "@/lib/helpers/agentToolStepContent";
 import { ExecutionStepMetaRow } from "./ExecutionStepMetaRow";
 
 function isLlmStepType(type: StepType): boolean {
@@ -23,11 +27,13 @@ interface ExecutionStepProps {
   provider?: string;
   model?: string;
   onToggle: () => void;
-  onCopy: () => void;
+  onCopy: (content: string) => void;
   /** When set, replaces the default icon from step type config (e.g. persisted run trace icons). */
   iconOverride?: React.ElementType;
   /** When set, replaces the default expanded body (pre + meta). */
   expandedContent?: ReactNode;
+  /** When `expandedContent` is custom, use this for copy (e.g. run trace rendered string). */
+  copyPayload?: string;
   variant?: ExecutionStepVariant;
 }
 
@@ -44,9 +50,15 @@ export function ExecutionStep({
   onCopy,
   iconOverride,
   expandedContent,
+  copyPayload,
   variant = "compact",
 }: ExecutionStepProps) {
   const cfg = stepConfig[step.type];
+  const defaultExpandedBody =
+    isAgentToolConcatStepType(step.type)
+      ? formatAgentToolCallStepContentForDisplay(step.label, step.content)
+      : step.content;
+  const textToCopy = copyPayload ?? defaultExpandedBody;
   const Icon = iconOverride ?? cfg.icon;
   const badge = cfg.badge;
   const comfortable = variant === "comfortable";
@@ -195,7 +207,7 @@ export function ExecutionStep({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onCopy();
+              onCopy(textToCopy);
             }}
             className="flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all flex-shrink-0 h-7 w-7"
           >
@@ -231,7 +243,7 @@ export function ExecutionStep({
                     comfortable ? "p-3.5 text-sm" : "p-3.5 text-[11px]"
                   )}
                 >
-                  <pre className="whitespace-pre-wrap break-words">{step.content}</pre>
+                  <pre className="whitespace-pre-wrap break-words">{defaultExpandedBody}</pre>
                 </div>
               </>
             )}
