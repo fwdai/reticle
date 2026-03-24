@@ -1,6 +1,7 @@
 import type { ExecutionStep as ExecutionStepType, StepType } from "@/types";
 import { ExecutionStep } from "@/components/Timeline/ExecutionStep";
 import { stepConfig } from "@/components/Timeline/constants";
+import { formatAgentToolCallPayloadForDisplay } from "@/lib/helpers/agentToolStepContent";
 import { TokenStat } from "./TokenStat";
 
 export interface TraceStep {
@@ -74,8 +75,16 @@ function renderStepContent(step: TraceStep): string {
       : "";
     return (text + reason + toolCallsSection) || "—";
   }
-  if (step.type === "tool_call") {
-    return JSON.stringify({ tool: c.name, arguments: c.arguments ?? {} }, null, 2);
+  if (step.type === "tool_call" || step.type === "memory_write") {
+    // Scenario runs: { name, arguments }. Agent runs: normalized { name, arguments, result? }.
+    if (typeof c.name === "string") {
+      return formatAgentToolCallPayloadForDisplay(
+        c.name,
+        c.arguments ?? {},
+        "result" in c ? c.result : undefined,
+      );
+    }
+    return JSON.stringify({ tool: step.label, arguments: c }, null, 2);
   }
   if (step.type === "tool_response") {
     const result = c.result;
@@ -150,7 +159,8 @@ export function TraceStepItem({
       provider={provider}
       model={model}
       onToggle={onToggle}
-      onCopy={() => onCopy(step.id, step.content)}
+      onCopy={(text) => onCopy(step.id, text)}
+      copyPayload={renderStepContent(step)}
       expandedContent={
         <>
           <div className="rounded-lg bg-gray-50 text-text-main p-3.5 font-mono text-xs leading-[1.7] overflow-x-auto border border-border-light custom-scrollbar">
