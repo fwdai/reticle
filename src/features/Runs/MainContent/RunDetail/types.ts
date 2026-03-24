@@ -3,6 +3,7 @@ export interface RunDetailRun {
   scenarioName: string;
   status: "success" | "error";
   model: string;
+  provider: string;
   latency: string;
   tokens: number;
   cost: string;

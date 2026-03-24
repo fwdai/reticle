@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import type { ExecutionState } from '@/contexts/AgentContext';
 import type { AgentRecord, Execution, ExecutionStep } from '@/types';
 import { substituteVariables } from '@/lib/helpers/substituteVariables';
+import { formatDuration } from '@/lib/helpers/time';
 
 function ts(): string {
   return new Date().toISOString();
@@ -99,8 +100,10 @@ export async function runAgentAction(
   });
 
   // Emit task_received immediately so the UI shows something before the first LLM round-trip
+  const taskInputStepId = crypto.randomUUID();
+  const taskInputStartMs = Date.now();
   stepBuffer.push({
-    id: crypto.randomUUID(),
+    id: taskInputStepId,
     type: 'task_input',
     label: 'Task',
     status: 'success',
@@ -214,7 +217,9 @@ export async function runAgentAction(
     });
 
     let pendingModelStepId: string | null = null;
+    let pendingModelStartMs: number | null = null;
     const pendingToolStepIds = new Map<string, string>(); // toolCallId → stepId
+    const pendingToolStartMs = new Map<string, number>(); // toolCallId → wall time at tool-call
     let stepText = '';
     let stepReasoning = '';
     let stepToolCalls: Array<{ tool: string; arguments: unknown }> = [];
@@ -228,6 +233,17 @@ export async function runAgentAction(
           stepToolCalls = [];
           const id = crypto.randomUUID();
           pendingModelStepId = id;
+          pendingModelStartMs = Date.now();
+
+          const taskIdx = stepBuffer.findIndex((s) => s.id === taskInputStepId);
+          if (taskIdx !== -1 && stepBuffer[taskIdx].type === "task_input") {
+            const waitMs = Date.now() - taskInputStartMs;
+            stepBuffer[taskIdx] = {
+              ...stepBuffer[taskIdx],
+              duration: waitMs < 1 ? "0ms" : formatDuration(waitMs),
+            };
+          }
+
           stepBuffer.push({
             id,
             type: 'model_call',
@@ -254,6 +270,7 @@ export async function runAgentAction(
           stepToolCalls.push({ tool: chunk.toolName, arguments: chunk.input });
           const id = crypto.randomUUID();
           pendingToolStepIds.set(chunk.toolCallId, id);
+          pendingToolStartMs.set(chunk.toolCallId, Date.now());
           const isMemoryWrite = chunk.toolName === 'memory_write';
           stepBuffer.push({
             id,
@@ -273,9 +290,14 @@ export async function runAgentAction(
           if (stepId) {
             const idx = stepBuffer.findIndex(s => s.id === stepId);
             if (idx !== -1) {
+              const startMs = pendingToolStartMs.get(key);
+              const toolMs = startMs != null ? Date.now() - startMs : undefined;
+              pendingToolStartMs.delete(key);
               stepBuffer[idx] = {
                 ...stepBuffer[idx],
                 status: 'success',
+                duration:
+                  toolMs != null ? (toolMs < 1 ? "0ms" : formatDuration(toolMs)) : undefined,
                 content:
                   stepBuffer[idx].content +
                   '\n\n' +
@@ -310,6 +332,9 @@ export async function runAgentAction(
                 ? JSON.stringify(response, null, 2)
                 : '';
 
+              const durationMs =
+                pendingModelStartMs != null ? Date.now() - pendingModelStartMs : undefined;
+
               stepBuffer[idx] = {
                 ...stepBuffer[idx],
                 status: 'success',
@@ -317,9 +342,12 @@ export async function runAgentAction(
                 tokens: stepTokens || undefined,
                 inputTokens: inputTokens || undefined,
                 outputTokens: outputTokens || undefined,
+                duration:
+                  durationMs != null && durationMs > 0 ? formatDuration(durationMs) : undefined,
               };
             }
             pendingModelStepId = null;
+            pendingModelStartMs = null;
           }
           break;
         }
@@ -335,6 +363,8 @@ export async function runAgentAction(
       setExecution(prev => ({ ...prev, steps: [...stepBuffer], tokens: totalTokens }));
     }
 
+    const streamEndedAtMs = Date.now();
+
     try {
       finalText = await result.text;
     } catch (err) {
@@ -349,6 +379,9 @@ export async function runAgentAction(
       }
     }
 
+    const afterFinalTextMs = Date.now();
+    const outputDurationMs = afterFinalTextMs - streamEndedAtMs;
+
     stepBuffer.push({
       id: crypto.randomUUID(),
       type: 'output',
@@ -356,6 +389,12 @@ export async function runAgentAction(
       status: 'success',
       timestamp: ts(),
       content: finalText,
+      duration:
+        outputDurationMs > 0
+          ? formatDuration(outputDurationMs)
+          : outputDurationMs === 0
+            ? "0ms"
+            : undefined,
     });
 
     const ended_at = Date.now();

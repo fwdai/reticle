@@ -21,6 +21,9 @@ interface TraceStepItemProps {
   onToggle: () => void;
   onCopy: (id: string, content: unknown) => void;
   copiedId: string | null;
+  /** From execution snapshot — enables per-step cost in the timeline */
+  provider?: string;
+  model?: string;
 }
 
 const TRACE_TYPE_MAP: Record<string, StepType> = {
@@ -33,6 +36,10 @@ function traceTypeToStepType(type: string): StepType {
     return type as StepType;
   }
   return TRACE_TYPE_MAP[type] ?? "model_call";
+}
+
+function isLlmMappedType(mapped: StepType): boolean {
+  return mapped === "model_call" || mapped === "model_response" || mapped === "reasoning";
 }
 
 function renderStepContent(step: TraceStep): string {
@@ -87,10 +94,35 @@ export function TraceStepItem({
   onToggle,
   onCopy,
   copiedId,
+  provider,
+  model,
 }: TraceStepItemProps) {
   const content = step.content as Record<string, unknown>;
   const hasUsage = "usage" in content;
   const mappedType = traceTypeToStepType(step.type);
+  const isLlm = isLlmMappedType(mappedType);
+
+  const usage = content.usage as
+    | { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+    | undefined;
+
+  let tokens: number | undefined;
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+  if (isLlm && usage) {
+    const pt = Number(usage.prompt_tokens ?? 0);
+    const ct = Number(usage.completion_tokens ?? 0);
+    const tt = Number(usage.total_tokens ?? 0) || pt + ct;
+    if (tt > 0) tokens = tt;
+    if (pt > 0) inputTokens = pt;
+    if (ct > 0) outputTokens = ct;
+  }
+
+  /** Older traces stored token totals in `duration` ("566 tokens"); strip that so the row uses tokens + cost + duration */
+  let durationLabel = step.duration;
+  if (isLlm && /^\d+\s*tokens$/.test(durationLabel.trim())) {
+    durationLabel = "—";
+  }
 
   const executionStep: ExecutionStepType = {
     id: step.id,
@@ -98,7 +130,10 @@ export function TraceStepItem({
     label: step.label,
     status: step.status === "error" ? "error" : "success",
     timestamp: step.timestamp,
-    duration: step.duration,
+    duration: durationLabel,
+    tokens,
+    inputTokens,
+    outputTokens,
     content: "",
   };
 
@@ -112,6 +147,8 @@ export function TraceStepItem({
       copiedId={copiedId}
       iconOverride={step.icon}
       variant="comfortable"
+      provider={provider}
+      model={model}
       onToggle={onToggle}
       onCopy={() => onCopy(step.id, step.content)}
       expandedContent={

@@ -125,6 +125,8 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
                 onToggleStep={toggleStep}
                 onCopyContent={copyContent}
                 copiedId={copiedId}
+                provider={run.provider}
+                model={run.model}
               />
             )
           ) : (

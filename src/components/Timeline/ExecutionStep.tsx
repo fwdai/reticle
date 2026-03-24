@@ -3,8 +3,12 @@ import { ChevronRight, ChevronDown, Copy, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stepConfig } from "./constants";
 import { calculateRequestCost } from "@/lib/modelPricing";
-import { formatCost } from "@/lib/helpers/format";
-import type { ExecutionStep as ExecutionStepType, StepPhase } from "@/types";
+import type { ExecutionStep as ExecutionStepType, StepPhase, StepType } from "@/types";
+import { ExecutionStepMetaRow } from "./ExecutionStepMetaRow";
+
+function isLlmStepType(type: StepType): boolean {
+  return type === "model_call" || type === "model_response" || type === "reasoning";
+}
 
 /** `compact` = agent runtime panel. `comfortable` = run history (slightly roomier than compact). */
 export type ExecutionStepVariant = "compact" | "comfortable";
@@ -56,6 +60,14 @@ export function ExecutionStep({
       : null;
 
   const isErrorDone = phase === "done" && step.status === "error";
+  const isLlm = isLlmStepType(step.type);
+  const metaBase = cn(
+    "font-mono flex-shrink-0",
+    comfortable ? "text-xs" : "text-[11px]"
+  );
+  const metaMuted = cn(metaBase, "text-text-muted/50");
+  const durationLabel =
+    step.duration && step.duration !== "—" ? step.duration : null;
 
   const railW = comfortable ? 36 : 28;
   const nodeClass = comfortable ? "h-9 w-9" : "h-7 w-7";
@@ -67,10 +79,7 @@ export function ExecutionStep({
     <div
       className={cn(
         // items-stretch so the rail column matches content height (incl. expanded body); connector uses flex-1 to fill.
-        "group min-h-16 relative flex items-stretch cursor-pointer transition-all duration-300 rounded-md",
-        comfortable
-          ? "gap-3"
-          : "gap-3 pl-4 pr-4 py-0",
+        "group min-h-16 relative flex items-stretch cursor-pointer transition-all duration-300 rounded-md gap-3",
         phase === "appearing" && "opacity-0 translate-y-1",
         phase === "processing" && "opacity-100 translate-y-0",
         phase === "done" && "opacity-100 translate-y-0"
@@ -129,8 +138,13 @@ export function ExecutionStep({
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0 py-1">
+      {/* Content — bottom padding when !isLast (comfortable) so the rail line spans the gap to the next step */}
+      <div
+        className={cn(
+          "flex-1 min-w-0",
+          comfortable ? (isLast ? "py-1" : "pt-1 pb-3") : "py-1"
+        )}
+      >
         <div className={cn("flex items-center", comfortable ? "gap-2" : "gap-2")}>
           {isExpanded ? (
             <ChevronDown className={cn(chevronClass, "text-text-muted/50 flex-shrink-0")} />
@@ -149,12 +163,7 @@ export function ExecutionStep({
             {step.label}
           </span>
           <span
-            className={cn(
-              "rounded-full border border-primary/15 bg-primary/5 font-medium tracking-wider text-primary/80 flex-shrink-0 uppercase",
-              comfortable
-                ? "px-2 py-0.5 text-[9px] leading-[18px]"
-                : "px-2 py-0 text-[9px] leading-[18px]"
-            )}
+            className="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] font-medium uppercase leading-[18px] tracking-wider text-primary/80 flex-shrink-0"
           >
             {badge}
           </span>
@@ -166,46 +175,21 @@ export function ExecutionStep({
           <div className="flex-1" />
 
           {phase === "done" && (
-            <>
-              {step.duration && (
-                <span
-                  className={cn(
-                    "font-mono text-text-muted/50 flex-shrink-0",
-                    comfortable ? "text-xs" : "text-[10px]"
-                  )}
-                >
-                  {step.duration}
-                </span>
+            <div
+              className={cn(
+                "flex min-w-0 flex-shrink-0 items-center justify-end gap-y-0.5",
+                isLlm ? "flex-wrap gap-x-0" : "gap-x-2"
               )}
-              {step.tokens && (
-                <span
-                  className={cn(
-                    "font-mono text-text-muted/40 flex-shrink-0",
-                    comfortable ? "text-xs" : "text-[10px]"
-                  )}
-                >
-                  {step.tokens}t
-                </span>
-              )}
-              {stepCost != null && stepCost > 0 && (
-                <span
-                  className={cn(
-                    "font-mono text-primary/70 flex-shrink-0",
-                    comfortable ? "text-xs" : "text-[10px]"
-                  )}
-                >
-                  {formatCost(stepCost)}
-                </span>
-              )}
-              <span
-                className={cn(
-                  "font-mono text-text-muted/30 flex-shrink-0",
-                  comfortable ? "text-xs" : "text-[10px]"
-                )}
-              >
-                {step.timestamp}
-              </span>
-            </>
+            >
+              <ExecutionStepMetaRow
+                isLlm={isLlm}
+                tokens={step.tokens}
+                stepCost={stepCost}
+                durationLabel={durationLabel}
+                metaBase={metaBase}
+                metaMuted={metaMuted}
+              />
+            </div>
           )}
 
           <button
@@ -213,25 +197,19 @@ export function ExecutionStep({
               e.stopPropagation();
               onCopy();
             }}
-            className={cn(
-              "flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all flex-shrink-0",
-              comfortable ? "h-7 w-7" : "h-5 w-5"
-            )}
+            className="flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all flex-shrink-0 h-7 w-7"
           >
             {copiedId === step.id ? (
-              <Check className={comfortable ? "h-3 w-3 text-green-600" : "h-2.5 w-2.5 text-green-600"} />
+              <Check className="h-3 w-3 text-green-600" />
             ) : (
-              <Copy className={comfortable ? "h-3 w-3 text-text-muted/50" : "h-2.5 w-2.5 text-text-muted/50"} />
+              <Copy className="h-3 w-3 text-text-muted/50" />
             )}
           </button>
         </div>
 
         {isExpanded && phase === "done" && (
           <div
-            className={cn(
-              "animate-in fade-in-0 duration-200",
-              comfortable ? "mt-3 mb-1 ml-6" : "mt-2.5 mb-2 ml-5"
-            )}
+            className="animate-in fade-in-0 duration-200 mt-3 mb-1 ml-4"
           >
             {expandedContent ?? (
               <>
@@ -240,10 +218,7 @@ export function ExecutionStep({
                     {Object.entries(step.meta).map(([k, v]) => (
                       <span
                         key={k}
-                        className={cn(
-                          "rounded-full bg-gray-100 px-2 py-0.5 font-mono text-text-muted/60",
-                          comfortable ? "text-[11px]" : "text-[10px]"
-                        )}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[11px] text-text-muted/60"
                       >
                         {k}: <span className="text-text-main/70">{v}</span>
                       </span>

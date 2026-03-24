@@ -83,6 +83,7 @@ function rowToDetailRun(row: RunRow): RunDetailRun {
     scenarioName: "Agent Run",
     status: row.status === "running" ? "success" : row.status,
     model: row.model,
+    provider: row.provider,
     latency: row.latencyMs != null ? formatDuration(row.latencyMs) : "—",
     tokens: row.tokens,
     cost: formatCost(row.cost),

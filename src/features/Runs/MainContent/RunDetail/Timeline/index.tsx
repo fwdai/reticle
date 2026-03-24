@@ -8,6 +8,8 @@ interface TimelineProps {
   onToggleStep: (id: string) => void;
   onCopyContent: (id: string, content: unknown) => void;
   copiedId: string | null;
+  provider?: string;
+  model?: string;
 }
 
 export function Timeline({
@@ -16,10 +18,11 @@ export function Timeline({
   onToggleStep,
   onCopyContent,
   copiedId,
+  provider,
+  model,
 }: TimelineProps) {
   return (
     <div className="w-full max-w-5xl mx-auto">
-      {/* Vertical gap between steps is pb-3 on each ExecutionStep (comfortable) so the rail line runs through it */}
       {traceSteps.map((step, idx) => (
         <TraceStepItem
           key={step.id}
@@ -29,6 +32,8 @@ export function Timeline({
           onToggle={() => onToggleStep(step.id)}
           onCopy={onCopyContent}
           copiedId={copiedId}
+          provider={provider}
+          model={model}
         />
       ))}
     </div>

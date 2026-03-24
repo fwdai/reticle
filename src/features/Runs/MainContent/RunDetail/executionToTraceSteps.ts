@@ -125,7 +125,14 @@ export function executionToTraceSteps(
       if (agentStep.type === 'model_call' || agentStep.type === 'model_response') {
         content = {
           chunks: agentStep.content ? [agentStep.content] : [],
-          usage: agentStep.tokens ? { total_tokens: agentStep.tokens } : {},
+          usage:
+            agentStep.tokens || agentStep.inputTokens || agentStep.outputTokens
+              ? {
+                  total_tokens: agentStep.tokens ?? (agentStep.inputTokens ?? 0) + (agentStep.outputTokens ?? 0),
+                  prompt_tokens: agentStep.inputTokens,
+                  completion_tokens: agentStep.outputTokens,
+                }
+              : {},
         };
       } else if (agentStep.type === 'tool_call') {
         try {
@@ -142,7 +149,8 @@ export function executionToTraceSteps(
         label: agentStep.label,
         icon,
         status: agentStep.status === 'error' ? 'error' : 'success',
-        duration: agentStep.tokens ? `${agentStep.tokens} tokens` : `${agentStep.duration ?? '0ms'}`,
+        // Duration is wall time for the step (persisted on agent ExecutionStep); not token counts
+        duration: agentStep.duration ?? "—",
         timestamp: formatElapsed(elapsedMs),
         content,
       });
@@ -178,7 +186,8 @@ export function executionToTraceSteps(
         label,
         icon: Cpu,
         status: execution.status === "succeeded" ? "success" : "error",
-        duration: `${totalTokens > 0 ? totalTokens : "—"} tokens`,
+        // Token counts live in content.usage; per-step LLM latency not persisted here
+        duration: "—",
         timestamp: formatElapsed(elapsedMs),
         content: {
           chunks: ms.text ? [ms.text] : [],

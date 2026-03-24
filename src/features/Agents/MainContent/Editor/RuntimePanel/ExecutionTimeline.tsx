@@ -83,7 +83,7 @@ export const ExecutionTimeline = forwardRef<
             </p>
           </div>
         ) : (
-          <div className="py-3">
+          <div className="p-4">
             {filteredSteps.map((step, idx) => {
               const phase = stepPhases.get(step.id) || "hidden";
               const lp = lineProgress.get(step.id) || 0;

@@ -18,6 +18,8 @@ interface Run {
   scenarioName: string;
   status: "success" | "error";
   model: string;
+  /** Provider id for pricing (e.g. timeline step costs) */
+  provider: string;
   latency: string;
   tokens: number;
   cost: string;
@@ -85,6 +87,7 @@ function executionToRun(exec: Execution, scenarioById: Map<string, Scenario>, ag
     scenarioName,
     status,
     model,
+    provider,
     latency,
     tokens,
     cost: costUsd > 0 ? `$${costUsd.toFixed(4)}` : "$0.0000",
