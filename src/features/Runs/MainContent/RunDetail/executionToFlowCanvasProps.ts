@@ -61,11 +61,11 @@ export async function executionToFlowCanvasProps(execution: Execution, run: RunD
   const response =
     execution.status === "succeeded" || execution.status === "failed"
       ? {
-          text,
-          usage: { promptTokens, completionTokens, totalTokens },
-          latency: latencyMs,
-          error: run.status === "error" ? "Run failed" : undefined,
-        }
+        text,
+        usage: { promptTokens, completionTokens, totalTokens },
+        latency: latencyMs,
+        error: run.status === "error" ? "Run failed" : undefined,
+      }
       : null;
 
   let executionToolCalls: PersistedToolCall[] | undefined;
@@ -82,7 +82,7 @@ export async function executionToFlowCanvasProps(execution: Execution, run: RunD
     userPrompt,
     attachments: [],
     tools: [],
-    configuration: { provider, model, temperature, topP: 1, maxTokens },
+    configuration: { provider, model, temperature, maxTokens },
     history,
     response,
     providerModels: {},

@@ -220,7 +220,6 @@ export interface ScenarioConfigExport {
     provider: string;
     model: string;
     temperature: number;
-    topP: number;
     maxTokens: number;
   };
   systemPrompt: string;
@@ -243,7 +242,6 @@ export function parseScenarioConfig(content: string): ScenarioConfigExport | nul
         provider: data.configuration?.provider ?? 'openai',
         model: data.configuration?.model ?? 'gpt-4o-2024-05-13',
         temperature: data.configuration?.temperature ?? 0.7,
-        topP: data.configuration?.topP ?? 1.0,
         maxTokens: data.configuration?.maxTokens ?? 2048,
       },
       systemPrompt: data.systemPrompt,
@@ -267,7 +265,6 @@ export interface AgentConfigExport {
     provider: string;
     model: string;
     temperature: number;
-    topP: number;
     maxTokens: number;
     seed?: string;
   };
@@ -296,7 +293,6 @@ export function parseAgentConfig(content: string): AgentConfigExport | null {
         provider: data.configuration?.provider ?? 'openai',
         model: data.configuration?.model ?? 'gpt-4o',
         temperature: data.configuration?.temperature ?? 0.7,
-        topP: data.configuration?.topP ?? 1.0,
         maxTokens: data.configuration?.maxTokens ?? 2048,
         ...(data.configuration?.seed ? { seed: data.configuration.seed } : {}),
       },

@@ -235,7 +235,6 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
             model: slot.model,
             systemPrompt: currentScenario.systemPrompt,
             temperature: currentScenario.configuration.temperature,
-            topP: currentScenario.configuration.topP,
             maxTokens: currentScenario.configuration.maxTokens,
           },
           allTools,

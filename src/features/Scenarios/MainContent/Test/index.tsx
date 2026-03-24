@@ -180,7 +180,6 @@ export default function Test() {
             model: configuration.model,
             systemPrompt,
             temperature: configuration.temperature,
-            topP: configuration.topP,
             maxTokens: configuration.maxTokens,
           },
           allTools,

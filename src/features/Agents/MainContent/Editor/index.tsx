@@ -29,7 +29,6 @@ interface LayoutProps {
   memoryEnabled: boolean;
   memorySource: string;
   temperature: number[];
-  topP: number[];
   maxTokens: number[];
   seed: string;
   showAdvanced: boolean;
@@ -44,7 +43,6 @@ interface LayoutProps {
   onMemoryEnabledChange: (enabled: boolean) => void;
   onMemorySourceChange: (source: string) => void;
   onTemperatureChange: (value: number[]) => void;
-  onTopPChange: (value: number[]) => void;
   onMaxTokensChange: (value: number[]) => void;
   onSeedChange: (value: string) => void;
   onShowAdvancedToggle: () => void;
@@ -63,7 +61,6 @@ export function SpecLayout({
   memoryEnabled,
   memorySource,
   temperature,
-  topP,
   maxTokens,
   seed,
   showAdvanced,
@@ -78,7 +75,6 @@ export function SpecLayout({
   onMemoryEnabledChange,
   onMemorySourceChange,
   onTemperatureChange,
-  onTopPChange,
   onMaxTokensChange,
   onSeedChange,
   onShowAdvancedToggle,
@@ -181,14 +177,12 @@ export function SpecLayout({
             provider={provider}
             model={model}
             temperature={temperature}
-            topP={topP}
             maxTokens={maxTokens}
             seed={seed}
             showAdvanced={showAdvanced}
             onProviderChange={onProviderChange}
             onModelChange={onModelChange}
             onTemperatureChange={onTemperatureChange}
-            onTopPChange={onTopPChange}
             onMaxTokensChange={onMaxTokensChange}
             onSeedChange={onSeedChange}
             onShowAdvancedToggle={onShowAdvancedToggle}

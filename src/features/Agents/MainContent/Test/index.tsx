@@ -113,11 +113,11 @@ export function TestView({ agentId, agentName }: TestViewProps) {
       prev.map((c) =>
         c.id === caseId
           ? {
-              ...c,
-              assertions: c.assertions.map((a) =>
-                a.id === assertionId ? { ...a, ...updates } : a
-              ),
-            }
+            ...c,
+            assertions: c.assertions.map((a) =>
+              a.id === assertionId ? { ...a, ...updates } : a
+            ),
+          }
           : c
       )
     );
@@ -264,7 +264,6 @@ export function TestView({ agentId, agentName }: TestViewProps) {
           ...(hasTools ? { tools: aiTools } : {}),
           stopWhen: stepCountIs(agentRecord.max_iterations ?? 10),
           temperature: params.temperature,
-          topP: params.top_p,
           maxOutputTokens: params.max_tokens,
         });
 

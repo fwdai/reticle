@@ -118,6 +118,11 @@ const ANTHROPIC_PRICING = {
     output: 2500,
     cached: null,
   },
+  'claude-sonnet-4-6': {
+    input: 300,
+    output: 1500,
+    cached: null,
+  },
   'claude-opus-4-5': {
     input: 500,
     output: 2500,

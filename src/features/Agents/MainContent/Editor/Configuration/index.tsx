@@ -5,14 +5,12 @@ interface ConfigurationProps {
   provider: string;
   model: string;
   temperature: number[];
-  topP: number[];
   maxTokens: number[];
   seed: string;
   showAdvanced: boolean;
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
   onTemperatureChange: (value: number[]) => void;
-  onTopPChange: (value: number[]) => void;
   onMaxTokensChange: (value: number[]) => void;
   onSeedChange: (value: string) => void;
   onShowAdvancedToggle: () => void;
@@ -22,14 +20,12 @@ export default function Configuration({
   provider,
   model,
   temperature,
-  topP,
   maxTokens,
   seed,
   showAdvanced,
   onProviderChange,
   onModelChange,
   onTemperatureChange,
-  onTopPChange,
   onMaxTokensChange,
   onSeedChange,
   onShowAdvancedToggle,
@@ -44,13 +40,11 @@ export default function Configuration({
         provider={provider}
         model={model}
         temperature={temperature[0]}
-        topP={topP[0]}
         maxTokens={maxTokens[0]}
         models={models}
         onProviderChange={onProviderChange}
         onModelChange={onModelChange}
         onTemperatureChange={(v) => onTemperatureChange([v])}
-        onTopPChange={(v) => onTopPChange([v])}
         onMaxTokensChange={(v) => onMaxTokensChange([v])}
         temperatureMax={2}
         temperatureStep={0.01}

@@ -305,9 +305,8 @@ export function FlowCanvas({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <ConfigChip label="Temp" value={String(configuration.temperature)} />
-                  <ConfigChip label="Top P" value={String(configuration.topP)} />
                   <ConfigChip label="Max" value={String(configuration.maxTokens)} />
                 </div>
 

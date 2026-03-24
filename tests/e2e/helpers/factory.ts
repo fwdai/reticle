@@ -23,7 +23,7 @@ const FACTORIES: Record<string, FactoryDef> = {
       name: 'Test Agent',
       provider: 'openai',
       model: 'gpt-4o',
-      params_json: '{"temperature":0.4,"top_p":0.95,"max_tokens":4096}',
+      params_json: '{"temperature":0.4,"max_tokens":4096}',
     },
   },
   execution: {
