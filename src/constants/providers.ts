@@ -15,7 +15,7 @@ export const PROVIDERS = {
     id: 'google',
     name: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com',
-    header: 'X-Goog-Api-Key',
+    header: 'Authorization',
   },
 } as const;
 

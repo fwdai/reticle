@@ -76,16 +76,24 @@ export function extractStepsAndToolCalls(
   return { modelSteps, toolCalls };
 }
 
+// Providers whose OpenAI-compatible endpoint lives at a non-/v1 path.
+// The proxy forwards: target_url_base (from X-Proxy-Target-Url) + incoming path.
+// Setting a different gateway base here changes which path reaches the provider.
+const PROVIDER_GATEWAY_BASE: Partial<Record<string, string>> = {
+  google: 'http://localhost:11513/v1beta/openai',
+};
+
 export const createModel = (
   config: Pick<LLMCallConfig, 'provider' | 'model'>,
   gateway?: GatewayFetch
 ) => {
   const { provider, model } = config;
+  const gatewayBase = PROVIDER_GATEWAY_BASE[provider] ?? GATEWAY_URL;
 
   return createOpenAICompatible({
     name: GATEWAY_NAME,
     apiKey: API_KEY,
-    baseURL: GATEWAY_URL,
+    baseURL: gatewayBase,
     includeUsage: true, // Important: must match original
     headers: getProviderHeaders(provider),
     fetch: gateway?.fetch ?? fetch, // Use latency-measuring fetch when gateway provided
@@ -154,9 +162,15 @@ export const streamText = async (
   return Object.assign(result, { latency: latency ?? undefined });
 };
 
+// Providers whose models list lives outside the standard /v1/models path.
+const PROVIDER_MODELS_URL: Partial<Record<string, string>> = {
+  google: 'http://localhost:11513/v1beta/openai/models',
+};
+
 export const listModels = async (providerId: string): Promise<any[]> => {
+  const modelsUrl = PROVIDER_MODELS_URL[providerId] ?? `${GATEWAY_URL}/models`;
   try {
-    const response = await fetch(`${GATEWAY_URL}/models`, {
+    const response = await fetch(modelsUrl, {
       method: 'GET',
       headers: getProviderHeaders(providerId),
     });
@@ -168,7 +182,6 @@ export const listModels = async (providerId: string): Promise<any[]> => {
     }
 
     const data = await response.json();
-
     // Return the array as returned from the API
     if (data && Array.isArray(data.data)) {
       return data.data;
