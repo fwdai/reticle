@@ -86,6 +86,9 @@ function renderStepContent(step: TraceStep): string {
     }
     return JSON.stringify({ tool: step.label, arguments: c }, null, 2);
   }
+  if (step.type === "error") {
+    return typeof c.text === "string" ? c.text : JSON.stringify(c, null, 2);
+  }
   if (step.type === "tool_response") {
     const result = c.result;
     if (result === undefined || result === null) {

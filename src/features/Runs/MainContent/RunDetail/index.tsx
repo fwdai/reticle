@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 import { Header, type RunViewMode } from "./Header";
 import { MetricsBar } from "./MetricsBar";
 import { Timeline, type TraceStep } from "./Timeline";
 import { Visualizer } from "./Visualizer";
+import { parseExecutionError } from "./types";
 import type { RunDetailRun } from "./types";
 import { getExecutionById } from "@/lib/storage";
 import {
@@ -24,6 +26,7 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<RunViewMode>("timeline");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +36,9 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         const execution = await getExecutionById(run.id);
         if (cancelled) return;
         if (execution) {
+          if (execution.status === "failed") {
+            setErrorMessage(parseExecutionError(execution.error_json) ?? null);
+          }
           let toolCalls: PersistedToolCall[] | undefined;
           let modelSteps: PersistedModelStep[] | undefined;
           if (execution.tool_calls_json) {
@@ -104,6 +110,16 @@ export function RunDetail({ run, onBack }: RunDetailProps) {
         onExpandAll={expandAll}
         onCollapseAll={collapseAll}
       />
+      {/* Error banner for failed runs */}
+      {run.status === "error" && errorMessage && (
+        <div className="mx-6 mt-4 flex gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3">
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-red-700">Run failed</p>
+            <p className="mt-0.5 text-xs font-mono text-red-600 break-words">{errorMessage}</p>
+          </div>
+        </div>
+      )}
       {/* Execution timeline or visualizer */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div

@@ -2,6 +2,7 @@ import { FileText, Cpu, Wrench, Send, AlertCircle, Zap, MessageSquare } from "lu
 import { parseAgentToolCallContent } from "@/lib/helpers/agentToolStepContent";
 import type { Execution, ExecutionStep as AgentExecutionStep } from "@/types";
 import type { TraceStep } from "./Timeline";
+import { parseExecutionError } from "./types";
 
 /** Format elapsed ms as MM:SS.mmm for timeline timestamps */
 function formatElapsed(ms: number): string {
@@ -291,6 +292,22 @@ export function executionToTraceSteps(
         finish_reason: finishReason,
         usage: { prompt_tokens: promptTokens, completion_tokens: completionTokens, total_tokens: totalTokens },
       },
+    });
+  }
+
+  // For failed scenario runs, append an explicit error step.
+  // (Agent runs already include an error step via steps_json from agentActions.)
+  if (execution.status === "failed" && execution.type !== "agent") {
+    const errorMsg = parseExecutionError(execution.error_json) ?? "Execution failed";
+    steps.push({
+      id: "execution_error",
+      type: "error",
+      label: "Error",
+      icon: AlertCircle,
+      status: "error",
+      duration: "—",
+      timestamp: formatElapsed(totalDuration),
+      content: { text: errorMsg },
     });
   }
 

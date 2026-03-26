@@ -239,6 +239,7 @@ export async function runScenarioAction(
   let executionId: string | undefined;
   let snapshot_json = '';
   let input_json = '';
+  let capturedStreamError: Error | undefined;
 
   try {
     // Fetch tools and create execution record inside try so any failure here
@@ -284,17 +285,24 @@ export async function runScenarioAction(
       abortSignal
     );
 
-    // Stream text chunks to the frontend as they arrive
+    // Stream chunks to the frontend as they arrive, capturing any stream errors
     let accumulatedText = '';
-    for await (const chunk of result.textStream) {
-      accumulatedText += chunk;
-      setStudioState(prev => ({
-        ...prev,
-        response: {
-          text: accumulatedText,
-          error: undefined,
-        },
-      }));
+    for await (const part of result.fullStream) {
+      if (part.type === 'text-delta') {
+        accumulatedText += part.text;
+        setStudioState(prev => ({
+          ...prev,
+          response: {
+            text: accumulatedText,
+            error: undefined,
+          },
+        }));
+      } else if (part.type === 'error') {
+        const err = part.error;
+        const message = err instanceof Error ? err.message : String(err);
+        const responseBody = (err as { responseBody?: string })?.responseBody;
+        capturedStreamError = new Error(responseBody ? `${message}: ${responseBody}` : message);
+      }
     }
 
     const [finalText, usage, steps] = await Promise.all([
@@ -370,7 +378,10 @@ export async function runScenarioAction(
     const isAborted = (error as { name?: string })?.name === 'AbortError';
     const errorMessage = isAborted
       ? 'Cancelled by user'
-      : error instanceof Error ? error.message : 'An unknown error occurred';
+      : capturedStreamError
+        // Errors from fullStream are provider API errors — prefix so it's clear this isn't an app/tool error
+        ? `[${configuration.provider}] API Error: ${capturedStreamError.message}`
+        : error instanceof Error ? error.message : 'An unknown error occurred';
 
     if (executionId) {
       await updateExecution(executionId, {
