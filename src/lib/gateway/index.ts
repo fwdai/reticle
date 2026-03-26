@@ -3,7 +3,8 @@ import { streamText as streamTextAi, stepCountIs, type ModelMessage } from 'ai';
 
 import { GatewayFetch } from './GatewayFetch';
 import {
-  GATEWAY_URL,
+  getProviderGatewayBase,
+  getProviderModelsUrl,
   API_KEY,
   STEPS_COUNT,
   GATEWAY_NAME,
@@ -76,19 +77,12 @@ export function extractStepsAndToolCalls(
   return { modelSteps, toolCalls };
 }
 
-// Providers whose OpenAI-compatible endpoint lives at a non-/v1 path.
-// The proxy forwards: target_url_base (from X-Proxy-Target-Url) + incoming path.
-// Setting a different gateway base here changes which path reaches the provider.
-const PROVIDER_GATEWAY_BASE: Partial<Record<string, string>> = {
-  google: 'http://localhost:11513/v1beta/openai',
-};
-
 export const createModel = (
   config: Pick<LLMCallConfig, 'provider' | 'model'>,
   gateway?: GatewayFetch
 ) => {
   const { provider, model } = config;
-  const gatewayBase = PROVIDER_GATEWAY_BASE[provider] ?? GATEWAY_URL;
+  const gatewayBase = getProviderGatewayBase(provider);
 
   return createOpenAICompatible({
     name: GATEWAY_NAME,
@@ -162,13 +156,8 @@ export const streamText = async (
   return Object.assign(result, { latency: latency ?? undefined });
 };
 
-// Providers whose models list lives outside the standard /v1/models path.
-const PROVIDER_MODELS_URL: Partial<Record<string, string>> = {
-  google: 'http://localhost:11513/v1beta/openai/models',
-};
-
 export const listModels = async (providerId: string): Promise<any[]> => {
-  const modelsUrl = PROVIDER_MODELS_URL[providerId] ?? `${GATEWAY_URL}/models`;
+  const modelsUrl = getProviderModelsUrl(providerId);
   try {
     const response = await fetch(modelsUrl, {
       method: 'GET',
