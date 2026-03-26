@@ -121,7 +121,7 @@ function makeStreamResult({
   steps = [] as any[],
 } = {}) {
   return {
-    textStream: (async function* () { for (const c of chunks) yield c; })(),
+    fullStream: (async function* () { for (const c of chunks) yield { type: 'text-delta', text: c }; })(),
     text: Promise.resolve(chunks.join('')),
     totalUsage: Promise.resolve({ inputTokens, outputTokens, totalTokens }),
     steps: Promise.resolve(steps),
