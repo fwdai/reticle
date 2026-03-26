@@ -1,6 +1,7 @@
 import { getProviderForModel } from "@/lib/modelManager";
 import type { FlowCanvasProps } from "@/features/Scenarios/MainContent/Visualizer/FlowCanvas";
 import type { Execution } from "@/types";
+import { parseExecutionError } from "./types";
 import type { RunDetailRun } from "./types";
 import type { PersistedToolCall } from "./executionToTraceSteps";
 
@@ -58,13 +59,17 @@ export async function executionToFlowCanvasProps(execution: Execution, run: RunD
   const endedAt = execution.ended_at ?? startedAt;
   const latencyMs = endedAt - startedAt;
 
+  const errorMessage = execution.status === "failed"
+    ? (parseExecutionError(execution.error_json) ?? "Run failed")
+    : undefined;
+
   const response =
     execution.status === "succeeded" || execution.status === "failed"
       ? {
         text,
         usage: { promptTokens, completionTokens, totalTokens },
         latency: latencyMs,
-        error: run.status === "error" ? "Run failed" : undefined,
+        error: errorMessage,
       }
       : null;
 

@@ -55,7 +55,7 @@ describe('getProviderHeaders', () => {
   it('returns correct routing headers for google', () => {
     const headers = getProviderHeaders('google');
     expect(headers['X-Api-Provider']).toBe('google');
-    expect(headers['X-Api-Auth-Header']).toBe('X-Goog-Api-Key');
+    expect(headers['X-Api-Auth-Header']).toBe('Authorization');
     expect(headers['X-Proxy-Target-Url']).toBe('https://generativelanguage.googleapis.com');
   });
 

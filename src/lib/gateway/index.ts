@@ -3,7 +3,8 @@ import { streamText as streamTextAi, stepCountIs, type ModelMessage } from 'ai';
 
 import { GatewayFetch } from './GatewayFetch';
 import {
-  GATEWAY_URL,
+  getProviderGatewayBase,
+  getProviderModelsUrl,
   API_KEY,
   STEPS_COUNT,
   GATEWAY_NAME,
@@ -81,11 +82,12 @@ export const createModel = (
   gateway?: GatewayFetch
 ) => {
   const { provider, model } = config;
+  const gatewayBase = getProviderGatewayBase(provider);
 
   return createOpenAICompatible({
     name: GATEWAY_NAME,
     apiKey: API_KEY,
-    baseURL: GATEWAY_URL,
+    baseURL: gatewayBase,
     includeUsage: true, // Important: must match original
     headers: getProviderHeaders(provider),
     fetch: gateway?.fetch ?? fetch, // Use latency-measuring fetch when gateway provided
@@ -155,8 +157,9 @@ export const streamText = async (
 };
 
 export const listModels = async (providerId: string): Promise<any[]> => {
+  const modelsUrl = getProviderModelsUrl(providerId);
   try {
-    const response = await fetch(`${GATEWAY_URL}/models`, {
+    const response = await fetch(modelsUrl, {
       method: 'GET',
       headers: getProviderHeaders(providerId),
     });
@@ -168,7 +171,6 @@ export const listModels = async (providerId: string): Promise<any[]> => {
     }
 
     const data = await response.json();
-
     // Return the array as returned from the API
     if (data && Array.isArray(data.data)) {
       return data.data;

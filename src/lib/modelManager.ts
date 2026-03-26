@@ -110,7 +110,10 @@ const getAllModels = async (): Promise<ProviderModels> => {
  */
 const normalizeModels = (models: any[]): { id: string; name: string }[] => {
   return models.map((model: any) => {
-    return { id: model.id || model.name, name: model.display_name || model.displayName || model.id };
+    const rawId = model.id || model.name || '';
+    // Google's API returns model names as "models/gemini-2.5-pro" — strip the prefix
+    const id = rawId.startsWith('models/') ? rawId.slice('models/'.length) : rawId;
+    return { id, name: model.display_name || model.displayName || id };
   });
 }
 
@@ -157,6 +160,7 @@ const filterModels = (
   const filtered = models.filter((m) => {
     if (isNonTextModel(m.id)) return false;
     if (isLegacyModel(m.id)) return false;
+    if (providerId === 'google' && !m.id.startsWith('gemini-')) return false;
     return true;
   });
 
