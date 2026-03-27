@@ -5,6 +5,7 @@ import type { Tool } from "../types";
 import { CodeEditor } from "@/components/ui/CodeEditor";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import type { SaveStatus } from "@/components/ui/EditableTitle";
+import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
 
 interface OutputProps {
   tool: Tool;
@@ -39,48 +40,24 @@ export function Output({
           <span className={panelTitle}>Tool Response</span>
           {saveStatus && <SaveIndicator status={saveStatus} />}
         </div>
-        <div className="flex items-center rounded-lg border border-border-light bg-white p-0.5">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onUpdate({ mockMode: "json" });
-            }}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide transition-all",
-              tool.mockMode === "json"
-                ? "bg-primary/15 text-primary shadow-sm"
-                : "text-text-muted hover:text-text-main"
-            )}
-          >
-            {tool.mockMode === "json" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            )}
-            <Braces className="h-3 w-3" />
-            MOCK
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
+        <div onClick={(e) => e.stopPropagation()}>
+          <SegmentedSwitch
+            variant="default"
+            size="compact"
+            value={tool.mockMode ?? "json"}
+            onChange={(value) => {
               onUpdate({
-                mockMode: "code",
-                ...(!tool.code?.trim() && {
+                mockMode: value,
+                ...(value === "code" && !tool.code?.trim() && {
                   code: `async function handler(args) {\n  // args contains the tool call arguments\n  // return any value — it will be passed back to the agent as JSON\n  return {};\n}`,
                 }),
               });
             }}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide transition-all",
-              tool.mockMode === "code"
-                ? "bg-primary/15 text-primary shadow-sm"
-                : "text-text-muted hover:text-text-main"
-            )}
-          >
-            {tool.mockMode === "code" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            )}
-            <Terminal className="h-3 w-3" />
-            CODE
-          </button>
+            options={[
+              { value: "json", label: "MOCK", icon: <Braces className="h-3 w-3" /> },
+              { value: "code", label: "CODE", icon: <Terminal className="h-3 w-3" /> },
+            ]}
+          />
         </div>
       </button>
 
@@ -94,7 +71,7 @@ export function Output({
                 placeholder='{ "result": "..." }'
               />
               <p className="mt-2 text-[10px] tracking-wide text-text-muted">
-                ACTIVE — THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL
+                THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL
               </p>
             </>
           ) : (
