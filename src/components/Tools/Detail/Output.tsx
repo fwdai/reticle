@@ -1,11 +1,20 @@
+import { useRef } from "react";
 import { Braces, ChevronDown, ChevronRight, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { panelBase, panelHeader, panelTitle } from "../constants";
 import type { Tool } from "../types";
-import { CodeEditor } from "@/components/ui/CodeEditor";
+import { CodeEditor as JsonOutput } from "@/components/ui/CodeEditor";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import type { SaveStatus } from "@/components/ui/EditableTitle";
 import { SegmentedSwitch } from "@/components/ui/SegmentedSwitch";
+import { Editor as CodeEditor } from "./Code/Editor";
+
+function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  const { overflowY } = window.getComputedStyle(el);
+  if (overflowY === "auto" || overflowY === "scroll") return el;
+  return getScrollParent(el.parentElement);
+}
 
 interface OutputProps {
   tool: Tool;
@@ -22,8 +31,10 @@ export function Output({
   onUpdate,
   saveStatus,
 }: OutputProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className={panelBase}>
+    <div ref={panelRef} className={panelBase}>
       <button
         onClick={onToggle}
         className={cn(
@@ -46,16 +57,33 @@ export function Output({
             size="compact"
             value={tool.mockMode ?? "json"}
             onChange={(value) => {
+              const container = getScrollParent(panelRef.current);
+              const savedScrollTop = container?.scrollTop ?? 0;
               onUpdate({
                 mockMode: value,
-                ...(value === "code" && !tool.code?.trim() && {
+                ...(value === "code" &&
+                  !tool.code?.trim() && {
                   code: `async function handler(args) {\n  // args contains the tool call arguments\n  // return any value — it will be passed back to the agent as JSON\n  return {};\n}`,
                 }),
               });
+              // Restore after React re-renders and the new CodeMirror instance mounts
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => {
+                  if (container) container.scrollTop = savedScrollTop;
+                })
+              );
             }}
             options={[
-              { value: "json", label: "MOCK", icon: <Braces className="h-3 w-3" /> },
-              { value: "code", label: "CODE", icon: <Terminal className="h-3 w-3" /> },
+              {
+                value: "json",
+                label: "MOCK",
+                icon: <Braces className="h-3 w-3" />,
+              },
+              {
+                value: "code",
+                label: "CODE",
+                icon: <Terminal className="h-3 w-3" />,
+              },
             ]}
           />
         </div>
@@ -65,7 +93,7 @@ export function Output({
         <div className="p-4">
           {tool.mockMode === "json" ? (
             <>
-              <CodeEditor
+              <JsonOutput
                 value={tool.mockResponse}
                 onChange={(val) => onUpdate({ mockResponse: val })}
                 placeholder='{ "result": "..." }'
@@ -75,17 +103,7 @@ export function Output({
               </p>
             </>
           ) : (
-            <>
-              <CodeEditor
-                value={tool.code ?? ""}
-                onChange={(val) => onUpdate({ code: val })}
-                language="javascript"
-                placeholder={`async function handler(args) {\n  // args contains the tool call arguments\n  // return any value — it will be passed back to the agent as JSON\n  return {};\n}`}
-              />
-              <p className="mt-2 text-[10px] tracking-wide text-text-muted">
-                ACTIVE — THIS CODE WILL BE EXECUTED WHEN THE LLM CALLS THIS TOOL
-              </p>
-            </>
+            <CodeEditor tool={tool} onUpdate={onUpdate} />
           )}
         </div>
       )}
