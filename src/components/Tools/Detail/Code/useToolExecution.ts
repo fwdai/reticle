@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Tool } from '../../types';
+import { coerceParamArgInput } from './paramArgCoercion';
 import {
   writeTempScript,
   deleteTempScript,
@@ -42,6 +43,40 @@ export function useToolExecution(tool: Tool) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [testArgs, setTestArgs] = useState('{}');
   const [argsError, setArgsError] = useState(false);
+  const [argsErrorMessage, setArgsErrorMessage] = useState<string | null>(null);
+  const [paramArgStrings, setParamArgStrings] = useState<Record<string, string>>({});
+
+  const namedParameters = tool.parameters.filter((p) => p.name.trim());
+  const parametersSyncKey = namedParameters
+    .map((p) => `${p.id}:${p.name}:${p.type}`)
+    .join('|');
+
+  useEffect(() => {
+    const named = tool.parameters.filter((p) => p.name.trim());
+    setParamArgStrings((prev) => {
+      const next: Record<string, string> = {};
+      for (const p of named) {
+        if (prev[p.name] !== undefined) {
+          next[p.name] = prev[p.name];
+        } else {
+          next[p.name] = '';
+        }
+      }
+      return next;
+    });
+  }, [tool.id, parametersSyncKey]);
+
+  const setParamArgValue = useCallback((name: string, value: string) => {
+    setArgsError(false);
+    setArgsErrorMessage(null);
+    setParamArgStrings((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const setTestArgsClearingErrors = useCallback((value: string) => {
+    setArgsError(false);
+    setArgsErrorMessage(null);
+    setTestArgs(value);
+  }, []);
 
   function clearLogs() {
     setLogs([]);
@@ -52,16 +87,34 @@ export function useToolExecution(tool: Tool) {
     if (status === 'running' || !tool.code?.trim()) return;
 
     let parsedArgs: Record<string, unknown>;
-    try {
-      const parsed = JSON.parse(testArgs);
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        throw new Error('must be an object');
+    if (namedParameters.length > 0) {
+      parsedArgs = {};
+      for (const p of namedParameters) {
+        const raw = paramArgStrings[p.name] ?? '';
+        const r = coerceParamArgInput(raw, p.type);
+        if (!r.ok) {
+          setArgsError(true);
+          setArgsErrorMessage(`${p.name}: ${r.error}`);
+          return;
+        }
+        parsedArgs[p.name] = r.value;
       }
-      parsedArgs = parsed;
       setArgsError(false);
-    } catch {
-      setArgsError(true);
-      return;
+      setArgsErrorMessage(null);
+    } else {
+      try {
+        const parsed = JSON.parse(testArgs);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          throw new Error('must be an object');
+        }
+        parsedArgs = parsed;
+        setArgsError(false);
+        setArgsErrorMessage(null);
+      } catch {
+        setArgsError(true);
+        setArgsErrorMessage('Args must be valid JSON object text (e.g. {})');
+        return;
+      }
     }
 
     const startTime = Date.now();
@@ -162,5 +215,18 @@ export function useToolExecution(tool: Tool) {
     }
   }
 
-  return { status, logs, testArgs, setTestArgs, argsError, execute, clearLogs };
+  return {
+    status,
+    logs,
+    testArgs,
+    setTestArgs: setTestArgsClearingErrors,
+    argsError,
+    argsErrorMessage,
+    execute,
+    clearLogs,
+    hasNamedParameters: namedParameters.length > 0,
+    namedParameters,
+    paramArgStrings,
+    setParamArgValue,
+  };
 }
