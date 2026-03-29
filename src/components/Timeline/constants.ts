@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Target,
   AlertTriangle,
+  Hand,
 } from "lucide-react";
 import type { StepType } from "@/types";
 
@@ -25,6 +26,7 @@ export const stepConfig: Record<StepType, { icon: React.ElementType; badge: stri
   decision: { icon: Sparkles, badge: "DECIDE" },
   output: { icon: ArrowRight, badge: "OUTPUT" },
   error: { icon: AlertTriangle, badge: "ERROR" },
+  human_input: { icon: Hand, badge: "HUMAN" },
 };
 
 export const filterOptions: { value: StepType | "all"; label: string }[] = [
@@ -34,4 +36,5 @@ export const filterOptions: { value: StepType | "all"; label: string }[] = [
   { value: "tool_call", label: "Tools" },
   { value: "memory_read", label: "Memory" },
   { value: "decision", label: "Decisions" },
+  { value: "human_input", label: "Human" },
 ];

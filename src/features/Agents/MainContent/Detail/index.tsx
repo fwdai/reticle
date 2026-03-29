@@ -11,7 +11,9 @@ import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
 import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evals";
 import { runAgentAction } from "@/actions/agentActions";
+import { submitAgentHumanInput } from "@/actions/agentHumanInput";
 import type { ExecutionState } from "@/contexts/AgentContext";
+import type { HumanInputSubmitPayload } from "@/types";
 
 export type { AgentDetailAgent };
 
@@ -50,6 +52,8 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
   const skipNextAutoSaveRef = useRef(!isNew);
   const [execution, setExecution] = useState<ExecutionState>({ status: "idle", steps: [] });
+  const executionRef = useRef(execution);
+  executionRef.current = execution;
 
   const loadAgent = useCallback(async () => {
     if (!effectiveId) return;
@@ -141,10 +145,16 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
 
   const runStartRef = useRef<number | null>(null);
   const agentAbortRef = useRef<AbortController | null>(null);
+  /** Wall time accumulated while waiting on human_input (excluded from elapsed). */
+  const humanInputPausedMsRef = useRef(0);
+  /** When non-null, a human_input pause started at this timestamp. */
+  const humanInputPauseStartedAtRef = useRef<number | null>(null);
 
   const handleRun = useCallback(async (taskInput?: string) => {
     if (!taskInput?.trim() || !effectiveId) return;
     runStartRef.current = Date.now();
+    humanInputPausedMsRef.current = 0;
+    humanInputPauseStartedAtRef.current = null;
     agentAbortRef.current = new AbortController();
     const record = await getAgentById(effectiveId);
     if (!record) return;
@@ -155,15 +165,39 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     agentAbortRef.current?.abort();
   }, []);
 
+  const handleSubmitHumanInput = useCallback(
+    (_stepId: string, payload: HumanInputSubmitPayload) => {
+      const execId = executionRef.current.executionId;
+      if (!execId) return;
+      submitAgentHumanInput(execId, payload);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (execution.status !== "running") return;
     const interval = setInterval(() => {
-      if (runStartRef.current) {
-        const elapsed = (Date.now() - runStartRef.current) / 1000;
-        setExecution(prev =>
-          prev.status === "running" ? { ...prev, elapsedSeconds: elapsed } : prev
+      const start = runStartRef.current;
+      if (start == null) return;
+      setExecution((prev) => {
+        if (prev.status !== "running") return prev;
+        const awaitingHumanInput = prev.steps.some(
+          (s) => s.type === "human_input" && s.status === "running",
         );
-      }
+        if (awaitingHumanInput) {
+          if (humanInputPauseStartedAtRef.current === null) {
+            humanInputPauseStartedAtRef.current = Date.now();
+          }
+          return prev;
+        }
+        if (humanInputPauseStartedAtRef.current !== null) {
+          humanInputPausedMsRef.current += Date.now() - humanInputPauseStartedAtRef.current;
+          humanInputPauseStartedAtRef.current = null;
+        }
+        const elapsed =
+          (Date.now() - start - humanInputPausedMsRef.current) / 1000;
+        return { ...prev, elapsedSeconds: elapsed };
+      });
     }, 100);
     return () => clearInterval(interval);
   }, [execution.status]);
@@ -213,6 +247,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const agentContextValue = {
     runAgent: handleRun,
     stopAgent: handleStop,
+    submitHumanInput: handleSubmitHumanInput,
     execution,
     isRunning: execution.status === "running",
     providerModels,
