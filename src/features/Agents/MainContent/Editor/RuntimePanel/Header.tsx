@@ -59,6 +59,9 @@ export function Header({
   const { execution } = useAgentContext();
   const inputTokens = execution.steps.reduce((a, s) => a + (s.inputTokens || 0), 0);
   const outputTokens = execution.steps.reduce((a, s) => a + (s.outputTokens || 0), 0);
+  const awaitingHumanInput =
+    status === "running" &&
+    execution.steps.some((s) => s.type === "human_input" && s.status === "running");
 
   return (
     <div className="h-11 flex-shrink-0 border-b border-border-light flex items-center justify-between px-6 bg-sidebar-light/40">
@@ -67,14 +70,14 @@ export function Header({
           <span
             className={cn(
               "size-2 rounded-full",
-              config.color,
-              config.pulse && "animate-pulse-subtle"
+              awaitingHumanInput ? "bg-amber-500 animate-pulse-subtle" : config.color,
+              !awaitingHumanInput && config.pulse && "animate-pulse-subtle",
             )}
           />
           <span className="text-[10px] font-bold uppercase tracking-widest text-text-main">
             Agent Execution
           </span>
-          {status === "running" && (
+          {status === "running" && !awaitingHumanInput && (
             <span className="text-[10px] font-mono text-primary animate-pulse-subtle">
               live
             </span>
@@ -92,11 +95,12 @@ export function Header({
                 status === "error" && "text-red-600",
                 status === "cancelled" && "text-amber-600",
                 status === "idle" && "text-text-muted",
-                status === "running" && "text-primary",
-                status === "success" && "text-green-600"
+                awaitingHumanInput && "text-amber-700",
+                status === "running" && !awaitingHumanInput && "text-primary",
+                status === "success" && "text-green-600",
               )}
             >
-              {config.label}
+              {awaitingHumanInput ? "Awaiting Input" : config.label}
             </span>
           </div>
           <div className="h-6 w-px bg-gray-200" />
@@ -104,8 +108,15 @@ export function Header({
             <span className="text-[8px] uppercase font-bold text-text-muted leading-none mb-1">
               Duration
             </span>
-            <span className="text-[11px] font-bold text-text-main leading-none">
-              {formatDuration(elapsedSeconds != null ? elapsedSeconds * 1000 : undefined)}
+            <span
+              className={cn(
+                "text-[11px] font-bold leading-none",
+                awaitingHumanInput ? "text-text-muted font-semibold normal-case" : "text-text-main",
+              )}
+            >
+              {awaitingHumanInput
+                ? "paused"
+                : formatDuration(elapsedSeconds != null ? elapsedSeconds * 1000 : undefined)}
             </span>
           </div>
           <div className="h-6 w-px bg-gray-200" />

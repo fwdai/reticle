@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { AgentExecutionStatus, ExecutionStep } from "@/types";
+import type { AgentExecutionStatus, ExecutionStep, HumanInputSubmitPayload } from "@/types";
 
 export interface ExecutionState {
   status: AgentExecutionStatus;
@@ -18,6 +18,8 @@ interface AgentContextType {
   runAgent: (taskInput?: string) => void;
   /** Stop the currently running agent. */
   stopAgent: () => void;
+  /** Resume after the built-in `human_input` tool (submits operator response to the waiting run). */
+  submitHumanInput: (stepId: string, payload: HumanInputSubmitPayload) => void;
   execution: ExecutionState;
   isRunning: boolean;
   /** Models per provider (from modelManager cache) */
