@@ -1,4 +1,4 @@
-import { FileText, Cpu, Wrench, Send, AlertCircle, Zap, MessageSquare } from "lucide-react";
+import { FileText, Cpu, Wrench, Send, AlertCircle, Zap, MessageSquare, Hand } from "lucide-react";
 import { parseAgentToolCallContent } from "@/lib/helpers/agentToolStepContent";
 import type { Execution, ExecutionStep as AgentExecutionStep } from "@/types";
 import type { TraceStep } from "./Timeline";
@@ -18,6 +18,7 @@ const AGENT_STEP_ICON: Record<string, React.ElementType> = {
   model_response: Cpu,
   tool_call: Wrench,
   memory_write: Wrench,
+  human_input: Hand,
   tool_response: Send,
   output: MessageSquare,
   error: AlertCircle,

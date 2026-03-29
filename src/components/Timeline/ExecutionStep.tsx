@@ -1,9 +1,15 @@
 import type { ReactNode } from "react";
-import { ChevronRight, ChevronDown, Copy, Check, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronDown, Copy, Check, Loader2, Hand } from "lucide-react";
+import { HumanInputPrompt } from "@/components/Agents/HumanInputPrompt";
 import { cn } from "@/lib/utils";
 import { stepConfig } from "./constants";
 import { calculateRequestCost } from "@/lib/modelPricing";
-import type { ExecutionStep as ExecutionStepType, StepPhase, StepType } from "@/types";
+import type {
+  ExecutionStep as ExecutionStepType,
+  HumanInputSubmitPayload,
+  StepPhase,
+  StepType,
+} from "@/types";
 import {
   formatAgentToolCallStepContentForDisplay,
   isAgentToolConcatStepType,
@@ -35,6 +41,7 @@ interface ExecutionStepProps {
   /** When `expandedContent` is custom, use this for copy (e.g. run trace rendered string). */
   copyPayload?: string;
   variant?: ExecutionStepVariant;
+  onHumanInputSubmit?: (stepId: string, payload: HumanInputSubmitPayload) => void;
 }
 
 export function ExecutionStep({
@@ -52,11 +59,14 @@ export function ExecutionStep({
   expandedContent,
   copyPayload,
   variant = "compact",
+  onHumanInputSubmit,
 }: ExecutionStepProps) {
   const cfg = stepConfig[step.type];
+  const toolLabelForDisplay =
+    step.type === "human_input" ? "human_input" : step.label;
   const defaultExpandedBody =
     isAgentToolConcatStepType(step.type)
-      ? formatAgentToolCallStepContentForDisplay(step.label, step.content)
+      ? formatAgentToolCallStepContentForDisplay(toolLabelForDisplay, step.content)
       : step.content;
   const textToCopy = copyPayload ?? defaultExpandedBody;
   const Icon = iconOverride ?? cfg.icon;
@@ -72,6 +82,8 @@ export function ExecutionStep({
       : null;
 
   const isErrorDone = phase === "done" && step.status === "error";
+  const isHumanWaiting = step.type === "human_input" && step.status === "running";
+  const isHumanDone = step.type === "human_input" && step.status === "success";
   const isLlm = isLlmStepType(step.type);
   const metaBase = cn(
     "font-mono flex-shrink-0",
@@ -110,18 +122,26 @@ export function ExecutionStep({
           className={cn(
             "relative z-10 flex shrink-0 items-center justify-center rounded-full transition-all duration-500",
             nodeClass,
+            isHumanWaiting &&
+              "bg-amber-500/20 text-amber-800 border border-amber-500/40 animate-pulse",
             phase === "done" &&
-            !isErrorDone &&
-            "bg-primary text-white shadow-glow-sm",
+              !isErrorDone &&
+              !isHumanWaiting &&
+              (isHumanDone
+                ? "bg-green-600 text-white shadow-[0_0_10px_rgb(22_163_84/0.35)]"
+                : "bg-primary text-white shadow-glow-sm"),
             phase === "done" &&
-            isErrorDone &&
-            "bg-red-500/10 text-red-600 border border-red-500/30",
+              isErrorDone &&
+              "bg-red-500/10 text-red-600 border border-red-500/30",
             phase === "processing" &&
-            "bg-primary/20 text-primary border border-primary/30",
-            phase === "appearing" && "bg-gray-200 text-text-muted"
+              !isHumanWaiting &&
+              "bg-primary/20 text-primary border border-primary/30",
+            phase === "appearing" && !isHumanWaiting && "bg-gray-200 text-text-muted",
           )}
         >
-          {phase === "processing" ? (
+          {isHumanWaiting ? (
+            <Hand className={glyphClass} />
+          ) : phase === "processing" ? (
             <Loader2 className={cn(glyphClass, "animate-spin")} />
           ) : (
             <Icon className={glyphClass} />
@@ -175,12 +195,17 @@ export function ExecutionStep({
             {step.label}
           </span>
           <span
-            className="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] font-medium uppercase leading-[18px] tracking-wider text-primary/80 flex-shrink-0"
+            className={cn(
+              "rounded-full border px-2 py-0.5 text-[9px] font-medium uppercase leading-[18px] tracking-wider flex-shrink-0",
+              isHumanWaiting
+                ? "border-amber-500/25 bg-amber-500/10 text-amber-800/80"
+                : "border-primary/15 bg-primary/5 text-primary/80",
+            )}
           >
             {badge}
           </span>
 
-          {phase === "processing" && (
+          {phase === "processing" && !isHumanWaiting && (
             <Loader2 className={cn(glyphClass, "text-primary/60 animate-spin flex-shrink-0")} />
           )}
 
@@ -219,7 +244,35 @@ export function ExecutionStep({
           </button>
         </div>
 
-        {isExpanded && phase === "done" && (
+        {isHumanWaiting && step.humanInput && onHumanInputSubmit && (
+          <div
+            className="mt-3 mb-2 ml-4 animate-in fade-in-0 duration-200"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
+          >
+            <HumanInputPrompt
+              config={step.humanInput}
+              isAnimating
+              onSubmit={(p) => onHumanInputSubmit(step.id, p)}
+            />
+          </div>
+        )}
+
+        {isHumanDone && onHumanInputSubmit && (
+          <div className="mt-2 mb-1 ml-4 animate-in fade-in-0 duration-200">
+            <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/[0.03] px-3 py-2">
+              <Check className="h-3 w-3 text-green-600" />
+              <span className="text-[10px] font-medium text-green-700/80">
+                Human input provided — agent resumed
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isExpanded &&
+          phase === "done" &&
+          !(step.type === "human_input" && step.status === "running") && (
           <div
             className="animate-in fade-in-0 duration-200 mt-3 mb-1 ml-4"
           >
@@ -253,3 +306,4 @@ export function ExecutionStep({
     </div>
   );
 }
+

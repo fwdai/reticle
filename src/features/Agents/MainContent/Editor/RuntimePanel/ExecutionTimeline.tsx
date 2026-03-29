@@ -2,7 +2,13 @@ import { forwardRef } from "react";
 import { Zap } from "lucide-react";
 import { filterOptions } from "./constants";
 import { ExecutionStep as ExecutionStepItem } from "@/components/Timeline/ExecutionStep";
-import type { AgentExecutionStatus, ExecutionStep, StepPhase, StepType } from "@/types";
+import type {
+  AgentExecutionStatus,
+  ExecutionStep,
+  HumanInputSubmitPayload,
+  StepPhase,
+  StepType,
+} from "@/types";
 import { cn } from "@/lib/utils";
 
 interface ExecutionTimelineProps {
@@ -19,6 +25,7 @@ interface ExecutionTimelineProps {
   hasPrompt?: boolean;
   provider?: string;
   model?: string;
+  onHumanInputSubmit?: (stepId: string, payload: HumanInputSubmitPayload) => void;
 }
 
 export const ExecutionTimeline = forwardRef<
@@ -39,6 +46,7 @@ export const ExecutionTimeline = forwardRef<
     hasPrompt,
     provider,
     model,
+    onHumanInputSubmit,
   },
   ref
 ) {
@@ -117,6 +125,7 @@ export const ExecutionTimeline = forwardRef<
                     model={model}
                     onToggle={() => onToggleStep(step.id)}
                     onCopy={(text) => onCopy(step.id, text)}
+                    onHumanInputSubmit={onHumanInputSubmit}
                   />
                 </div>
               );
