@@ -28,7 +28,8 @@ export function Input({
         onClick={onToggle}
         className={cn(
           panelHeader,
-          "w-full cursor-pointer hover:bg-sidebar-light/50 transition-colors"
+          !expanded && "border-b-0",
+          "w-full cursor-pointer hover:bg-sidebar-light/50 transition-colors",
         )}
       >
         <div className="flex items-center gap-2">
