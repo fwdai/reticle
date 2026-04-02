@@ -91,22 +91,20 @@ export function Output({
       </button>
 
       {expanded && (
-        <div className="p-4">
-          {tool.mockMode === "json" ? (
-            <>
-              <JsonOutput
-                value={tool.mockResponse}
-                onChange={(val) => onUpdate({ mockResponse: val })}
-                placeholder='{ "result": "..." }'
-              />
-              <p className="mt-2 text-[10px] tracking-wide text-text-muted">
-                THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL
-              </p>
-            </>
-          ) : (
-            <CodeEditor tool={tool} onUpdate={onUpdate} />
-          )}
-        </div>
+        tool.mockMode === "json" ? (
+          <div className="p-4">
+            <JsonOutput
+              value={tool.mockResponse}
+              onChange={(val) => onUpdate({ mockResponse: val })}
+              placeholder='{ "result": "..." }'
+            />
+            <p className="mt-2 text-[10px] tracking-wide text-text-muted">
+              THIS JSON WILL BE RETURNED WHEN THE LLM CALLS THIS TOOL
+            </p>
+          </div>
+        ) : (
+          <CodeEditor tool={tool} onUpdate={onUpdate} />
+        )
       )}
     </div>
   );
