@@ -9,6 +9,7 @@ import { TestView } from "../Test";
 import { VisualizerView } from "../Visualizer";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
+import { AgentSpecProvider } from "@/contexts/AgentSpecContext";
 import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evals";
 import { runAgentAction } from "@/actions/agentActions";
 import { submitAgentHumanInput } from "@/actions/agentHumanInput";
@@ -46,6 +47,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const [toolCallStrategy, setToolCallStrategy] = useState("auto");
   const [memoryEnabled, setMemoryEnabled] = useState(agent.memoryEnabled);
   const [memorySource, setMemorySource] = useState("local");
+  const [humanInTheLoop, setHumanInTheLoop] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [viewMode, setViewMode] = useState<AgentViewMode>("editor");
   const [isLoading, setIsLoading] = useState(!isNew);
@@ -77,6 +79,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
         setToolCallStrategy(record.tool_call_strategy ?? "auto");
         setMemoryEnabled(record.memory_enabled === 1);
         setMemorySource(record.memory_source ?? "local");
+        setHumanInTheLoop(record.human_in_the_loop !== 0);
       }
       setSaveStatus("saved");
     } finally {
@@ -107,10 +110,11 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     tool_call_strategy: toolCallStrategy,
     memory_enabled: memoryEnabled ? 1 : 0,
     memory_source: memorySource,
+    human_in_the_loop: humanInTheLoop ? 1 : 0,
   }), [
     agentName, description, provider, model, temperature, maxTokens, seed,
     agentGoal, systemInstructions, maxIterations, timeoutValue, retryPolicy,
-    toolCallStrategy, memoryEnabled, memorySource,
+    toolCallStrategy, memoryEnabled, memorySource, humanInTheLoop,
   ]);
 
   const performSave = useCallback(async () => {
@@ -253,9 +257,27 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     providerModels,
   };
 
+  const agentSpecContextValue = {
+    agentGoal,
+    systemInstructions,
+    maxIterations,
+    timeoutValue,
+    retryPolicy,
+    toolCallStrategy,
+    humanInTheLoop,
+    setAgentGoal,
+    setSystemInstructions,
+    setMaxIterations,
+    setTimeoutValue,
+    setRetryPolicy,
+    setToolCallStrategy,
+    setHumanInTheLoop,
+  };
+
   return (
     <MainContent>
       <AgentProvider value={agentContextValue}>
+      <AgentSpecProvider value={agentSpecContextValue}>
         <Header
           agentName={agentName}
           isNew={isNew}
@@ -273,12 +295,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               agentId={effectiveId}
               provider={provider}
               model={model}
-              agentGoal={agentGoal}
-              systemInstructions={systemInstructions}
-              maxIterations={maxIterations}
-              timeout={timeoutValue}
-              retryPolicy={retryPolicy}
-              toolCallStrategy={toolCallStrategy}
               memoryEnabled={memoryEnabled}
               memorySource={memorySource}
               temperature={temperature}
@@ -287,12 +303,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               showAdvanced={showAdvanced}
               onProviderChange={setProvider}
               onModelChange={setModel}
-              onAgentGoalChange={setAgentGoal}
-              onSystemInstructionsChange={setSystemInstructions}
-              onMaxIterationsChange={setMaxIterations}
-              onTimeoutChange={setTimeoutValue}
-              onRetryPolicyChange={setRetryPolicy}
-              onToolCallStrategyChange={setToolCallStrategy}
               onMemoryEnabledChange={setMemoryEnabled}
               onMemorySourceChange={setMemorySource}
               onTemperatureChange={setTemperature}
@@ -317,6 +327,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
             />
           )}
         </div>
+      </AgentSpecProvider>
       </AgentProvider>
     </MainContent>
   );

@@ -63,8 +63,10 @@ export async function runAgentAction(
   const memoryInstructions = memoryEnabled
     ? `## Memory\nYou have a \`memory_write\` tool. Use it to persist facts that would be useful in future runs — user preferences, discovered values, key decisions, API endpoints, or any context worth recalling. Call it whenever you learn something worth remembering.`
     : '';
-  const humanInputInstructions =
-    '## Human input\nYou have a `human_input` tool. Use it when you need the operator to confirm a decision, pick from options, enter text, acknowledge credentials, or set a toggle. The run pauses until they respond.';
+  const humanInTheLoop = agentRecord.human_in_the_loop !== 0;
+  const humanInputInstructions = humanInTheLoop
+    ? '## Human input\nYou have a `human_input` tool. Use it when you need the operator to confirm a decision, pick from options, enter text, acknowledge credentials, or set a toggle. The run pauses until they respond.'
+    : '';
   const instructions =
     [substitutedInstructions, memoryBlock, memoryInstructions, humanInputInstructions]
       .filter(Boolean)
@@ -146,7 +148,7 @@ export async function runAgentAction(
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
     const aiTools = toolConfigToAiSdkTools(linkedTools, envVarsMap);
 
-    aiTools['human_input'] = tool({
+    if (humanInTheLoop) aiTools['human_input'] = tool({
       description:
         'Ask the human operator for input before continuing. Use for approvals, choices, free text, credential acknowledgment, or toggles.',
       inputSchema: jsonSchema({

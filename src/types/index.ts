@@ -106,6 +106,7 @@ export type AgentRecord = {
   tool_call_strategy: string;
   memory_enabled: number;
   memory_source: string;
+  human_in_the_loop: number;
   version?: number;
   created_at?: number;
   updated_at?: number;

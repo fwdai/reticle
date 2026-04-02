@@ -28,6 +28,7 @@ fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/0017_create_eval_tables.sql")),
         M::up(include_str!("../migrations/0018_create_env_variables_table.sql")),
         M::up(include_str!("../migrations/0019_create_agent_memories.sql")),
+        M::up(include_str!("../migrations/0020_add_human_in_the_loop_to_agents.sql")),
     ])
 }
 
