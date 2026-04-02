@@ -29,7 +29,7 @@ export function ToolDetail({
 }: ToolDetailProps) {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
-  >({ params: true, output: true });
+  >({ params: true, output: true, schema: false });
 
   const toggleSection = (key: string) =>
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -77,7 +77,11 @@ export function ToolDetail({
         saveStatus={saveStatus}
       />
 
-      <SchemaPreview tool={tool} />
+      <SchemaPreview
+        tool={tool}
+        expanded={expandedSections.schema ?? false}
+        onToggle={() => toggleSection("schema")}
+      />
 
       {usedBy !== undefined && (
         <Usage usedBy={usedBy} updatedAt={updatedAt ?? null} />
