@@ -95,6 +95,7 @@ function makeFullStream(chunks: object[] = [], text = '') {
       for (const c of chunks) yield c;
     })(),
     text: Promise.resolve(text),
+    steps: Promise.resolve([{ text }]),
   };
 }
 

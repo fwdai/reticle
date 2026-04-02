@@ -3,6 +3,8 @@ import { jsonSchema } from 'ai';
 import { createModel } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
 import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables, listAgentMemories, saveAgentMemory } from '@/lib/storage';
+import { rejectPendingAgentHumanInput, waitForAgentHumanInput } from '@/actions/agentHumanInput';
+import { normalizeHumanInputConfig } from '@/lib/helpers/humanInputTool';
 import { TELEMETRY_EVENTS, trackEvent } from '@/lib/telemetry';
 import { toast } from 'sonner';
 import type { ExecutionState } from '@/contexts/AgentContext';
@@ -61,7 +63,14 @@ export async function runAgentAction(
   const memoryInstructions = memoryEnabled
     ? `## Memory\nYou have a \`memory_write\` tool. Use it to persist facts that would be useful in future runs — user preferences, discovered values, key decisions, API endpoints, or any context worth recalling. Call it whenever you learn something worth remembering.`
     : '';
-  const instructions = [substitutedInstructions, memoryBlock, memoryInstructions].filter(Boolean).join('\n\n') || undefined;
+  const humanInTheLoop = agentRecord.human_in_the_loop !== 0;
+  const humanInputInstructions = humanInTheLoop
+    ? '## Human input\nYou have a `human_input` tool. Use it when you need the operator to confirm a decision, pick from options, enter text, acknowledge credentials, or set a toggle. The run pauses until they respond.'
+    : '';
+  const instructions =
+    [substitutedInstructions, memoryBlock, memoryInstructions, humanInputInstructions]
+      .filter(Boolean)
+      .join('\n\n') || undefined;
 
   const params = agentRecord.params_json ? JSON.parse(agentRecord.params_json) : {};
 
@@ -139,6 +148,47 @@ export async function runAgentAction(
     const linkedTools = await listToolsForEntity(agentRecord.id, 'agent');
     const aiTools = toolConfigToAiSdkTools(linkedTools, envVarsMap);
 
+    if (humanInTheLoop) aiTools['human_input'] = tool({
+      description:
+        'Ask the human operator for input before continuing. Use for approvals, choices, free text, credential acknowledgment, or toggles.',
+      inputSchema: jsonSchema({
+        type: 'object',
+        properties: {
+          question: { type: 'string', description: 'What you need from the operator.' },
+          context: { type: 'string', description: 'Optional supporting context.' },
+          widgetType: {
+            type: 'string',
+            enum: ['confirm', 'choice', 'text', 'credentials', 'toggle'],
+            description:
+              'confirm: yes/no; choice: pick one (provide options); text: freeform; credentials: confirm linked; toggle: boolean (optional options for labels).',
+          },
+          options: {
+            type: 'array',
+            description: 'For choice or toggle: { id, label, description?, variant? }.',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                label: { type: 'string' },
+                description: { type: 'string' },
+                variant: { type: 'string', enum: ['default', 'accent', 'destructive'] },
+              },
+              required: ['id', 'label'],
+            },
+          },
+          placeholder: { type: 'string' },
+          confirmLabel: { type: 'string' },
+          cancelLabel: { type: 'string' },
+        },
+        required: ['question', 'widgetType'],
+        additionalProperties: false,
+      }),
+      execute: async () => {
+        if (!executionId) throw new Error('Execution not initialized');
+        return waitForAgentHumanInput(executionId);
+      },
+    });
+
     if (memoryEnabled) {
       aiTools['memory_write'] = tool({
         description: 'Persist a key-value fact to memory for future runs. Use to store important findings, preferences, or context.',
@@ -191,13 +241,18 @@ export async function runAgentAction(
           ? 3
           : 2; // fallback to SDK default
 
-    const timeoutSignal = agentRecord.timeout_seconds
-      ? AbortSignal.timeout(agentRecord.timeout_seconds * 1000)
-      : null;
-    const effectiveAbortSignal =
-      abortSignal && timeoutSignal
-        ? AbortSignal.any([abortSignal, timeoutSignal])
-        : abortSignal ?? timeoutSignal ?? undefined;
+    // Only the user cancel signal — do not merge AbortSignal.timeout(timeout_seconds).
+    // Wall-clock timeouts abort the whole streamText call, which includes tool execution.
+    // human_input can block for a long time; a merged timeout would abort before the user answers
+    // or before a follow-up model step runs. Agent timeout_seconds is not applied here until we
+    // have pause-aware accounting. Provider / user stop still apply.
+    const effectiveAbortSignal = abortSignal ?? undefined;
+
+    const configuredMaxSteps = agentRecord.max_iterations ?? 10;
+    // AI SDK counts one step per model generation. stopWhen: stepCountIs(n) stops as soon as n
+    // steps have finished — so n=1 ends the run right after the first LLM call (incl. tools),
+    // with no second turn to use tool results. With tools, require at least 2 steps.
+    const maxStreamSteps = hasTools ? Math.max(2, configuredMaxSteps) : configuredMaxSteps;
 
     const result = streamText({
       model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
@@ -206,7 +261,7 @@ export async function runAgentAction(
       ...(hasTools ? { tools: aiTools } : {}),
       ...(toolChoice !== undefined ? { toolChoice } : {}),
       maxRetries,
-      stopWhen: stepCountIs(agentRecord.max_iterations ?? 10),
+      stopWhen: stepCountIs(maxStreamSteps),
       temperature: params.temperature,
       maxOutputTokens: params.max_tokens,
       ...(effectiveAbortSignal ? { abortSignal: effectiveAbortSignal } : {}),
@@ -268,15 +323,26 @@ export async function runAgentAction(
           pendingToolStepIds.set(chunk.toolCallId, id);
           pendingToolStartMs.set(chunk.toolCallId, Date.now());
           const isMemoryWrite = chunk.toolName === 'memory_write';
+          const isHumanInput = chunk.toolName === 'human_input';
+          const humanCfg = isHumanInput ? normalizeHumanInputConfig(id, chunk.input) : undefined;
+          const humanLabel =
+            humanCfg &&
+            (humanCfg.question.length > 72
+              ? `${humanCfg.question.slice(0, 72)}…`
+              : humanCfg.question);
           stepBuffer.push({
             id,
-            type: isMemoryWrite ? 'memory_write' : 'tool_call',
-            label: isMemoryWrite ? 'Memory Write' : chunk.toolName,
+            type: isMemoryWrite ? 'memory_write' : isHumanInput ? 'human_input' : 'tool_call',
+            label: isMemoryWrite ? 'Memory Write' : isHumanInput ? (humanLabel ?? 'Human input') : chunk.toolName,
             status: 'running',
             loop: currentLoop,
             timestamp: ts(),
             content: JSON.stringify(chunk.input, null, 2),
+            ...(humanCfg ? { humanInput: humanCfg } : {}),
           });
+          if (isHumanInput) {
+            setExecution(prev => ({ ...prev, steps: [...stepBuffer], tokens: totalTokens }));
+          }
           break;
         }
 
@@ -362,16 +428,28 @@ export async function runAgentAction(
     const streamEndedAtMs = Date.now();
 
     try {
-      finalText = await result.text;
+      const steps = await result.steps;
+      const last = steps[steps.length - 1];
+      finalText = last?.text ?? '';
+      if (!finalText.trim()) {
+        finalText = steps
+          .map(s => s.text)
+          .filter(t => t != null && t.trim() !== '')
+          .join('\n\n');
+      }
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') throw err;
-      const lastModelContent =
-        [...stepBuffer].reverse().find(s => s.type === 'model_call' && s.content)?.content ?? '';
       try {
-        const parsed = JSON.parse(lastModelContent);
-        finalText = parsed.text ?? lastModelContent;
+        finalText = await result.text;
       } catch {
-        finalText = lastModelContent;
+        const lastModelContent =
+          [...stepBuffer].reverse().find(s => s.type === 'model_call' && s.content)?.content ?? '';
+        try {
+          const parsed = JSON.parse(lastModelContent);
+          finalText = parsed.text ?? lastModelContent;
+        } catch {
+          finalText = lastModelContent;
+        }
       }
     }
 
@@ -429,6 +507,16 @@ export async function runAgentAction(
     const errorMessage = isAborted
       ? 'Cancelled by user'
       : error instanceof Error ? error.message : 'Unknown error';
+
+    if (executionId) {
+      const rejectErr =
+        isAborted
+          ? Object.assign(new Error('Cancelled by user'), { name: 'AbortError' })
+          : error instanceof Error
+            ? error
+            : new Error(String(error));
+      rejectPendingAgentHumanInput(executionId, rejectErr);
+    }
 
     const stepsWithError: ExecutionStep[] = stepBuffer.map(s =>
       s.status === 'running' ? { ...s, status: 'error' as const } : s,

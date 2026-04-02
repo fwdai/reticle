@@ -9,9 +9,12 @@ import { TestView } from "../Test";
 import { VisualizerView } from "../Visualizer";
 import type { AgentDetailAgent, AgentDetailProps } from "./types";
 import { getAgentById, insertAgent, updateAgent } from "@/lib/storage";
+import { AgentSpecProvider } from "@/contexts/AgentSpecContext";
 import { exportAgentAsJSON, saveFileWithDialog } from "@/lib/evals";
 import { runAgentAction } from "@/actions/agentActions";
+import { submitAgentHumanInput } from "@/actions/agentHumanInput";
 import type { ExecutionState } from "@/contexts/AgentContext";
+import type { HumanInputSubmitPayload } from "@/types";
 
 export type { AgentDetailAgent };
 
@@ -44,12 +47,15 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const [toolCallStrategy, setToolCallStrategy] = useState("auto");
   const [memoryEnabled, setMemoryEnabled] = useState(agent.memoryEnabled);
   const [memorySource, setMemorySource] = useState("local");
+  const [humanInTheLoop, setHumanInTheLoop] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [viewMode, setViewMode] = useState<AgentViewMode>("editor");
   const [isLoading, setIsLoading] = useState(!isNew);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(isNew ? "unsaved" : "saved");
   const skipNextAutoSaveRef = useRef(!isNew);
   const [execution, setExecution] = useState<ExecutionState>({ status: "idle", steps: [] });
+  const executionRef = useRef(execution);
+  executionRef.current = execution;
 
   const loadAgent = useCallback(async () => {
     if (!effectiveId) return;
@@ -73,6 +79,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
         setToolCallStrategy(record.tool_call_strategy ?? "auto");
         setMemoryEnabled(record.memory_enabled === 1);
         setMemorySource(record.memory_source ?? "local");
+        setHumanInTheLoop(record.human_in_the_loop !== 0);
       }
       setSaveStatus("saved");
     } finally {
@@ -103,10 +110,11 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     tool_call_strategy: toolCallStrategy,
     memory_enabled: memoryEnabled ? 1 : 0,
     memory_source: memorySource,
+    human_in_the_loop: humanInTheLoop ? 1 : 0,
   }), [
     agentName, description, provider, model, temperature, maxTokens, seed,
     agentGoal, systemInstructions, maxIterations, timeoutValue, retryPolicy,
-    toolCallStrategy, memoryEnabled, memorySource,
+    toolCallStrategy, memoryEnabled, memorySource, humanInTheLoop,
   ]);
 
   const performSave = useCallback(async () => {
@@ -141,10 +149,16 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
 
   const runStartRef = useRef<number | null>(null);
   const agentAbortRef = useRef<AbortController | null>(null);
+  /** Wall time accumulated while waiting on human_input (excluded from elapsed). */
+  const humanInputPausedMsRef = useRef(0);
+  /** When non-null, a human_input pause started at this timestamp. */
+  const humanInputPauseStartedAtRef = useRef<number | null>(null);
 
   const handleRun = useCallback(async (taskInput?: string) => {
     if (!taskInput?.trim() || !effectiveId) return;
     runStartRef.current = Date.now();
+    humanInputPausedMsRef.current = 0;
+    humanInputPauseStartedAtRef.current = null;
     agentAbortRef.current = new AbortController();
     const record = await getAgentById(effectiveId);
     if (!record) return;
@@ -155,15 +169,39 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
     agentAbortRef.current?.abort();
   }, []);
 
+  const handleSubmitHumanInput = useCallback(
+    (_stepId: string, payload: HumanInputSubmitPayload) => {
+      const execId = executionRef.current.executionId;
+      if (!execId) return;
+      submitAgentHumanInput(execId, payload);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (execution.status !== "running") return;
     const interval = setInterval(() => {
-      if (runStartRef.current) {
-        const elapsed = (Date.now() - runStartRef.current) / 1000;
-        setExecution(prev =>
-          prev.status === "running" ? { ...prev, elapsedSeconds: elapsed } : prev
+      const start = runStartRef.current;
+      if (start == null) return;
+      setExecution((prev) => {
+        if (prev.status !== "running") return prev;
+        const awaitingHumanInput = prev.steps.some(
+          (s) => s.type === "human_input" && s.status === "running",
         );
-      }
+        if (awaitingHumanInput) {
+          if (humanInputPauseStartedAtRef.current === null) {
+            humanInputPauseStartedAtRef.current = Date.now();
+          }
+          return prev;
+        }
+        if (humanInputPauseStartedAtRef.current !== null) {
+          humanInputPausedMsRef.current += Date.now() - humanInputPauseStartedAtRef.current;
+          humanInputPauseStartedAtRef.current = null;
+        }
+        const elapsed =
+          (Date.now() - start - humanInputPausedMsRef.current) / 1000;
+        return { ...prev, elapsedSeconds: elapsed };
+      });
     }, 100);
     return () => clearInterval(interval);
   }, [execution.status]);
@@ -213,14 +251,33 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
   const agentContextValue = {
     runAgent: handleRun,
     stopAgent: handleStop,
+    submitHumanInput: handleSubmitHumanInput,
     execution,
     isRunning: execution.status === "running",
     providerModels,
   };
 
+  const agentSpecContextValue = {
+    agentGoal,
+    systemInstructions,
+    maxIterations,
+    timeoutValue,
+    retryPolicy,
+    toolCallStrategy,
+    humanInTheLoop,
+    setAgentGoal,
+    setSystemInstructions,
+    setMaxIterations,
+    setTimeoutValue,
+    setRetryPolicy,
+    setToolCallStrategy,
+    setHumanInTheLoop,
+  };
+
   return (
     <MainContent>
       <AgentProvider value={agentContextValue}>
+      <AgentSpecProvider value={agentSpecContextValue}>
         <Header
           agentName={agentName}
           isNew={isNew}
@@ -238,12 +295,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               agentId={effectiveId}
               provider={provider}
               model={model}
-              agentGoal={agentGoal}
-              systemInstructions={systemInstructions}
-              maxIterations={maxIterations}
-              timeout={timeoutValue}
-              retryPolicy={retryPolicy}
-              toolCallStrategy={toolCallStrategy}
               memoryEnabled={memoryEnabled}
               memorySource={memorySource}
               temperature={temperature}
@@ -252,12 +303,6 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
               showAdvanced={showAdvanced}
               onProviderChange={setProvider}
               onModelChange={setModel}
-              onAgentGoalChange={setAgentGoal}
-              onSystemInstructionsChange={setSystemInstructions}
-              onMaxIterationsChange={setMaxIterations}
-              onTimeoutChange={setTimeoutValue}
-              onRetryPolicyChange={setRetryPolicy}
-              onToolCallStrategyChange={setToolCallStrategy}
               onMemoryEnabledChange={setMemoryEnabled}
               onMemorySourceChange={setMemorySource}
               onTemperatureChange={setTemperature}
@@ -282,6 +327,7 @@ export function AgentDetail({ agent, onBack, onSaved, onDelete }: AgentDetailPro
             />
           )}
         </div>
+      </AgentSpecProvider>
       </AgentProvider>
     </MainContent>
   );

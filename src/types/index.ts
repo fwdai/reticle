@@ -106,6 +106,7 @@ export type AgentRecord = {
   tool_call_strategy: string;
   memory_enabled: number;
   memory_source: string;
+  human_in_the_loop: number;
   version?: number;
   created_at?: number;
   updated_at?: number;
@@ -159,7 +160,40 @@ export type StepType =
   | 'memory_write'
   | 'decision'
   | 'output'
-  | 'error';
+  | 'error'
+  | 'human_input';
+
+/** Built-in `human_input` tool — serializable prompt config for the runtime panel */
+export type PromptWidgetType =
+  | 'confirm'
+  | 'choice'
+  | 'text'
+  | 'credentials'
+  | 'toggle';
+
+export interface PromptOption {
+  id: string;
+  label: string;
+  description?: string;
+  variant?: 'default' | 'accent' | 'destructive';
+}
+
+export interface HumanInputConfig {
+  id: string;
+  question: string;
+  context?: string;
+  widgetType: PromptWidgetType;
+  options?: PromptOption[];
+  placeholder?: string;
+  required?: boolean;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+
+export interface HumanInputSubmitPayload {
+  widgetType: PromptWidgetType;
+  value: string | boolean;
+}
 
 export interface ExecutionStep {
   id: string;
@@ -175,6 +209,8 @@ export interface ExecutionStep {
   content: string;
   meta?: Record<string, string>;
   processingMs?: number;
+  /** When type is human_input: prompt UI config (from tool args) */
+  humanInput?: HumanInputConfig;
 }
 
 export type StepPhase = 'hidden' | 'appearing' | 'processing' | 'done';

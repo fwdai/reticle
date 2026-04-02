@@ -14,7 +14,7 @@ interface RuntimePanelProps {
 }
 
 export function RuntimePanel({ agentId }: RuntimePanelProps) {
-  const { execution } = useAgentContext();
+  const { execution, submitHumanInput } = useAgentContext();
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<StepType | "all">("all");
@@ -81,6 +81,7 @@ export function RuntimePanel({ agentId }: RuntimePanelProps) {
             hasPrompt
             provider={execution.provider}
             model={execution.model}
+            onHumanInputSubmit={submitHumanInput}
           />
         </>
       )}

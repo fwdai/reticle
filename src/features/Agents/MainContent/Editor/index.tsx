@@ -20,12 +20,6 @@ interface LayoutProps {
   agentId: string | null;
   provider: string;
   model: string;
-  agentGoal: string;
-  systemInstructions: string;
-  maxIterations: number[];
-  timeout: number[];
-  retryPolicy: string;
-  toolCallStrategy: string;
   memoryEnabled: boolean;
   memorySource: string;
   temperature: number[];
@@ -34,12 +28,6 @@ interface LayoutProps {
   showAdvanced: boolean;
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
-  onAgentGoalChange: (value: string) => void;
-  onSystemInstructionsChange: (value: string) => void;
-  onMaxIterationsChange: (value: number[]) => void;
-  onTimeoutChange: (value: number[]) => void;
-  onRetryPolicyChange: (value: string) => void;
-  onToolCallStrategyChange: (value: string) => void;
   onMemoryEnabledChange: (enabled: boolean) => void;
   onMemorySourceChange: (source: string) => void;
   onTemperatureChange: (value: number[]) => void;
@@ -52,12 +40,6 @@ export function SpecLayout({
   agentId,
   provider,
   model,
-  agentGoal,
-  systemInstructions,
-  maxIterations,
-  timeout,
-  retryPolicy,
-  toolCallStrategy,
   memoryEnabled,
   memorySource,
   temperature,
@@ -66,12 +48,6 @@ export function SpecLayout({
   showAdvanced,
   onProviderChange,
   onModelChange,
-  onAgentGoalChange,
-  onSystemInstructionsChange,
-  onMaxIterationsChange,
-  onTimeoutChange,
-  onRetryPolicyChange,
-  onToolCallStrategyChange,
   onMemoryEnabledChange,
   onMemorySourceChange,
   onTemperatureChange,
@@ -131,20 +107,7 @@ export function SpecLayout({
         <Tabs>
           <TabPanel title="Agent Spec" icon={<SlidersHorizontal className="h-3.5 w-3.5" />}>
             <div className={panelContentClass}>
-              <Tab
-                agentGoal={agentGoal}
-                systemInstructions={systemInstructions}
-                maxIterations={maxIterations}
-                timeout={timeout}
-                retryPolicy={retryPolicy}
-                toolCallStrategy={toolCallStrategy}
-                onAgentGoalChange={onAgentGoalChange}
-                onSystemInstructionsChange={onSystemInstructionsChange}
-                onMaxIterationsChange={onMaxIterationsChange}
-                onTimeoutChange={onTimeoutChange}
-                onRetryPolicyChange={onRetryPolicyChange}
-                onToolCallStrategyChange={onToolCallStrategyChange}
-              />
+              <Tab />
             </div>
           </TabPanel>
           <TabPanel title={<TabTitle label="Tools" count={toolCount} />} icon={<Wrench className="h-3.5 w-3.5" />}>

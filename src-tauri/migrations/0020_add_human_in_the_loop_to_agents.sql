@@ -1,0 +1,1 @@
+ALTER TABLE agents ADD COLUMN human_in_the_loop INTEGER NOT NULL DEFAULT 1;

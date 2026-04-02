@@ -31,7 +31,7 @@ export function parseAgentToolCallContent(content: string): { input: unknown; ou
 
 /** Steps that use the args + `\n\n` + result concatenation from `runAgentAction`. */
 export function isAgentToolConcatStepType(type: StepType): boolean {
-  return type === 'tool_call' || type === 'memory_write';
+  return type === 'tool_call' || type === 'memory_write' || type === 'human_input';
 }
 
 /**
