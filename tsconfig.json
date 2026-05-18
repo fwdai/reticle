@@ -19,7 +19,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
@@ -27,5 +26,6 @@
     }
   },
   "include": ["src", "tests"],
+  "exclude": ["tests/e2e"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
