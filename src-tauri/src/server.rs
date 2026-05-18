@@ -186,7 +186,7 @@ pub async fn start_proxy_server(app_handle: AppHandle) {
 
     let app = Router::new()
         .route("/", axum::routing::get(hello_world))
-        .route("/*path", any(proxy_handler))
+        .route("/{*path}", any(proxy_handler))
         .with_state(state)
         .layer(cors);
 
