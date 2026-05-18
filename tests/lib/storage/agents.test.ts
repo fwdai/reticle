@@ -43,6 +43,7 @@ function makeAgent(overrides: Partial<AgentRecord> = {}): AgentRecord {
     tool_call_strategy: 'auto',
     memory_enabled: 0,
     memory_source: 'none',
+    human_in_the_loop: 0,
     archived_at: null,
     created_at: 0,
     updated_at: 0,
@@ -169,6 +170,7 @@ describe('insertAgent', () => {
       tool_call_strategy: 'auto',
       memory_enabled: 0,
       memory_source: 'none',
+      human_in_the_loop: 0,
     };
     expect(await insertAgent(data)).toBe('new-id');
     expect(mockDbInsert).toHaveBeenCalledWith('agents', data);

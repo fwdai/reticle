@@ -81,6 +81,7 @@ function makeAgent(overrides: Partial<AgentRecord> = {}): AgentRecord {
     tool_call_strategy: 'auto',
     memory_enabled: 0,
     memory_source: 'local',
+    human_in_the_loop: 0,
     ...overrides,
   };
 }
