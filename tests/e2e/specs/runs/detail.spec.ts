@@ -129,8 +129,10 @@ describe("Run detail", () => {
 
     await expect($("span=Prompt Assembled")).toBeDisplayed();
     await expect($("span=Model Requested Tool Call")).toBeDisplayed();
-    await expect($("span*=Tool Call")).toBeDisplayed();
-    await expect($("span*=Tool Response")).toBeDisplayed();
+    // The arrows (→ / ←) are unique to tool_call / tool_response step labels,
+    // so they can't collide with "Model Requested Tool Call" above.
+    await expect($("span*=Tool Call → get_weather")).toBeDisplayed();
+    await expect($("span*=Tool Response ← get_weather")).toBeDisplayed();
     await expect($("span=Final Model Response")).toBeDisplayed();
   });
 
