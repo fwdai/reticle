@@ -17,6 +17,28 @@ import {
   onRunnerExit,
 } from '@/lib/runner';
 
+/** Normalizes and validates a user-supplied provider base URL before it can reach
+ *  X-Proxy-Target-Url (forwarded verbatim by server.rs) or the settings table.
+ *  Rejects CR/LF (header-injection into the proxy's routing headers) and anything
+ *  that isn't a plain http(s) origin, and strips trailing slashes so concatenation
+ *  with the proxied request path (baseUrl + "/v1/chat/completions") can't produce "//". */
+export function normalizeProviderBaseUrl(rawValue: string): string {
+  const trimmed = rawValue.trim();
+  if (/[\r\n]/.test(trimmed)) {
+    throw new Error('Base URL cannot contain line breaks.');
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error('Enter a valid URL, e.g. http://127.0.0.1:11434');
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Only http:// and https:// URLs are supported.');
+  }
+  return (parsed.origin + parsed.pathname).replace(/\/+$/, '');
+}
+
 /** Builds the headers the local proxy (server.rs) reads to route + authenticate a request.
  *  Async because the 'local' provider's target URL is user-configurable (Settings → API Keys)
  *  and read from the settings table rather than being a compile-time constant. */
@@ -30,7 +52,11 @@ export async function getProviderHeaders(providerId: string): Promise<Record<str
   let baseUrl: string = providerConfig.baseUrl;
   if (providerId === 'local') {
     const customBaseUrl = await getSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY);
-    if (customBaseUrl) baseUrl = customBaseUrl;
+    // Re-validate even though the Settings UI already validates on save: the stored
+    // value could predate this check, or have been edited directly in the DB.
+    // Fail loud (don't silently fall back to the default) so a broken override is
+    // visible rather than routing to a server the user didn't choose.
+    if (customBaseUrl) baseUrl = normalizeProviderBaseUrl(customBaseUrl);
   }
 
   const headers: Record<string, string> = {

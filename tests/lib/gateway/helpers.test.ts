@@ -20,6 +20,7 @@ import {
   getProviderHeaders,
   isReasoningModel,
   loadAttachmentsAsContentParts,
+  normalizeProviderBaseUrl,
   toolConfigToAiSdkTools,
 } from '@/lib/gateway/helpers';
 import { ANTHROPIC_VERSION } from '@/lib/gateway/constants';
@@ -76,6 +77,52 @@ describe('getProviderHeaders', () => {
     mockInvoke.mockResolvedValue([{ key: 'local_provider_base_url', value: 'http://192.168.1.50:1234' }]);
     const headers = await getProviderHeaders('local');
     expect(headers['X-Proxy-Target-Url']).toBe('http://192.168.1.50:1234');
+  });
+
+  it('throws rather than routing to a broken stored local base URL', async () => {
+    mockInvoke.mockResolvedValue([{ key: 'local_provider_base_url', value: 'not a url\r\nX-Injected: 1' }]);
+    await expect(getProviderHeaders('local')).rejects.toThrow();
+  });
+});
+
+// ── normalizeProviderBaseUrl ──────────────────────────────────────────────────
+
+describe('normalizeProviderBaseUrl', () => {
+  it('passes through a clean http URL unchanged', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('accepts https URLs', () => {
+    expect(normalizeProviderBaseUrl('https://models.example.com')).toBe('https://models.example.com');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(normalizeProviderBaseUrl('  http://127.0.0.1:11434  ')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('strips trailing slashes so path concatenation cannot produce "//"', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434/')).toBe('http://127.0.0.1:11434');
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434///')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('preserves a non-root path while stripping its trailing slash', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:8000/api/')).toBe('http://127.0.0.1:8000/api');
+  });
+
+  it('rejects values containing CR or LF (header-injection into the proxy)', () => {
+    expect(() => normalizeProviderBaseUrl('http://127.0.0.1:11434\r\nX-Injected: 1')).toThrow();
+    expect(() => normalizeProviderBaseUrl('http://127.0.0.1:11434\nX-Injected: 1')).toThrow();
+  });
+
+  it('rejects unparseable input', () => {
+    expect(() => normalizeProviderBaseUrl('not a url')).toThrow();
+    expect(() => normalizeProviderBaseUrl('')).toThrow();
+  });
+
+  it('rejects non-http(s) protocols', () => {
+    expect(() => normalizeProviderBaseUrl('file:///etc/passwd')).toThrow();
+    expect(() => normalizeProviderBaseUrl('ftp://example.com')).toThrow();
+    expect(() => normalizeProviderBaseUrl('javascript:alert(1)')).toThrow();
   });
 });
 

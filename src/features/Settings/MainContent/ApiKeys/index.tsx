@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { fetchAndNormalizeModels, clearModelCache } from "@/lib/modelManager";
 import { getSetting, setSetting } from "@/lib/storage";
 import { LOCAL_PROVIDER_BASE_URL_SETTING_KEY } from "@/lib/gateway/constants";
+import { normalizeProviderBaseUrl } from "@/lib/gateway/helpers";
 import { PROVIDERS as ALL_PROVIDERS } from "@/constants/providers";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -62,7 +63,16 @@ function ApiKeys() {
   }, []);
 
   const handleSaveLocalBaseUrl = async (rawValue: string) => {
-    const value = rawValue.trim() || ALL_PROVIDERS.LOCAL.baseUrl;
+    let value: string;
+    try {
+      value = rawValue.trim() ? normalizeProviderBaseUrl(rawValue) : ALL_PROVIDERS.LOCAL.baseUrl;
+    } catch (error) {
+      setSaveStatus((prev) => ({ ...prev, local: "error" }));
+      toast.error("Invalid local endpoint", {
+        description: error instanceof Error ? error.message : "Please enter a valid http(s) URL.",
+      });
+      return;
+    }
     setSaveStatus((prev) => ({ ...prev, local: "saving" }));
     try {
       await setSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY, value);
