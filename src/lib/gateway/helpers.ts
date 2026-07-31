@@ -1,10 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import { PROVIDERS_LIST } from '@/constants/providers';
 import { jsonSchema, tool, type ToolSet } from 'ai';
-import { ANTHROPIC_VERSION, REASONING_MODEL_PREFIXES } from './constants';
+import { ANTHROPIC_VERSION, REASONING_MODEL_PREFIXES, LOCAL_PROVIDER_BASE_URL_SETTING_KEY } from './constants';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/components/Tools/types';
 import { substituteVariables } from '@/lib/helpers/substituteVariables';
+import { getSetting } from '@/lib/storage';
 import {
   writeTempScript,
   deleteTempScript,
@@ -16,16 +17,26 @@ import {
   onRunnerExit,
 } from '@/lib/runner';
 
-export function getProviderHeaders(providerId: string): Record<string, string> {
+/** Builds the headers the local proxy (server.rs) reads to route + authenticate a request.
+ *  Async because the 'local' provider's target URL is user-configurable (Settings → API Keys)
+ *  and read from the settings table rather than being a compile-time constant. */
+export async function getProviderHeaders(providerId: string): Promise<Record<string, string>> {
   const providerConfig = PROVIDERS_LIST.find((p) => p.id === providerId);
 
   if (!providerConfig) {
     throw new Error(`Provider "${providerId}" not found.`);
   }
+
+  let baseUrl: string = providerConfig.baseUrl;
+  if (providerId === 'local') {
+    const customBaseUrl = await getSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY);
+    if (customBaseUrl) baseUrl = customBaseUrl;
+  }
+
   const headers: Record<string, string> = {
     'X-Api-Provider': providerConfig.id,
     'X-Api-Auth-Header': providerConfig.header,
-    'X-Proxy-Target-Url': providerConfig.baseUrl,
+    'X-Proxy-Target-Url': baseUrl,
   };
 
   if (providerId === 'anthropic') {

@@ -32,37 +32,50 @@ beforeEach(() => vi.clearAllMocks());
 // ── getProviderHeaders ─────────────────────────────────────────────────────────
 
 describe('getProviderHeaders', () => {
-  it('returns correct routing headers for openai', () => {
-    const headers = getProviderHeaders('openai');
+  it('returns correct routing headers for openai', async () => {
+    const headers = await getProviderHeaders('openai');
     expect(headers['X-Api-Provider']).toBe('openai');
     expect(headers['X-Api-Auth-Header']).toBe('Authorization');
     expect(headers['X-Proxy-Target-Url']).toBe('https://api.openai.com');
   });
 
-  it('returns correct routing headers for anthropic and adds anthropic-version', () => {
-    const headers = getProviderHeaders('anthropic');
+  it('returns correct routing headers for anthropic and adds anthropic-version', async () => {
+    const headers = await getProviderHeaders('anthropic');
     expect(headers['X-Api-Provider']).toBe('anthropic');
     expect(headers['X-Api-Auth-Header']).toBe('X-Api-Key');
     expect(headers['X-Proxy-Target-Url']).toBe('https://api.anthropic.com');
     expect(headers['anthropic-version']).toBe(ANTHROPIC_VERSION);
   });
 
-  it('does not add anthropic-version for non-anthropic providers', () => {
-    const headers = getProviderHeaders('openai');
+  it('does not add anthropic-version for non-anthropic providers', async () => {
+    const headers = await getProviderHeaders('openai');
     expect(headers).not.toHaveProperty('anthropic-version');
   });
 
-  it('returns correct routing headers for google', () => {
-    const headers = getProviderHeaders('google');
+  it('returns correct routing headers for google', async () => {
+    const headers = await getProviderHeaders('google');
     expect(headers['X-Api-Provider']).toBe('google');
     expect(headers['X-Api-Auth-Header']).toBe('Authorization');
     expect(headers['X-Proxy-Target-Url']).toBe('https://generativelanguage.googleapis.com');
   });
 
-  it('throws when the provider is not found', () => {
-    expect(() => getProviderHeaders('unknown-provider')).toThrow(
+  it('throws when the provider is not found', async () => {
+    await expect(getProviderHeaders('unknown-provider')).rejects.toThrow(
       'Provider "unknown-provider" not found.'
     );
+  });
+
+  it('uses the default local base URL when no custom setting is stored', async () => {
+    mockInvoke.mockResolvedValue([]); // getSetting -> dbSelectOne -> no row
+    const headers = await getProviderHeaders('local');
+    expect(headers['X-Api-Provider']).toBe('local');
+    expect(headers['X-Proxy-Target-Url']).toBe('http://127.0.0.1:11434');
+  });
+
+  it('uses the stored custom base URL for the local provider when one is set', async () => {
+    mockInvoke.mockResolvedValue([{ key: 'local_provider_base_url', value: 'http://192.168.1.50:1234' }]);
+    const headers = await getProviderHeaders('local');
+    expect(headers['X-Proxy-Target-Url']).toBe('http://192.168.1.50:1234');
   });
 });
 

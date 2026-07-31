@@ -1,6 +1,6 @@
 import { streamText, stepCountIs, tool } from 'ai';
 import { jsonSchema } from 'ai';
-import { createModel } from '@/lib/gateway';
+import { createModel, getProviderHeaders } from '@/lib/gateway';
 import { toolConfigToAiSdkTools } from '@/lib/gateway/helpers';
 import { insertExecution, updateExecution, listToolsForEntity, listEnvVariables, listAgentMemories, saveAgentMemory } from '@/lib/storage';
 import { rejectPendingAgentHumanInput, waitForAgentHumanInput } from '@/actions/agentHumanInput';
@@ -254,8 +254,9 @@ export async function runAgentAction(
     // with no second turn to use tool results. With tools, require at least 2 steps.
     const maxStreamSteps = hasTools ? Math.max(2, configuredMaxSteps) : configuredMaxSteps;
 
+    const agentModelHeaders = await getProviderHeaders(agentRecord.provider);
     const result = streamText({
-      model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
+      model: createModel({ provider: agentRecord.provider, model: agentRecord.model }, agentModelHeaders),
       ...(instructions ? { system: instructions } : {}),
       prompt: taskInput,
       ...(hasTools ? { tools: aiTools } : {}),
