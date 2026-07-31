@@ -1,5 +1,5 @@
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 
@@ -94,9 +94,17 @@ function ApiKeys() {
   // (a new/removed API key, or a changed local endpoint) — clearing the cache
   // alone leaves `providerModels` (and the descriptions derived from it) stale
   // until the component happens to remount.
+  //
+  // The mount-time call and a later save-triggered call can both be in flight at
+  // once; if the mount-time one resolves last it would otherwise overwrite the
+  // fresh result with stale data. loadModelsRequestId guards against that — only
+  // the response to the most recently *started* call is allowed to apply.
+  const loadModelsRequestId = useRef(0);
   const loadModels = useCallback(async () => {
+    const requestId = ++loadModelsRequestId.current;
     try {
       const models = await fetchAndNormalizeModels();
+      if (requestId !== loadModelsRequestId.current) return; // superseded by a newer call
       setProviderModels(models);
     } catch (error) {
       console.error("Failed to fetch provider models:", error);
