@@ -1,5 +1,5 @@
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 
@@ -77,6 +77,7 @@ function ApiKeys() {
     try {
       await setSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY, value);
       clearModelCache();
+      loadModels();
       setLocalBaseUrl(value);
       setSaveStatus((prev) => ({ ...prev, local: "saved" }));
       setTimeout(() => {
@@ -89,17 +90,22 @@ function ApiKeys() {
     }
   };
 
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const models = await fetchAndNormalizeModels();
-        setProviderModels(models);
-      } catch (error) {
-        console.error("Failed to fetch provider models:", error);
-      }
-    };
-    loadModels();
+  // Re-run after any save/delete that could change which models are reachable
+  // (a new/removed API key, or a changed local endpoint) — clearing the cache
+  // alone leaves `providerModels` (and the descriptions derived from it) stale
+  // until the component happens to remount.
+  const loadModels = useCallback(async () => {
+    try {
+      const models = await fetchAndNormalizeModels();
+      setProviderModels(models);
+    } catch (error) {
+      console.error("Failed to fetch provider models:", error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
 
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -143,8 +149,13 @@ function ApiKeys() {
           query: { where: { provider } },
         });
         clearModelCache();
-        const models = await fetchAndNormalizeModels({ forceRefresh: true });
-        setProviderModels(models);
+        // main inlined fetchAndNormalizeModels({ forceRefresh: true }) here;
+        // this branch routes every refresh through loadModels() so the
+        // out-of-order guard added later applies to all of them. Dropping
+        // forceRefresh is safe: clearModelCache() above removes the cache
+        // key, and getAllModels refetches when the provider is absent from
+        // the cache regardless of the flag.
+        loadModels();
       } catch (error) {
         console.error(`Failed to delete API key for ${provider}:`, error);
         setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
@@ -169,6 +180,7 @@ function ApiKeys() {
         });
       }
       clearModelCache();
+      loadModels();
       setApiKeys((prev) => ({ ...prev, [provider]: apiKey }));
       const models = await fetchAndNormalizeModels({ forceRefresh: true });
       setProviderModels(models);
