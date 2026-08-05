@@ -159,28 +159,44 @@ export const streamText = async (
 export const listModels = async (providerId: string): Promise<any[]> => {
   const modelsUrl = getProviderModelsUrl(providerId);
   try {
-    const response = await fetch(modelsUrl, {
-      method: 'GET',
-      headers: getProviderHeaders(providerId),
-    });
+    const models: any[] = [];
+    let nextUrl: string | null = modelsUrl;
 
-    if (!response.ok) {
-      console.log(response)
-      const errorText = await response.text();
-      throw new Error(`Failed to fetch models from ${providerId}: ${response.status} ${errorText}`);
+    // Anthropic's models endpoint is cursor-paginated. OpenAI and Google's
+    // OpenAI-compatible endpoint currently return their catalog in one page.
+    while (nextUrl) {
+      const response = await fetch(nextUrl, {
+        method: 'GET',
+        headers: getProviderHeaders(providerId),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch models from ${providerId}: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (data && Array.isArray(data.data)) {
+        models.push(...data.data);
+      } else if (data && Array.isArray(data.models)) {
+        models.push(...data.models);
+      } else if (Array.isArray(data)) {
+        models.push(...data);
+      } else {
+        throw new Error(`Unexpected response format from ${providerId} models API.`);
+      }
+
+      if (providerId === 'anthropic' && data?.has_more && data?.last_id) {
+        const url = new URL(modelsUrl);
+        url.searchParams.set('after_id', data.last_id);
+        url.searchParams.set('limit', '100');
+        nextUrl = url.toString();
+      } else {
+        nextUrl = null;
+      }
     }
 
-    const data = await response.json();
-    // Return the array as returned from the API
-    if (data && Array.isArray(data.data)) {
-      return data.data;
-    } else if (data && Array.isArray(data.models)) {
-      return data.models;
-    } else if (Array.isArray(data)) {
-      return data;
-    }
-
-    throw new Error(`Unexpected response format from ${providerId} models API.`);
+    return models;
 
   } catch (error) {
     console.error(`Error listing models for ${providerId}:`, error);

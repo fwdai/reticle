@@ -186,6 +186,41 @@ describe('listModels', () => {
     expect(result).toEqual(models);
   });
 
+  it('collects every page from Anthropic\'s cursor-paginated response', async () => {
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(''),
+        json: () => Promise.resolve({
+          data: [{ id: 'claude-opus-5' }],
+          has_more: true,
+          last_id: 'claude-opus-5',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(''),
+        json: () => Promise.resolve({
+          data: [{ id: 'claude-sonnet-5' }],
+          has_more: false,
+          last_id: 'claude-sonnet-5',
+        }),
+      });
+
+    const result = await listModels('anthropic');
+
+    expect(result).toEqual([
+      { id: 'claude-opus-5' },
+      { id: 'claude-sonnet-5' },
+    ]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[1][0]).toContain(
+      'after_id=claude-opus-5'
+    );
+  });
+
   it('returns data.models when the response has a models array', async () => {
     const models = [{ id: 'gemini-pro' }];
     mockFetch({ models });

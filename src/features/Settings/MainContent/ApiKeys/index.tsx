@@ -12,19 +12,19 @@ const PROVIDERS = [
     id: "openai",
     label: "OpenAI API Key",
     placeholder: "sk-...",
-    fallbackDescription: "Required for OpenAI chat models (GPT-4o, o1, o3, etc.).",
+    fallbackDescription: "Required for OpenAI text and reasoning models.",
   },
   {
     id: "anthropic",
     label: "Anthropic API Key",
     placeholder: "sk-ant-...",
-    fallbackDescription: "Required for Claude models (Claude 3.5 Sonnet, Opus, etc.).",
+    fallbackDescription: "Required for Anthropic Claude models.",
   },
   {
     id: "google",
     label: "Google Vertex/Gemini API Key",
     placeholder: "Enter Google Cloud API Key",
-    fallbackDescription: "Required for Google Gemini models (Gemini 1.5 Pro, Flash, etc.).",
+    fallbackDescription: "Required for Google Gemini models.",
   },
 ] as const;
 
@@ -94,6 +94,8 @@ function ApiKeys() {
           query: { where: { provider } },
         });
         clearModelCache();
+        const models = await fetchAndNormalizeModels({ forceRefresh: true });
+        setProviderModels(models);
       } catch (error) {
         console.error(`Failed to delete API key for ${provider}:`, error);
         setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
@@ -119,6 +121,8 @@ function ApiKeys() {
       }
       clearModelCache();
       setApiKeys((prev) => ({ ...prev, [provider]: apiKey }));
+      const models = await fetchAndNormalizeModels({ forceRefresh: true });
+      setProviderModels(models);
       setSaveStatus((prev) => ({ ...prev, [provider]: "saved" }));
 
       setTimeout(() => {
