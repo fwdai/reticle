@@ -7,7 +7,9 @@ export function useProviderModels(): ProviderModels {
   const [providerModels, setProviderModels] = useState<ProviderModels>({});
 
   useEffect(() => {
-    fetchAndNormalizeModels().then(setProviderModels);
+    // Refresh once when a model-consuming screen mounts. If a provider is
+    // temporarily unavailable, modelManager returns its last-known-good list.
+    fetchAndNormalizeModels({ forceRefresh: true }).then(setProviderModels);
   }, []);
 
   return providerModels;

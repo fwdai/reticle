@@ -14,31 +14,6 @@ type ProviderModelOptions = Record<
   { label: string; models: { value: string; label: string }[] }
 >;
 
-const FALLBACK_OPTIONS: ProviderModelOptions = {
-  openai: {
-    label: "OpenAI",
-    models: [
-      { value: "gpt-4o-mini", label: "gpt-4o-mini" },
-      { value: "gpt-4o", label: "gpt-4o" },
-      { value: "gpt-4.1", label: "gpt-4.1" },
-    ],
-  },
-  anthropic: {
-    label: "Anthropic",
-    models: [
-      { value: "claude-3-haiku", label: "claude-3-haiku" },
-      { value: "claude-3-5-sonnet", label: "claude-3.5-sonnet" },
-    ],
-  },
-  google: {
-    label: "Google",
-    models: [
-      { value: "gemini-2.0-flash", label: "gemini-2.0-flash" },
-      { value: "gemini-2.5-flash-lite", label: "gemini-2.5-flash-lite" },
-    ],
-  },
-};
-
 function buildOptions(
   providerModels: Record<string, { id: string; name: string }[]>
 ): ProviderModelOptions {
@@ -52,7 +27,7 @@ function buildOptions(
       result[provider.id] = { label: provider.name, models: validModels };
     }
   }
-  return Object.keys(result).length > 0 ? result : FALLBACK_OPTIONS;
+  return result;
 }
 
 interface JudgeModelSelectProps {
@@ -61,32 +36,43 @@ interface JudgeModelSelectProps {
 }
 
 export function JudgeModelSelect({ value, onChange }: JudgeModelSelectProps) {
-  const [options, setOptions] = useState<ProviderModelOptions>(FALLBACK_OPTIONS);
+  const [options, setOptions] = useState<ProviderModelOptions>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchAndNormalizeModels().then((providerModels) => {
-      setOptions(buildOptions(providerModels));
-    });
+    fetchAndNormalizeModels({ forceRefresh: true })
+      .then((providerModels) => {
+        setOptions(buildOptions(providerModels));
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const providerIds = Object.keys(options);
-  const provider = value?.provider ?? providerIds[0] ?? "openai";
-  const model = value?.model ?? options[provider]?.models[0]?.value ?? "gpt-4o-mini";
-  const currentProvider = providerIds.includes(provider) ? provider : providerIds[0] ?? "openai";
+  const provider = value?.provider ?? providerIds[0] ?? "";
+  const model = value?.model ?? options[provider]?.models[0]?.value ?? "";
+  const currentProvider = providerIds.includes(provider) ? provider : providerIds[0] ?? "";
   const models = options[currentProvider]?.models ?? [];
   const currentModel = models.some((m) => m.value === model)
     ? model
-    : models[0]?.value ?? "gpt-4o-mini";
+    : models[0]?.value ?? "";
 
   const handleProviderChange = (provider: string) => {
     const nextModels = options[provider]?.models ?? [];
-    const model = nextModels[0]?.value ?? "gpt-4o-mini";
+    const model = nextModels[0]?.value ?? "";
     onChange({ provider, model });
   };
 
   const handleModelChange = (model: string) => {
     onChange({ provider: currentProvider, model });
   };
+
+  if (providerIds.length === 0) {
+    return (
+      <p className="flex-1 text-[11px] text-slate-400">
+        {isLoading ? "Loading provider models…" : "Add an API key in Settings to select a judge model."}
+      </p>
+    );
+  }
 
   return (
     <div className="flex flex-1 items-center gap-2 min-w-0">

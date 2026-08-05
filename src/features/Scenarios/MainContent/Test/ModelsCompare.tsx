@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext } from "react";
+import { useState, useCallback, useContext, useEffect } from "react";
 import {
   Plus,
   X,
@@ -48,7 +48,7 @@ interface SlotResult {
   pass?: boolean;
 }
 
-/** Build provider/model options from context or fallback to defaults */
+/** Build provider/model options from the catalogs returned by provider APIs. */
 function buildProviderModelOptions(
   providerModels: Record<string, Array<{ id?: string; name?: string }>>
 ): Record<string, { label: string; models: { value: string; label: string }[] }> {
@@ -65,35 +65,6 @@ function buildProviderModelOptions(
         models: validModels,
       };
     }
-  }
-
-  // Fallback when providerModels is empty (e.g. before API keys configured)
-  if (Object.keys(result).length === 0) {
-    return {
-      openai: {
-        label: "OpenAI",
-        models: [
-          { value: "gpt-4o", label: "gpt-4o" },
-          { value: "gpt-4-turbo", label: "gpt-4-turbo" },
-          { value: "gpt-3.5-turbo", label: "gpt-3.5-turbo" },
-        ],
-      },
-      anthropic: {
-        label: "Anthropic",
-        models: [
-          { value: "claude-3-5-sonnet", label: "claude-3.5-sonnet" },
-          { value: "claude-3-opus", label: "claude-3-opus" },
-          { value: "claude-3-haiku", label: "claude-3-haiku" },
-        ],
-      },
-      google: {
-        label: "Google",
-        models: [
-          { value: "gemini-1.5-pro", label: "gemini-1.5-pro" },
-          { value: "gemini-1.5-flash", label: "gemini-1.5-flash" },
-        ],
-      },
-    };
   }
 
   return result;
@@ -122,15 +93,36 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
 
   const PROVIDERS = buildProviderModelOptions(providerModels);
   const providerIds = Object.keys(PROVIDERS);
+  const isModelCatalogLoading = Object.keys(providerModels).length === 0;
 
-  const [slots, setSlots] = useState<ModelSlot[]>(() => {
+  const [slots, setSlots] = useState<ModelSlot[]>([]);
+
+  useEffect(() => {
+    if (providerIds.length === 0) {
+      setSlots([]);
+      return;
+    }
+
     const first = providerIds[0];
     const second = providerIds[1] ?? first;
-    return [
-      { id: generateId(), provider: first, model: PROVIDERS[first].models[0]?.value ?? "" },
-      { id: generateId(), provider: second, model: PROVIDERS[second].models[0]?.value ?? "" },
-    ].filter((s) => s.model);
-  });
+    setSlots((current) => {
+      if (current.length === 0) {
+        return [
+          { id: generateId(), provider: first, model: PROVIDERS[first].models[0]?.value ?? "" },
+          { id: generateId(), provider: second, model: PROVIDERS[second].models[0]?.value ?? "" },
+        ].filter((slot) => slot.model);
+      }
+
+      return current.map((slot) => {
+        const provider = PROVIDERS[slot.provider] ? slot.provider : first;
+        const models = PROVIDERS[provider].models;
+        const model = models.some((item) => item.value === slot.model)
+          ? slot.model
+          : (models[0]?.value ?? "");
+        return { ...slot, provider, model };
+      }).filter((slot) => slot.model);
+    });
+  }, [providerModels]);
 
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(
     cases[0]?.id ?? null
@@ -190,7 +182,7 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
   };
 
   const runAll = useCallback(async () => {
-    if (!scenarioId || !currentScenario) return;
+    if (!scenarioId || !currentScenario || slots.length === 0) return;
 
     setIsRunning(true);
     // Reset all slots to running state immediately
@@ -330,7 +322,7 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
     setIsRunning(false);
   };
 
-  const allDone = slots.every((s) => results[s.id]?.status === "done");
+  const allDone = slots.length > 0 && slots.every((s) => results[s.id]?.status === "done");
   const hasResults = Object.keys(results).length > 0;
 
   const bestLatency =
@@ -384,6 +376,13 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
           </div>
 
           <div className="flex flex-1 items-center gap-2 overflow-x-auto scrollbar-thin">
+            {providerIds.length === 0 && (
+              <span className="text-xs text-text-muted">
+                {isModelCatalogLoading
+                  ? "Loading available models…"
+                  : "Add an API key in Settings to load available models."}
+              </span>
+            )}
             {slots.map((slot, idx) => (
               <div
                 key={slot.id}
@@ -443,7 +442,7 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
                 )}
               </div>
             ))}
-            {slots.length < 4 && (
+            {providerIds.length > 0 && slots.length < 4 && (
               <button
                 onClick={addSlot}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border-light text-text-muted hover:text-text-main hover:border-primary/40 transition-all"
@@ -468,7 +467,7 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
             <Button
               size="sm"
               onClick={runAll}
-              disabled={isRunning}
+              disabled={isRunning || slots.length === 0}
               className="h-8 gap-1.5 bg-primary text-white hover:bg-primary/90 font-semibold px-4"
             >
               <Play className="h-3 w-3" />
@@ -534,6 +533,15 @@ export function ModelsCompare({ cases, providerModels }: ModelsCompareProps) {
 
       {/* Columns grid */}
       <div className="flex flex-1 overflow-hidden">
+        {slots.length === 0 && (
+          <div className="flex flex-1 items-center justify-center bg-slate-50/50">
+            <p className="text-xs text-text-muted/70">
+              {isModelCatalogLoading
+                ? "Refreshing provider catalogs…"
+                : "Model comparison becomes available after a provider catalog is loaded."}
+            </p>
+          </div>
+        )}
         {slots.map((slot, idx) => {
           const r = results[slot.id];
           const color = COLUMN_COLORS[idx];

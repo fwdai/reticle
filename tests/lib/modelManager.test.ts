@@ -64,6 +64,19 @@ describe('fetchAndNormalizeModels — cache behaviour', () => {
     expect(mockListModels).not.toHaveBeenCalled();
   });
 
+  it('bypasses a fresh cache when a refresh is requested', async () => {
+    seedCache({ openai: [{ id: 'gpt-5' }], anthropic: [{ id: 'claude-opus-4-6' }] });
+    mockListModels
+      .mockResolvedValueOnce([{ id: 'gpt-5.2' }])
+      .mockResolvedValueOnce([{ id: 'claude-opus-5' }]);
+
+    const result = await fetchAndNormalizeModels({ forceRefresh: true });
+
+    expect(mockListModels).toHaveBeenCalledTimes(2);
+    expect(result.openai.map((model) => model.id)).toContain('gpt-5.2');
+    expect(result.anthropic.map((model) => model.id)).toContain('claude-opus-5');
+  });
+
   it('fetches when cache is stale (older than 1 hour)', async () => {
     store[CACHE_KEY] = JSON.stringify({
       data: { openai: [{ id: 'gpt-5' }] },
@@ -101,6 +114,25 @@ describe('fetchAndNormalizeModels — cache behaviour', () => {
     await fetchAndNormalizeModels();
 
     expect(mockListModels).toHaveBeenCalled();
+  });
+
+  it('preserves a provider\'s last-known-good models when only its refresh fails', async () => {
+    seedCache({ openai: [{ id: 'gpt-5' }], anthropic: [{ id: 'claude-opus-4-6' }] });
+    mockListModels
+      .mockResolvedValueOnce([{ id: 'gpt-5.2' }])
+      .mockRejectedValueOnce(new Error('anthropic unavailable'));
+
+    const result = await fetchAndNormalizeModels({ forceRefresh: true });
+
+    expect(result.openai.map((model) => model.id)).toContain('gpt-5.2');
+    expect(result.anthropic.map((model) => model.id)).toContain('claude-opus-4-6');
+
+    mockListModels.mockClear();
+    mockListModels.mockRejectedValueOnce(new Error('anthropic still unavailable'));
+    await fetchAndNormalizeModels();
+
+    expect(mockListModels).toHaveBeenCalledTimes(1);
+    expect(mockListModels).toHaveBeenCalledWith('anthropic');
   });
 });
 

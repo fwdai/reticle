@@ -32,25 +32,42 @@ interface ProviderModels {
 interface AllModelCache {
   data: ProviderModels;
   timestamp: number;
+  providerTimestamps?: Record<string, number>;
 }
+
+interface ProviderFetchResult {
+  providerId: string;
+  models?: any[];
+}
+
+const pendingProviderRequests = new Map<string, Promise<any[]>>();
+
+const fetchProviderModels = (providerId: string): Promise<any[]> => {
+  const pending = pendingProviderRequests.get(providerId);
+  if (pending) return pending;
+
+  const request = listModels(providerId).finally(() => {
+    pendingProviderRequests.delete(providerId);
+  });
+  pendingProviderRequests.set(providerId, request);
+  return request;
+};
 
 /**
  * Fetches raw model lists for ALL providers from the API and constructs an AllModelCache object.
  * This function does NOT use caching internally; it always fetches fresh data.
  * @returns A Promise resolving to an AllModelCache object.
  */
-const fetchRawModels = async (): Promise<AllModelCache> => {
-  const providerModelsData: ProviderModels = {};
-  for (const provider of PROVIDERS_LIST) {
+const fetchRawModels = async (providerIds: string[]): Promise<ProviderFetchResult[]> => {
+  return Promise.all(providerIds.map(async (providerId) => {
+    const provider = PROVIDERS_LIST.find((item) => item.id === providerId);
     try {
-      const rawModels = await listModels(provider.id);
-      providerModelsData[provider.id] = rawModels;
+      return { providerId, models: await fetchProviderModels(providerId) };
     } catch (error) {
-      console.error(`Failed to fetch raw models for provider ${provider.name}:`, error);
-      providerModelsData[provider.id] = [];
+      console.error(`Failed to fetch raw models for provider ${provider?.name ?? providerId}:`, error);
+      return { providerId };
     }
-  }
-  return { data: providerModelsData, timestamp: Date.now() };
+  }));
 }
 
 /**
@@ -58,15 +75,13 @@ const fetchRawModels = async (): Promise<AllModelCache> => {
  * It fetches fresh data for all providers if the cache is expired or missing.
  * @returns A Promise resolving to an AllModelCache object (from cache or newly fetched).
  */
-const getAllModels = async (): Promise<ProviderModels> => {
+const getAllModels = async (forceRefresh = false): Promise<ProviderModels> => {
   const allCacheString = localStorage.getItem(CACHE_KEY);
   let cachedData: AllModelCache = { data: {}, timestamp: 0 };
-  let cacheIsFresh = false;
 
   if (allCacheString) {
     try {
       cachedData = JSON.parse(allCacheString);
-      cacheIsFresh = (Date.now() - cachedData.timestamp < CACHE_DURATION);
     } catch (e) {
       console.error(`Failed to parse all models cache from localStorage:`, e);
       localStorage.removeItem(CACHE_KEY);
@@ -74,25 +89,53 @@ const getAllModels = async (): Promise<ProviderModels> => {
     }
   }
 
-  if (cacheIsFresh) return cachedData.data;
+  const now = Date.now();
+  const providersToFetch = PROVIDERS_LIST
+    .filter((provider) => {
+      if (forceRefresh || !cachedData.data[provider.id]) return true;
+      const timestamp = cachedData.providerTimestamps
+        ? (cachedData.providerTimestamps[provider.id] ?? 0)
+        : cachedData.timestamp;
+      return now - timestamp >= CACHE_DURATION;
+    })
+    .map((provider) => provider.id);
+
+  if (providersToFetch.length === 0) return cachedData.data;
 
   try {
-    const newRawProviderModels = await fetchRawModels();
+    const results = await fetchRawModels(providersToFetch);
+    const dataToCache: ProviderModels = { ...cachedData.data };
+    const providerTimestamps = { ...cachedData.providerTimestamps };
+    let cacheChanged = false;
 
-    // Only persist providers that actually returned models.
-    // Empty results mean "no API key yet" — caching them would lock out a
-    // provider for the full TTL even after the user adds a key.
-    const dataToCache: ProviderModels = {};
-    for (const [providerId, models] of Object.entries(newRawProviderModels.data)) {
-      if (Array.isArray(models) && models.length > 0) {
+    for (const { providerId, models } of results) {
+      // A missing `models` value is a failed request. Preserve the provider's
+      // last-known-good catalog and leave its timestamp stale so it is retried.
+      if (!models) continue;
+
+      cacheChanged = true;
+      if (models.length > 0) {
         dataToCache[providerId] = models;
+        providerTimestamps[providerId] = now;
+      } else {
+        delete dataToCache[providerId];
+        delete providerTimestamps[providerId];
       }
     }
-    if (Object.keys(dataToCache).length > 0) {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: dataToCache, timestamp: Date.now() }));
+
+    if (cacheChanged) {
+      if (Object.keys(dataToCache).length > 0) {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: dataToCache,
+          timestamp: now,
+          providerTimestamps,
+        }));
+      } else {
+        localStorage.removeItem(CACHE_KEY);
+      }
     }
 
-    return newRawProviderModels.data;
+    return dataToCache;
   } catch (error) {
     console.error(`Failed to fetch and cache all raw models:`, error);
     if (Object.keys(cachedData.data).length > 0) {
@@ -199,11 +242,13 @@ export function clearModelCache(): void {
  * Fetches and normalizes all models for all providers.
  * @returns A Promise resolving to a record of provider IDs to arrays of normalized model objects.
  */
-export const fetchAndNormalizeModels = async (): Promise<Record<string, { id: string; name: string }[]>> => {
+export const fetchAndNormalizeModels = async (
+  options: { forceRefresh?: boolean } = {}
+): Promise<Record<string, { id: string; name: string }[]>> => {
   const allNormalizedModels: Record<string, { id: string; name: string }[]> = {};
 
   try {
-    const allRawModelCache = await getAllModels();
+    const allRawModelCache = await getAllModels(options.forceRefresh);
 
     for (const provider of PROVIDERS_LIST) {
       const providerModels = allRawModelCache[provider.id];
