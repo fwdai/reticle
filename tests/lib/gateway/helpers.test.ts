@@ -20,6 +20,7 @@ import {
   getProviderHeaders,
   isReasoningModel,
   loadAttachmentsAsContentParts,
+  normalizeProviderBaseUrl,
   toolConfigToAiSdkTools,
 } from '@/lib/gateway/helpers';
 import { ANTHROPIC_VERSION } from '@/lib/gateway/constants';
@@ -32,37 +33,96 @@ beforeEach(() => vi.clearAllMocks());
 // ── getProviderHeaders ─────────────────────────────────────────────────────────
 
 describe('getProviderHeaders', () => {
-  it('returns correct routing headers for openai', () => {
-    const headers = getProviderHeaders('openai');
+  it('returns correct routing headers for openai', async () => {
+    const headers = await getProviderHeaders('openai');
     expect(headers['X-Api-Provider']).toBe('openai');
     expect(headers['X-Api-Auth-Header']).toBe('Authorization');
     expect(headers['X-Proxy-Target-Url']).toBe('https://api.openai.com');
   });
 
-  it('returns correct routing headers for anthropic and adds anthropic-version', () => {
-    const headers = getProviderHeaders('anthropic');
+  it('returns correct routing headers for anthropic and adds anthropic-version', async () => {
+    const headers = await getProviderHeaders('anthropic');
     expect(headers['X-Api-Provider']).toBe('anthropic');
     expect(headers['X-Api-Auth-Header']).toBe('X-Api-Key');
     expect(headers['X-Proxy-Target-Url']).toBe('https://api.anthropic.com');
     expect(headers['anthropic-version']).toBe(ANTHROPIC_VERSION);
   });
 
-  it('does not add anthropic-version for non-anthropic providers', () => {
-    const headers = getProviderHeaders('openai');
+  it('does not add anthropic-version for non-anthropic providers', async () => {
+    const headers = await getProviderHeaders('openai');
     expect(headers).not.toHaveProperty('anthropic-version');
   });
 
-  it('returns correct routing headers for google', () => {
-    const headers = getProviderHeaders('google');
+  it('returns correct routing headers for google', async () => {
+    const headers = await getProviderHeaders('google');
     expect(headers['X-Api-Provider']).toBe('google');
     expect(headers['X-Api-Auth-Header']).toBe('Authorization');
     expect(headers['X-Proxy-Target-Url']).toBe('https://generativelanguage.googleapis.com');
   });
 
-  it('throws when the provider is not found', () => {
-    expect(() => getProviderHeaders('unknown-provider')).toThrow(
+  it('throws when the provider is not found', async () => {
+    await expect(getProviderHeaders('unknown-provider')).rejects.toThrow(
       'Provider "unknown-provider" not found.'
     );
+  });
+
+  it('uses the default local base URL when no custom setting is stored', async () => {
+    mockInvoke.mockResolvedValue([]); // getSetting -> dbSelectOne -> no row
+    const headers = await getProviderHeaders('local');
+    expect(headers['X-Api-Provider']).toBe('local');
+    expect(headers['X-Proxy-Target-Url']).toBe('http://127.0.0.1:11434');
+  });
+
+  it('uses the stored custom base URL for the local provider when one is set', async () => {
+    mockInvoke.mockResolvedValue([{ key: 'local_provider_base_url', value: 'http://192.168.1.50:1234' }]);
+    const headers = await getProviderHeaders('local');
+    expect(headers['X-Proxy-Target-Url']).toBe('http://192.168.1.50:1234');
+  });
+
+  it('throws rather than routing to a broken stored local base URL', async () => {
+    mockInvoke.mockResolvedValue([{ key: 'local_provider_base_url', value: 'not a url\r\nX-Injected: 1' }]);
+    await expect(getProviderHeaders('local')).rejects.toThrow();
+  });
+});
+
+// ── normalizeProviderBaseUrl ──────────────────────────────────────────────────
+
+describe('normalizeProviderBaseUrl', () => {
+  it('passes through a clean http URL unchanged', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('accepts https URLs', () => {
+    expect(normalizeProviderBaseUrl('https://models.example.com')).toBe('https://models.example.com');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(normalizeProviderBaseUrl('  http://127.0.0.1:11434  ')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('strips trailing slashes so path concatenation cannot produce "//"', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434/')).toBe('http://127.0.0.1:11434');
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:11434///')).toBe('http://127.0.0.1:11434');
+  });
+
+  it('preserves a non-root path while stripping its trailing slash', () => {
+    expect(normalizeProviderBaseUrl('http://127.0.0.1:8000/api/')).toBe('http://127.0.0.1:8000/api');
+  });
+
+  it('rejects values containing CR or LF (header-injection into the proxy)', () => {
+    expect(() => normalizeProviderBaseUrl('http://127.0.0.1:11434\r\nX-Injected: 1')).toThrow();
+    expect(() => normalizeProviderBaseUrl('http://127.0.0.1:11434\nX-Injected: 1')).toThrow();
+  });
+
+  it('rejects unparseable input', () => {
+    expect(() => normalizeProviderBaseUrl('not a url')).toThrow();
+    expect(() => normalizeProviderBaseUrl('')).toThrow();
+  });
+
+  it('rejects non-http(s) protocols', () => {
+    expect(() => normalizeProviderBaseUrl('file:///etc/passwd')).toThrow();
+    expect(() => normalizeProviderBaseUrl('ftp://example.com')).toThrow();
+    expect(() => normalizeProviderBaseUrl('javascript:alert(1)')).toThrow();
   });
 });
 

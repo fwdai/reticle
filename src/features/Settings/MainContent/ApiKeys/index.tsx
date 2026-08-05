@@ -1,9 +1,13 @@
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 
 import { fetchAndNormalizeModels, clearModelCache } from "@/lib/modelManager";
+import { getSetting, setSetting } from "@/lib/storage";
+import { LOCAL_PROVIDER_BASE_URL_SETTING_KEY } from "@/lib/gateway/constants";
+import { normalizeProviderBaseUrl } from "@/lib/gateway/helpers";
+import { PROVIDERS as ALL_PROVIDERS } from "@/constants/providers";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -40,17 +44,76 @@ function ApiKeys() {
     Record<string, { id: string; name: string }[]>
   >({});
 
+  // 'local' needs no API key — just a base URL, stored in `settings` rather than `api_keys`.
+  // Reuses the shared `saveStatus`/`getInputClass`/`renderStatusIcon` machinery below (keyed
+  // by "local") rather than a parallel status state, so the same visual feedback applies.
+  const [localBaseUrl, setLocalBaseUrl] = useState("");
+
   useEffect(() => {
-    const loadModels = async () => {
+    const loadLocalBaseUrl = async () => {
       try {
-        const models = await fetchAndNormalizeModels();
-        setProviderModels(models);
+        const stored = await getSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY);
+        setLocalBaseUrl(stored ?? ALL_PROVIDERS.LOCAL.baseUrl);
       } catch (error) {
-        console.error("Failed to fetch provider models:", error);
+        console.error("Failed to load local provider base URL:", error);
+        setLocalBaseUrl(ALL_PROVIDERS.LOCAL.baseUrl);
       }
     };
-    loadModels();
+    loadLocalBaseUrl();
   }, []);
+
+  const handleSaveLocalBaseUrl = async (rawValue: string) => {
+    let value: string;
+    try {
+      value = rawValue.trim() ? normalizeProviderBaseUrl(rawValue) : ALL_PROVIDERS.LOCAL.baseUrl;
+    } catch (error) {
+      setSaveStatus((prev) => ({ ...prev, local: "error" }));
+      toast.error("Invalid local endpoint", {
+        description: error instanceof Error ? error.message : "Please enter a valid http(s) URL.",
+      });
+      return;
+    }
+    setSaveStatus((prev) => ({ ...prev, local: "saving" }));
+    try {
+      await setSetting(LOCAL_PROVIDER_BASE_URL_SETTING_KEY, value);
+      clearModelCache();
+      loadModels();
+      setLocalBaseUrl(value);
+      setSaveStatus((prev) => ({ ...prev, local: "saved" }));
+      setTimeout(() => {
+        setSaveStatus((prev) => ({ ...prev, local: "idle" }));
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to save local provider base URL:", error);
+      setSaveStatus((prev) => ({ ...prev, local: "error" }));
+      toast.error("Failed to save local endpoint", { description: "Could not save the base URL. Please try again." });
+    }
+  };
+
+  // Re-run after any save/delete that could change which models are reachable
+  // (a new/removed API key, or a changed local endpoint) — clearing the cache
+  // alone leaves `providerModels` (and the descriptions derived from it) stale
+  // until the component happens to remount.
+  //
+  // The mount-time call and a later save-triggered call can both be in flight at
+  // once; if the mount-time one resolves last it would otherwise overwrite the
+  // fresh result with stale data. loadModelsRequestId guards against that — only
+  // the response to the most recently *started* call is allowed to apply.
+  const loadModelsRequestId = useRef(0);
+  const loadModels = useCallback(async () => {
+    const requestId = ++loadModelsRequestId.current;
+    try {
+      const models = await fetchAndNormalizeModels();
+      if (requestId !== loadModelsRequestId.current) return; // superseded by a newer call
+      setProviderModels(models);
+    } catch (error) {
+      console.error("Failed to fetch provider models:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
 
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -94,8 +157,13 @@ function ApiKeys() {
           query: { where: { provider } },
         });
         clearModelCache();
-        const models = await fetchAndNormalizeModels({ forceRefresh: true });
-        setProviderModels(models);
+        // main inlined fetchAndNormalizeModels({ forceRefresh: true }) here;
+        // this branch routes every refresh through loadModels() so the
+        // out-of-order guard added later applies to all of them. Dropping
+        // forceRefresh is safe: clearModelCache() above removes the cache
+        // key, and getAllModels refetches when the provider is absent from
+        // the cache regardless of the flag.
+        loadModels();
       } catch (error) {
         console.error(`Failed to delete API key for ${provider}:`, error);
         setSaveStatus((prev) => ({ ...prev, [provider]: "error" }));
@@ -120,6 +188,7 @@ function ApiKeys() {
         });
       }
       clearModelCache();
+      loadModels();
       setApiKeys((prev) => ({ ...prev, [provider]: apiKey }));
       const models = await fetchAndNormalizeModels({ forceRefresh: true });
       setProviderModels(models);
@@ -224,6 +293,32 @@ function ApiKeys() {
             </p>
           </div>
         ))}
+
+        <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            Local Endpoint (Ollama, LM Studio, vLLM, etc.)
+          </label>
+          <div className="relative">
+            <input
+              className={getInputClass("local")}
+              placeholder={ALL_PROVIDERS.LOCAL.baseUrl}
+              type="text"
+              value={localBaseUrl}
+              data-save-status={saveStatus.local}
+              onChange={(e) => setLocalBaseUrl(e.target.value)}
+              onBlur={(e) => handleSaveLocalBaseUrl(e.target.value)}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              {renderStatusIcon("local")}
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-2">
+            {getProviderDescription(
+              "local",
+              `No API key needed — point this at any OpenAI-compatible server (defaults to ${ALL_PROVIDERS.LOCAL.baseUrl} for Ollama).`
+            )}
+          </p>
+        </div>
       </div>
     </div>
   );

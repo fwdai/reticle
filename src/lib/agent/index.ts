@@ -1,5 +1,5 @@
 import { ToolLoopAgent, stepCountIs } from 'ai';
-import { createModel } from '@/lib/gateway';
+import { createModel, getProviderHeaders } from '@/lib/gateway';
 import { streamWithEvents } from './streamWithEvents';
 
 import type { AgentEventCallback, ToolSet } from './types';
@@ -31,12 +31,13 @@ export interface Agent {
   stream(options: AgentStreamOptions): ReturnType<typeof streamWithEvents>;
 }
 
-export function createAgent(options: CreateAgentOptions): Agent {
+export async function createAgent(options: CreateAgentOptions): Promise<Agent> {
   const { provider, model, instructions, tools, timeout, maxSteps = 10, maxRetries = 3, onEvent } = options;
 
+  const headers = await getProviderHeaders(provider);
   const agent = new ToolLoopAgent({
     id: 'reticle-agent',
-    model: createModel({ provider, model }),
+    model: createModel({ provider, model }, headers),
     instructions: instructions,
     tools: tools,
     maxRetries: maxRetries,

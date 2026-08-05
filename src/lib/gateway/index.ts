@@ -15,6 +15,8 @@ import {
   loadAttachmentsAsContentParts,
   toolConfigToAiSdkTools,
 } from './helpers';
+
+export { getProviderHeaders } from './helpers';
 import { LLMCallConfig } from '@/types';
 import type { AttachedFile } from '@/contexts/StudioContext';
 import type { Tool } from '@/components/Tools/types';
@@ -77,8 +79,11 @@ export function extractStepsAndToolCalls(
   return { modelSteps, toolCalls };
 }
 
+/** `headers` must be resolved by the caller via `await getProviderHeaders(provider)` first —
+ *  this stays synchronous because the AI SDK's `model` factories can't be awaited inline. */
 export const createModel = (
   config: Pick<LLMCallConfig, 'provider' | 'model'>,
+  headers: Record<string, string>,
   gateway?: GatewayFetch
 ) => {
   const { provider, model } = config;
@@ -89,7 +94,7 @@ export const createModel = (
     apiKey: API_KEY,
     baseURL: gatewayBase,
     includeUsage: true, // Important: must match original
-    headers: getProviderHeaders(provider),
+    headers,
     fetch: gateway?.fetch ?? fetch, // Use latency-measuring fetch when gateway provided
     // OpenAI reasoning models require max_completion_tokens instead of max_tokens.
     // This is a workaround to support the OpenAI API for reasoning models as @ai-sdk/openai-compatible doesn't handle this.
@@ -141,8 +146,9 @@ export const streamText = async (
   const envVarsMap = Object.fromEntries(rawEnvVars.map(v => [v.key, v.value]));
   const aiTools = tools?.length ? toolConfigToAiSdkTools(tools, envVarsMap) : undefined;
 
+  const headers = await getProviderHeaders(config.provider);
   const result = await streamTextAi({
-    model: createModel(config, gateway),
+    model: createModel(config, headers, gateway),
     messages: messages,
     temperature: config.temperature,
     maxOutputTokens: config.maxTokens,
@@ -159,6 +165,12 @@ export const streamText = async (
 export const listModels = async (providerId: string): Promise<any[]> => {
   const modelsUrl = getProviderModelsUrl(providerId);
   try {
+    // main added cursor pagination; this branch made getProviderHeaders
+    // async (the local provider resolves its base URL/key asynchronously).
+    // Both are needed: await the headers ONCE, then reuse them for every
+    // page — calling the async version per-iteration without awaiting would
+    // pass a Promise as `headers` and silently send no auth.
+    const headers = await getProviderHeaders(providerId);
     const models: any[] = [];
     let nextUrl: string | null = modelsUrl;
 
@@ -167,7 +179,7 @@ export const listModels = async (providerId: string): Promise<any[]> => {
     while (nextUrl) {
       const response = await fetch(nextUrl, {
         method: 'GET',
-        headers: getProviderHeaders(providerId),
+        headers,
       });
 
       if (!response.ok) {
