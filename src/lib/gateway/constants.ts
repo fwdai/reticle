@@ -22,6 +22,9 @@ export function getProviderModelsUrl(providerId: string): string {
   return PROVIDER_MODELS_URL[providerId] ?? `${GATEWAY_URL}/models`;
 }
 
+/** Key into the `settings` table for the user-configurable 'local' provider base URL. */
+export const LOCAL_PROVIDER_BASE_URL_SETTING_KEY = 'local_provider_base_url';
+
 export const API_KEY = '1';
 export const STEPS_COUNT = 5;
 export const GATEWAY_NAME = 'reticle';

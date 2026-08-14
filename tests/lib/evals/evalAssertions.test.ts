@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('ai', () => ({ generateText: vi.fn() }));
-vi.mock('@/lib/gateway', () => ({ createModel: vi.fn(() => 'mock-model') }));
+vi.mock('@/lib/gateway', () => ({
+  createModel: vi.fn(() => 'mock-model'),
+  getProviderHeaders: vi.fn(async () => ({})),
+}));
 
 import * as aiSdk from 'ai';
 import {
@@ -417,7 +420,10 @@ describe('evaluateAgentAssertion', () => {
         'output', [], 1,
       );
 
-      expect(mockCreateModel).toHaveBeenCalledWith({ provider: 'anthropic', model: 'claude-sonnet-4' });
+      expect(mockCreateModel).toHaveBeenCalledWith(
+        { provider: 'anthropic', model: 'claude-sonnet-4' },
+        expect.any(Object)
+      );
     });
   });
 

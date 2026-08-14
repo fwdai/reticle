@@ -1,6 +1,6 @@
 import Ajv from "ajv";
 import { generateText } from "ai";
-import { createModel } from "@/lib/gateway";
+import { createModel, getProviderHeaders } from "@/lib/gateway";
 
 // ── Scenario ──────────────────────────────────────────────────────────────────
 
@@ -83,8 +83,9 @@ async function evaluateLlmJudgeAssertion(
   const model = assertion.judgeModel?.model ?? DEFAULT_JUDGE_MODEL;
 
   try {
+    const headers = await getProviderHeaders(provider);
     const { text } = await generateText({
-      model: createModel({ provider, model }),
+      model: createModel({ provider, model }, headers),
       system: systemPrompt,
       prompt: userPrompt,
       maxOutputTokens: 150,
@@ -118,8 +119,9 @@ async function evaluateGuardrailAssertion(
   const model = assertion.judgeModel?.model ?? DEFAULT_JUDGE_MODEL;
 
   try {
+    const headers = await getProviderHeaders(provider);
     const { text } = await generateText({
-      model: createModel({ provider, model }),
+      model: createModel({ provider, model }, headers),
       system: systemPrompt,
       prompt: userPrompt,
       maxOutputTokens: 150,

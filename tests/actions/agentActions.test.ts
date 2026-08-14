@@ -10,6 +10,7 @@ vi.mock('ai', () => ({
 
 vi.mock('@/lib/gateway', () => ({
   createModel: vi.fn(() => 'mock-model'),
+  getProviderHeaders: vi.fn(async () => ({})),
 }));
 
 vi.mock('@/lib/gateway/helpers', () => ({

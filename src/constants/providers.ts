@@ -17,6 +17,15 @@ export const PROVIDERS = {
     baseUrl: 'https://generativelanguage.googleapis.com',
     header: 'Authorization',
   },
+  LOCAL: {
+    id: 'local',
+    // Default target for any OpenAI-compatible local server (Ollama, LM Studio, vLLM, etc.).
+    // Overridable per-user via Settings → API Keys ("local_provider_base_url" setting) —
+    // see getProviderHeaders() in lib/gateway/helpers.ts.
+    name: 'Local (OpenAI-compatible)',
+    baseUrl: 'http://127.0.0.1:11434',
+    header: 'Authorization',
+  },
 } as const;
 
 // Export as array for easier iteration

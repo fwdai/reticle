@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { FlaskConical, Play, GitCompare } from "lucide-react";
 import { streamText, stepCountIs } from "ai";
-import { createModel } from "@/lib/gateway";
+import { createModel, getProviderHeaders } from "@/lib/gateway";
 import { toolConfigToAiSdkTools } from "@/lib/gateway/helpers";
 import {
   getAgentById,
@@ -257,8 +257,9 @@ export function TestView({ agentId, agentName }: TestViewProps) {
       let errorMsg: string | null = null;
 
       try {
+        const testHeaders = await getProviderHeaders(agentRecord.provider);
         const result = streamText({
-          model: createModel({ provider: agentRecord.provider, model: agentRecord.model }),
+          model: createModel({ provider: agentRecord.provider, model: agentRecord.model }, testHeaders),
           ...(instructions ? { system: instructions } : {}),
           prompt: tc.task,
           ...(hasTools ? { tools: aiTools } : {}),
